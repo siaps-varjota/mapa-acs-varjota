@@ -334,6 +334,10 @@
     position: relative;
     cursor: pointer;
     display: inline-block;
+    transform-origin: 50% 50%;
+    /* shift so center of label = map point */
+    margin-left: -40px;
+    margin-top: -18px;
   }
   .marker-pin {
     position: absolute;
@@ -684,7 +688,7 @@ async function adicionarLadoSilencioso(d) {
              </div>
              <div class="marker-pin"></div>
            </div>`,
-    iconAnchor: [40, 18], iconSize: [80, 36]
+    iconAnchor: [0, 0], iconSize: [1, 1]
   });
   const marker = L.marker([d.lat, d.lng], { icon, draggable: true }).addTo(map);
   marker.bindTooltip(`Lado #${id} — ${d.rua}`, { permanent: false });
@@ -995,8 +999,8 @@ function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
              </div>
              <div class="marker-pin"></div>
            </div>`,
-      iconAnchor: [40, 18],
-      iconSize:   [80, 36]
+      iconAnchor: [0, 0],
+      iconSize:   [1, 1]
     });
   }
   const marker = L.marker([lat, lng], { icon: buildIconWithAngle('', 0, angulo), draggable: true }).addTo(map);
@@ -1214,8 +1218,8 @@ function atualizarIconeMarcador(id) {
              </div>
              <div class="marker-pin"></div>
            </div>`,
-    iconAnchor: [40, 18],
-    iconSize:   [80, 36]
+    iconAnchor: [0, 0],
+    iconSize:   [1, 1]
   });
   lado.marker.setIcon(novoIcon);
 }
