@@ -1330,6 +1330,24 @@ function renderCards() {
       <div class="fixar-toggle"></div>`;
     fixarRow.addEventListener('click', () => {
       const novoFixado = !lado.fixado;
+
+      if (novoFixado) {
+        // Captura o ângulo visual atual (o que está aparecendo no mapa agora)
+        // e salva como rotacaoManual, para que ao fixar o label não mova nada.
+        const anguloVisual = calcAngLabel(lado.angulo || 0, lado.rotacaoManual || 0, false);
+        const v = Math.round(anguloVisual);
+        lado.rotacaoManual = v;
+        slider.value = String(v);
+        valDisplay.textContent = `${v}°`;
+        previewLabel.style.transform = `rotate(${v}deg)`;
+      } else {
+        // Ao desfixar, zera o offset manual para voltar ao alinhamento automático da rua
+        lado.rotacaoManual = 0;
+        slider.value = '0';
+        valDisplay.textContent = '0°';
+        previewLabel.style.transform = 'rotate(0deg)';
+      }
+
       fixarRow.classList.toggle('ativo', novoFixado);
       fixarRow.querySelector('.fixar-txt').textContent = novoFixado
         ? 'Nome fixado (não acompanha rotação do mapa)'
