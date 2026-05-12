@@ -329,15 +329,25 @@
   }
   #dica.visivel { opacity: 1; }
 
-  /* ── MARCADOR LADO ── */
-  .marker-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-    width: max-content;
+  /* ────────────────────────────────────────────────
+     MARCADOR DE LADO  —  FIX DE ROTAÇÃO
+     O container .marker-pivot tem width/height = 0,
+     portanto transform-origin padrão (50% 50%) cai
+     exatamente em (0,0), que coincide com iconAnchor.
+     O pin é deslocado −6px/−6px para ficar centrado
+     nesse ponto. A label fica posicionada em absolute
+     logo abaixo, e translateX(-50%) sempre a centraliza
+     ao longo do eixo da rua, qualquer que seja o ângulo.
+  ──────────────────────────────────────────────── */
+  .marker-pivot {
+    position: relative;
+    width: 0;
+    height: 0;
   }
   .marker-pin {
+    position: absolute;
+    left: -6px;
+    top: -6px;
     width: 12px;
     height: 12px;
     background: var(--verde);
@@ -345,12 +355,17 @@
     border-radius: 50%;
     box-shadow: 0 1px 5px rgba(0,0,0,.4);
     transition: background .2s;
-    flex-shrink: 0;
+    cursor: pointer;
   }
-  .marker-wrapper:hover .marker-pin { background: var(--laranja); }
-  .marker-wrapper.preenchido .marker-pin { background: var(--azul); }
+  .marker-pin:hover  { background: var(--laranja); }
+  /* Quando o lado já tem ACS/pessoas preenchidos */
+  .marker-pin.preenchido { background: var(--azul); }
   .marker-label {
-    margin-top: 4px;
+    position: absolute;
+    top: 10px;
+    /* translateX(-50%) centra a label sobre o ponto de ancoragem
+       mesmo após o pivot ser rotacionado */
+    transform: translateX(-50%);
     background: rgba(255,255,255,0.92);
     color: var(--texto);
     border-radius: 5px;
@@ -507,7 +522,7 @@
 
   <div id="main">
     <div id="map">
-      <div id="status-nuvem" id="status-nuvem" onclick="abrirConfig()" title="Clique para configurar">
+      <div id="status-nuvem" onclick="abrirConfig()" title="Clique para configurar">
         <div class="dot"></div>
         <span id="status-txt">Sem nuvem</span>
       </div>
@@ -636,7 +651,6 @@ function mostrarToast(msg, dur = 2500) {
   setTimeout(() => t.classList.remove('visivel'), dur);
 }
 
-// Serializa apenas o necessário (sem marker)
 function serializarLados() {
   return lados.map(l => ({
     id: l.id, lat: l.lat, lng: l.lng,
@@ -645,10 +659,8 @@ function serializarLados() {
   }));
 }
 
-// Carrega lados a partir de dados JSON (sem refazer o mapa do zero se não precisar)
 async function carregarDados(dados) {
   if (!Array.isArray(dados)) return;
-  // Remove marcadores antigos
   lados.forEach(l => { try { map.removeLayer(l.marker); } catch {} });
   lados = [];
   proximoId = 1;
@@ -662,28 +674,9 @@ async function carregarDados(dados) {
   agendarSave();
 }
 
-// Adiciona lado sem abrir card nem fazer geocodificação
 async function adicionarLadoSilencioso(d) {
   const id = d.id;
-  const angulo = d.angulo || 0;
-  let ang = angulo % 360;
-  if (ang >  90) ang -= 180;
-  if (ang < -90) ang += 180;
-  const acsLbl = d.acs || `#${id}`;
-  const acsCls = d.acs ? 'lbl-acs' : 'lbl-acs vazio';
-  const qtdLbl = d.pessoas > 0 ? `${d.pessoas} pessoas` : '– pessoas';
-  const pre    = !!(d.acs || d.pessoas);
-  const icon = L.divIcon({
-    className: '',
-    html: `<div class="marker-wrapper${pre?' preenchido':''}" id="marker-${id}" style="transform:rotate(${ang}deg);transform-origin:0 6px;">
-             <div class="marker-pin"></div>
-             <div class="marker-label" style="transform:translateX(-50%)">
-               <span class="${acsCls}">${escHtml(acsLbl)}</span>
-               <span class="lbl-qtd">${escHtml(qtdLbl)}</span>
-             </div>
-           </div>`,
-    iconAnchor: [0, 6], iconSize: [1, 1]
-  });
+  const icon = buildMarkerIcon(id, d.acs || '', d.pessoas || 0, d.angulo || 0);
   const marker = L.marker([d.lat, d.lng], { icon, draggable: true }).addTo(map);
   marker.bindTooltip(`Lado #${id} — ${d.rua}`, { permanent: false });
   marker.on('click', () => abrirCard(id));
@@ -695,7 +688,7 @@ async function adicionarLadoSilencioso(d) {
       if (l2) { l2.rua = nome; l2.angulo = ang2; atualizarCardHeader(id); atualizarIconeMarcador(id); agendarSave(); }
     });
   });
-  lados.push({ id, lat: d.lat, lng: d.lng, rua: d.rua, angulo, acs: d.acs || '', pessoas: d.pessoas || 0, marker });
+  lados.push({ id, lat: d.lat, lng: d.lng, rua: d.rua, angulo: d.angulo || 0, acs: d.acs || '', pessoas: d.pessoas || 0, marker });
 }
 
 // ── SAVE com debounce ──
@@ -712,7 +705,6 @@ async function salvarNuvem() {
   try {
     let res;
     if (!jbBinId) {
-      // Cria bin novo
       res = await fetch('https://api.jsonbin.io/v3/b', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Master-Key': jbApiKey, 'X-Bin-Name': 'acs-varjota' },
@@ -742,7 +734,6 @@ async function salvarNuvem() {
   }
 }
 
-// ── LOAD from nuvem ──
 async function carregarNuvem(silencioso = false) {
   if (!jbApiKey || !jbBinId) return false;
   try {
@@ -752,7 +743,7 @@ async function carregarNuvem(silencioso = false) {
     if (!res.ok) throw new Error(await res.text());
     const j = await res.json();
     const dados = j.record;
-    if (dados?.ts && dados.ts === lastSaveTs) return true; // sem mudanças
+    if (dados?.ts && dados.ts === lastSaveTs) return true;
     if (dados?.lados) {
       proximoId = dados.proximoId || 1;
       await carregarDados(dados.lados);
@@ -767,14 +758,12 @@ async function carregarNuvem(silencioso = false) {
   }
 }
 
-// ── POLLING a cada 15s ──
 function iniciarPolling() {
   clearInterval(pollTimer);
   if (!jbApiKey || !jbBinId) return;
   pollTimer = setInterval(() => carregarNuvem(true), 15000);
 }
 
-// ── MODAL CONFIG ──
 function abrirConfig() {
   document.getElementById('modal-config').classList.remove('oculto');
   document.getElementById('input-apikey').value = jbApiKey;
@@ -807,7 +796,6 @@ document.getElementById('btn-modal-avancar').addEventListener('click', async () 
       erro.textContent = 'Não foi possível carregar o Bin. Verifique a chave e o ID.';
     }
   } else {
-    // Vai criar bin no primeiro save
     setStatus('conectado', 'Pronto p/ salvar');
     iniciarPolling();
     document.getElementById('modal-config').classList.add('oculto');
@@ -833,6 +821,57 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 // ─────────────────────────────────────────
+//  HELPER: CONSTRUÇÃO DO ÍCONE DO MARCADOR
+//
+//  Estrutura corrigida para rotação precisa:
+//
+//  • .marker-pivot  →  width:0; height:0
+//    O transform-origin padrão (50% 50%) cai em (0,0),
+//    que é o ponto colocado pelo Leaflet sobre o latlng
+//    (iconAnchor: [0,0]).
+//
+//  • .marker-pin  →  position:absolute; left:-6px; top:-6px
+//    Centraliza o pin de 12×12 sobre o ponto de ancoragem.
+//
+//  • .marker-label  →  position:absolute; top:10px
+//    translateX(-50%) desloca para baixo do pin no eixo
+//    rotacionado — label sempre centrada sobre a rua.
+// ─────────────────────────────────────────
+function normalizarAngulo(angulo) {
+  // Mantém o texto legível: nunca de cabeça para baixo
+  let a = (angulo || 0) % 360;
+  if (a >  90) a -= 180;
+  if (a < -90) a += 180;
+  return a;
+}
+
+function buildMarkerHtml(id, acs, pessoas, angulo) {
+  const acsLabel = acs || `#${id}`;
+  const acsClass = acs ? 'lbl-acs' : 'lbl-acs vazio';
+  const qtdLabel = pessoas > 0 ? `${pessoas} pessoas` : '– pessoas';
+  const pre      = !!(acs || pessoas);
+  const ang      = normalizarAngulo(angulo);
+  return (
+    `<div class="marker-pivot" style="transform:rotate(${ang}deg);">` +
+      `<div class="marker-pin${pre ? ' preenchido' : ''}"></div>` +
+      `<div class="marker-label">` +
+        `<span class="${acsClass}">${escHtml(acsLabel)}</span>` +
+        `<span class="lbl-qtd">${escHtml(qtdLabel)}</span>` +
+      `</div>` +
+    `</div>`
+  );
+}
+
+function buildMarkerIcon(id, acs, pessoas, angulo) {
+  return L.divIcon({
+    className:  '',
+    html:       buildMarkerHtml(id, acs, pessoas, angulo),
+    iconAnchor: [0, 0],   // (0,0) do .marker-pivot fica sobre o latlng
+    iconSize:   [0, 0]
+  });
+}
+
+// ─────────────────────────────────────────
 //  DRAG-TO-MAP PARA ADICIONAR LADO
 // ─────────────────────────────────────────
 const dragHandle = document.getElementById('drag-handle');
@@ -851,7 +890,6 @@ dragHandle.addEventListener('mousedown', (e) => {
   dica.classList.add('visivel');
 });
 
-// Touch support
 dragHandle.addEventListener('touchstart', (e) => {
   isDraggingNew = true;
   dragHandle.classList.add('dragging');
@@ -897,12 +935,10 @@ async function finalizarDrag(cx, cy) {
   map.dragging.enable();
   dica.classList.remove('visivel');
 
-  // Verifica se soltou sobre o mapa
   const mapEl = map.getContainer();
   const rect  = mapEl.getBoundingClientRect();
   if (cx < rect.left || cx > rect.right || cy < rect.top || cy > rect.bottom) return;
 
-  // Converte pixel → coordenada
   const point  = L.point(cx - rect.left, cy - rect.top);
   const latlng = map.containerPointToLatLng(point);
 
@@ -911,18 +947,12 @@ async function finalizarDrag(cx, cy) {
 }
 
 // ─────────────────────────────────────────
-//  GEOCODIFICAÇÃO REVERSA (Nominatim)
+//  GEOCODIFICAÇÃO REVERSA (Nominatim + Overpass)
 // ─────────────────────────────────────────
-async function buscarNomeRua(lat, lng) {
-  const res = await buscarRuaEAngulo(lat, lng);
-  return res.rua;
-}
-
 async function buscarRuaEAngulo(lat, lng) {
   let rua = 'Localização marcada';
   let angulo = 0;
   try {
-    // Nominatim para o nome
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
     const r = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
     const d = await r.json();
@@ -930,7 +960,6 @@ async function buscarRuaEAngulo(lat, lng) {
   } catch {}
 
   try {
-    // Overpass: busca o way de highway mais próximo num raio de 30m
     const delta = 0.0003;
     const bbox = `${lat-delta},${lng-delta},${lat+delta},${lng+delta}`;
     const query = `[out:json][timeout:5];way[highway](${bbox});out geom;`;
@@ -944,7 +973,6 @@ async function buscarRuaEAngulo(lat, lng) {
 
     for (const way of (od.elements || [])) {
       if (!way.geometry || way.geometry.length < 2) continue;
-      // Percorre cada segmento e acha o mais próximo
       for (let i = 0; i < way.geometry.length - 1; i++) {
         const a = way.geometry[i];
         const b = way.geometry[i + 1];
@@ -954,7 +982,6 @@ async function buscarRuaEAngulo(lat, lng) {
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist < melhorDist) {
           melhorDist = dist;
-          // Ângulo do segmento em graus (lon=x, lat=y)
           const dLon = (b.lon - a.lon) * Math.cos(lat * Math.PI / 180);
           const dLat = b.lat - a.lat;
           melhorAng = Math.atan2(dLon, dLat) * 180 / Math.PI;
@@ -973,32 +1000,12 @@ async function buscarRuaEAngulo(lat, lng) {
 function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
   const id = proximoId++;
 
-  // Marcador no mapa — com ângulo paralelo à rua
-  // Use angulo na label desde o início
-  function buildIconWithAngle(acs, pessoas, ang) {
-    const acsLbl = acs || `#${id}`;
-    const acsCls = acs ? 'lbl-acs' : 'lbl-acs vazio';
-    const qtdLbl = pessoas > 0 ? `${pessoas} pessoas` : '– pessoas';
-    const pre    = !!(acs || pessoas);
-    let a = (ang || 0) % 360;
-    if (a >  90) a -= 180;
-    if (a < -90) a += 180;
-    return L.divIcon({
-      className: '',
-      html: `<div class="marker-wrapper${pre ? ' preenchido' : ''}" id="marker-${id}" style="transform:rotate(${a}deg);transform-origin:0 6px;">
-               <div class="marker-pin"></div>
-               <div class="marker-label" style="transform:translateX(-50%)">
-                 <span class="${acsCls}">${acsLbl}</span>
-                 <span class="lbl-qtd">${qtdLbl}</span>
-               </div>
-             </div>`,
-      iconAnchor: [0, 6],
-      iconSize:   [1, 1]
-    });
-  }
-  const marker = L.marker([lat, lng], { icon: buildIconWithAngle('', 0, angulo), draggable: true }).addTo(map);
-  marker.bindTooltip(`Lado #${id} — ${rua}`, { permanent: false });
+  const marker = L.marker([lat, lng], {
+    icon: buildMarkerIcon(id, '', 0, angulo),
+    draggable: true
+  }).addTo(map);
 
+  marker.bindTooltip(`Lado #${id} — ${rua}`, { permanent: false });
   marker.on('click', () => abrirCard(id));
   marker.on('dragend', (e) => {
     const l = lados.find(x => x.id === id);
@@ -1037,7 +1044,7 @@ function renderCards() {
   if (lados.length === 0) {
     const vazio = document.createElement('p');
     vazio.style.cssText = 'font-size:12px;color:var(--muted);font-style:italic;margin-top:6px';
-    vazio.textContent = 'Nenhum lado marcado. Clique em "Adicionar Lado" e clique no mapa.';
+    vazio.textContent = 'Nenhum lado marcado. Arraste o marcador para o mapa.';
     lista.appendChild(vazio);
     return;
   }
@@ -1061,7 +1068,6 @@ function renderCards() {
     const body = document.createElement('div');
     body.className = 'lado-card-body';
 
-    // Input Rua
     const campoRua = document.createElement('div');
     campoRua.className = 'campo';
     campoRua.innerHTML = '<label>🏘️ Nome da Rua / Localização</label>';
@@ -1069,12 +1075,9 @@ function renderCards() {
     inputRua.type = 'text';
     inputRua.placeholder = 'Ex.: Rua das Flores';
     inputRua.value = lado.rua || '';
-    inputRua.addEventListener('input', function() {
-      atualizarLado(lado.id, 'rua', this.value);
-    });
+    inputRua.addEventListener('input', function() { atualizarLado(lado.id, 'rua', this.value); });
     campoRua.appendChild(inputRua);
 
-    // Input ACS
     const campoAcs = document.createElement('div');
     campoAcs.className = 'campo';
     campoAcs.innerHTML = '<label>👤 Nome da ACS</label>';
@@ -1082,12 +1085,9 @@ function renderCards() {
     inputAcs.type = 'text';
     inputAcs.placeholder = 'Ex.: Maria da Silva';
     inputAcs.value = lado.acs || '';
-    inputAcs.addEventListener('input', function() {
-      atualizarLado(lado.id, 'acs', this.value);
-    });
+    inputAcs.addEventListener('input', function() { atualizarLado(lado.id, 'acs', this.value); });
     campoAcs.appendChild(inputAcs);
 
-    // Input Pessoas
     const campoPessoas = document.createElement('div');
     campoPessoas.className = 'campo';
     campoPessoas.innerHTML = '<label>👥 Total de pessoas neste lado</label>';
@@ -1096,12 +1096,9 @@ function renderCards() {
     inputPessoas.min = '0';
     inputPessoas.placeholder = '0';
     inputPessoas.value = lado.pessoas > 0 ? lado.pessoas : '';
-    inputPessoas.addEventListener('input', function() {
-      atualizarLado(lado.id, 'pessoas', this.value);
-    });
+    inputPessoas.addEventListener('input', function() { atualizarLado(lado.id, 'pessoas', this.value); });
     campoPessoas.appendChild(inputPessoas);
 
-    // Botão remover
     const btnRem = document.createElement('button');
     btnRem.className = 'btn-remover';
     btnRem.textContent = '🗑️ Remover este lado';
@@ -1111,7 +1108,6 @@ function renderCards() {
     body.appendChild(campoAcs);
     body.appendChild(campoPessoas);
     body.appendChild(btnRem);
-
     card.appendChild(header);
     card.appendChild(body);
     lista.appendChild(card);
@@ -1124,7 +1120,6 @@ function toggleCard(id) {
 }
 
 function abrirCard(id) {
-  // Só abre o card sem recriar o DOM
   const card = document.getElementById(`card-${id}`);
   if (card) {
     card.classList.add('aberto');
@@ -1146,7 +1141,7 @@ function atualizarCardHeader(id) {
 }
 
 // ─────────────────────────────────────────
-//  ATUALIZAR DADOS DE UM LADO (SEM recriar DOM)
+//  ATUALIZAR DADOS DE UM LADO
 // ─────────────────────────────────────────
 function atualizarLado(id, campo, valor) {
   const lado = lados.find(x => x.id === id);
@@ -1158,7 +1153,6 @@ function atualizarLado(id, campo, valor) {
     lado[campo] = valor;
   }
 
-  // Atualiza só o sub-texto e classe do card — sem recriar inputs
   const cardEl = document.getElementById(`card-${id}`);
   if (cardEl) {
     const sub = cardEl.querySelector('.sub');
@@ -1168,9 +1162,7 @@ function atualizarLado(id, campo, valor) {
     cardEl.classList.toggle('preenchido', !!(lado.acs || lado.pessoas));
   }
 
-  // Atualiza marcador no mapa
   atualizarIconeMarcador(id);
-
   atualizarResumo();
   agendarSave();
 }
@@ -1194,27 +1186,7 @@ function removerLado(id) {
 function atualizarIconeMarcador(id) {
   const lado = lados.find(x => x.id === id);
   if (!lado) return;
-  const acsLabel   = lado.acs || `#${id}`;
-  const acsClass   = lado.acs ? 'lbl-acs' : 'lbl-acs vazio';
-  const qtdLabel   = lado.pessoas > 0 ? `${lado.pessoas} pessoas` : '– pessoas';
-  const preenchido = !!(lado.acs || lado.pessoas);
-  // Normaliza ângulo para -90..90 (texto nunca de cabeça pra baixo)
-  let ang = (lado.angulo || 0) % 360;
-  if (ang >  90) ang -= 180;
-  if (ang < -90) ang += 180;
-  const novoIcon = L.divIcon({
-    className: '',
-    html: `<div class="marker-wrapper${preenchido ? ' preenchido' : ''}" id="marker-${id}" style="transform:rotate(${ang}deg);transform-origin:0 6px;">
-             <div class="marker-pin"></div>
-             <div class="marker-label" style="transform:translateX(-50%)">
-               <span class="${acsClass}">${acsLabel}</span>
-               <span class="lbl-qtd">${qtdLabel}</span>
-             </div>
-           </div>`,
-    iconAnchor: [0, 6],
-    iconSize:   [1, 1]
-  });
-  lado.marker.setIcon(novoIcon);
+  lado.marker.setIcon(buildMarkerIcon(id, lado.acs, lado.pessoas, lado.angulo));
 }
 
 // ─────────────────────────────────────────
@@ -1223,8 +1195,6 @@ function atualizarIconeMarcador(id) {
 function atualizarResumo() {
   const listaEl = document.getElementById('lista-acs');
   const totalEl = document.getElementById('total-num');
-
-  // Agrupa por ACS
   const mapa = {};
   let total = 0;
   lados.forEach(l => {
@@ -1262,10 +1232,22 @@ function atualizarBadge() {
 // ─────────────────────────────────────────
 //  EXPORTAR JSON
 // ─────────────────────────────────────────
+document.getElementById('btn-exportar').addEventListener('click', () => {
+  const dados = lados.map(l => ({
+    id: l.id, rua: l.rua, lat: l.lat, lng: l.lng,
+    acs: l.acs, pessoas: l.pessoas
+  }));
+  const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `acs_varjota_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+});
+
 // ─────────────────────────────────────────
 //  CAMADA DE RUAS (Overpass OSM)
 // ─────────────────────────────────────────
-let ruasLayer   = null;
+let ruasLayer    = null;
 let ruasVisiveis = false;
 let ruasCarregadas = false;
 
@@ -1278,8 +1260,7 @@ async function carregarRuas() {
       (way[highway~"^(residential|unclassified|tertiary|secondary|primary|trunk|living_street|service|footway|path|track)$"](around:3500,-4.1928215,-40.4677377););
       out geom;`;
     const res = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      body: query
+      method: 'POST', body: query
     });
     const data = await res.json();
 
@@ -1331,16 +1312,11 @@ function desativarRuas() {
 }
 
 document.getElementById('btn-ruas').addEventListener('click', () => {
-  if (ruasVisiveis) {
-    desativarRuas();
-  } else if (ruasCarregadas) {
-    ativarRuas();
-  } else {
-    carregarRuas();
-  }
+  if (ruasVisiveis) desativarRuas();
+  else if (ruasCarregadas) ativarRuas();
+  else carregarRuas();
 });
 
-// CSS tooltip rua inline
 const styleRua = document.createElement('style');
 styleRua.textContent = `.tooltip-rua { background:#fff; border:1px solid #ccc; border-radius:4px; padding:2px 7px; font-size:11px; font-family:'Sora',sans-serif; font-weight:600; color:#1e2a38; box-shadow:0 1px 4px rgba(0,0,0,.15); }`;
 document.head.appendChild(styleRua);
@@ -1363,7 +1339,6 @@ function aplicarRotacao() {
 
 document.getElementById('btn-rot-esq').addEventListener('click', () => girarMapa(-10));
 document.getElementById('btn-rot-dir').addEventListener('click', () => girarMapa(10));
-
 document.getElementById('btn-rot-reset').addEventListener('click', () => {
   mapBearing = 0;
   aplicarRotacao();
@@ -1381,22 +1356,6 @@ rotInput.addEventListener('input', () => {
 rotInput.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowUp')   { e.preventDefault(); girarMapa(1);  }
   if (e.key === 'ArrowDown') { e.preventDefault(); girarMapa(-1); }
-});
-
-document.getElementById('btn-exportar').addEventListener('click', () => {
-  const dados = lados.map(l => ({
-    id: l.id,
-    rua: l.rua,
-    lat: l.lat,
-    lng: l.lng,
-    acs: l.acs,
-    pessoas: l.pessoas
-  }));
-  const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `acs_varjota_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
 });
 
 // ─────────────────────────────────────────
@@ -1433,13 +1392,10 @@ if (jbApiKey && jbBinId) {
     if (ok) { setStatus('conectado', `Bin: ${jbBinId.slice(-6)}`); iniciarPolling(); }
     else    { setStatus('erro', 'Erro ao conectar'); }
   });
-  // Abre modal só se não tiver config
 } else {
-  // Sem config — mostra modal
   renderCards();
   atualizarResumo();
   if (!jbApiKey) {
-    // pequeno delay para o mapa carregar
     setTimeout(() => document.getElementById('modal-config').classList.remove('oculto'), 600);
   }
 }
