@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
@@ -371,6 +372,13 @@
     border: 1px solid #ffcdd2;
   }
   #btn-limpar:hover { background: #ffebee; }
+  #btn-capturar {
+    background: var(--cinza);
+    color: var(--azul);
+    border: 1px solid #90caf9;
+  }
+  #btn-capturar:hover { background: #e3f2fd; }
+  #btn-capturar.capturando { opacity: .6; cursor: wait; }
   #btn-ruas {
     background: var(--cinza);
     color: var(--texto);
@@ -645,6 +653,7 @@
           <button id="btn-rot-dir" title="Girar à direita">↻</button>
         </div>
         <button id="btn-ruas">🛣️ Ruas</button>
+        <button id="btn-capturar">🖼️ Salvar Mapa</button>
         <button id="btn-exportar">📋 Exportar JSON</button>
         <button id="btn-limpar">🗑️ Limpar Tudo</button>
       </div>
@@ -832,16 +841,14 @@ function atualizarTodosOsIcones() {
 
 // ─────────────────────────────────────────
 //  ESCALA POR ZOOM
-//  Zoom de referência = 16 (escala 1.0)
+//  Zoom de referência = 16 (escala 1.0 → 0.5 com redução de 50%)
 //  Cada nível duplica/divide por 2, então:
-//  scale = 2^(zoom - 16) mas limitado a [0.25, 2.0]
+//  scale = 2^(zoom - 16) * 0.5 limitado proporcionalmente
 // ─────────────────────────────────────────
 function calcZoomScale(zoom) {
-  // zoom 16 = escala 0.5 (referência)
-  // zoom out → scale < 1 (card diminui junto com o mapa)
-  // zoom in  → scale > 1 (card cresce junto com o mapa)
+  // zoom 16 = escala base * 0.5 (redução de 50% do tamanho original)
   const scale = Math.pow(2, (zoom - 16) * 0.5);
-  return Math.min(3.0, Math.max(0.15, scale))*0.4;
+  return Math.min(3.0, Math.max(0.15, scale)) * 0.4;
 }
 
 function atualizarEscalaZoom() {
@@ -1663,6 +1670,75 @@ document.getElementById('btn-exportar').addEventListener('click', () => {
   a.href = URL.createObjectURL(blob);
   a.download = `acs_varjota_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
+});
+
+// ─────────────────────────────────────────
+//  CAPTURAR MAPA COMO PNG
+// ─────────────────────────────────────────
+document.getElementById('btn-capturar').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-capturar');
+  if (btn.classList.contains('capturando')) return;
+  btn.classList.add('capturando');
+  btn.textContent = '⏳ Capturando…';
+
+  // Esconde a toolbar e o status durante a captura
+  const toolbar = document.getElementById('toolbar');
+  const statusNuvem = document.getElementById('status-nuvem');
+  const dica = document.getElementById('dica');
+  toolbar.style.display = 'none';
+  statusNuvem.style.display = 'none';
+  dica.style.display = 'none';
+
+  try {
+    const mapEl = document.getElementById('map');
+    const canvas = await html2canvas(mapEl, {
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      scale: 2,           // 2× para qualidade melhor na impressão
+      backgroundColor: '#f4f6f9'
+    });
+
+    // Adiciona rodapé com data e total
+    const totalPessoas = document.getElementById('total-num').textContent;
+    const dataAtual = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const rodapeAltura = 40;
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width  = canvas.width;
+    finalCanvas.height = canvas.height + rodapeAltura * 2;
+    const ctx = finalCanvas.getContext('2d');
+
+    // Fundo branco do rodapé
+    ctx.fillStyle = '#1a7f4b';
+    ctx.fillRect(0, canvas.height, finalCanvas.width, rodapeAltura * 2);
+
+    // Imagem do mapa
+    ctx.drawImage(canvas, 0, 0);
+
+    // Texto do rodapé
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${28}px Sora, sans-serif`;
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Mapa ACS — Varjota/CE', 30, canvas.height + rodapeAltura * 0.7);
+
+    ctx.font = `${24}px Sora, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.fillText(`Total: ${totalPessoas} pessoas  ·  Gerado em ${dataAtual}`, 30, canvas.height + rodapeAltura * 1.5);
+
+    const link = document.createElement('a');
+    link.download = `mapa_acs_varjota_${new Date().toISOString().slice(0,10)}.png`;
+    link.href = finalCanvas.toDataURL('image/png');
+    link.click();
+    mostrarToast('✅ Imagem salva com sucesso!');
+  } catch (e) {
+    console.error(e);
+    mostrarToast('❌ Erro ao capturar o mapa. Tente novamente.');
+  } finally {
+    toolbar.style.display = '';
+    statusNuvem.style.display = '';
+    btn.classList.remove('capturando');
+    btn.textContent = '🖼️ Salvar Mapa';
+  }
 });
 
 // ─────────────────────────────────────────
