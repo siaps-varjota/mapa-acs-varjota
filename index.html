@@ -30,7 +30,6 @@
 
   html, body { height: 100%; font-family: 'Sora', sans-serif; background: var(--cinza); color: var(--texto); }
 
-  /* ── LAYOUT ── */
   #app { display: flex; flex-direction: column; height: 100vh; }
 
   header {
@@ -59,10 +58,8 @@
 
   #main { display: flex; flex: 1; overflow: hidden; }
 
-  /* ── MAPA ── */
   #map { flex: 1; position: relative; }
 
-  /* ── PAINEL LATERAL ── */
   #painel {
     width: 380px;
     background: #fff;
@@ -83,7 +80,6 @@
   #painel-header h2 { font-size: 14px; font-weight: 700; color: var(--verde); }
   #painel-header p  { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-  /* ── RESUMO TOTAL ACS ── */
   #resumo {
     padding: 14px 18px;
     border-bottom: 1px solid var(--borda);
@@ -114,7 +110,6 @@
   }
   #sem-dados { font-size: 12px; color: var(--muted); font-style: italic; }
 
-  /* ── LISTA DE LADOS ── */
   #lados-lista {
     flex: 1;
     overflow-y: auto;
@@ -192,7 +187,6 @@
   }
   .btn-remover:hover { opacity: .7; }
 
-  /* ── TOOLBAR NO MAPA ── */
   #toolbar {
     position: absolute;
     bottom: 24px;
@@ -310,7 +304,6 @@
   #rot-input::-webkit-outer-spin-button { -webkit-appearance: none; }
   #rot-input:focus { border-color: var(--verde2); }
 
-  /* ── DICA NO MAPA ── */
   #dica {
     position: absolute;
     top: 70px;
@@ -329,13 +322,11 @@
   }
   #dica.visivel { opacity: 1; }
 
-  /* ── MARCADOR LADO ── */
   .marker-wrapper {
     position: relative;
     cursor: pointer;
     display: inline-block;
     transform-origin: 50% 50%;
-    /* shift so center of label = map point */
     margin-left: -40px;
     margin-top: -18px;
   }
@@ -385,12 +376,10 @@
     color: var(--texto);
   }
 
-  /* ── SCROLLBAR ── */
   #lados-lista::-webkit-scrollbar { width: 5px; }
   #lados-lista::-webkit-scrollbar-track { background: transparent; }
   #lados-lista::-webkit-scrollbar-thumb { background: var(--borda); border-radius: 5px; }
 
-  /* ── TOTAL GERAL ── */
   #total-geral {
     padding: 12px 18px;
     border-top: 1px solid var(--borda);
@@ -408,7 +397,6 @@
     color: var(--verde);
   }
 
-  /* ── MODAL ── */
   .modal-overlay {
     position: fixed; inset: 0; z-index: 9999;
     background: rgba(10,20,35,.7);
@@ -461,7 +449,6 @@
   }
   .modal-btns .btn-secundario:hover { background: var(--borda); }
 
-  /* ── STATUS NUVEM ── */
   #status-nuvem {
     position: absolute; top: 10px; right: 10px; z-index: 800;
     background: #ffffffee; border-radius: 20px;
@@ -481,7 +468,6 @@
   #status-nuvem.erro .dot      { background: var(--vermelho); }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-  /* ── TOAST ── */
   #toast {
     position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
     background: #1e2a38; color: #fff;
@@ -513,7 +499,7 @@
 
   <div id="main">
     <div id="map">
-      <div id="status-nuvem" id="status-nuvem" onclick="abrirConfig()" title="Clique para configurar">
+      <div id="status-nuvem" onclick="abrirConfig()" title="Clique para configurar">
         <div class="dot"></div>
         <span id="status-txt">Sem nuvem</span>
       </div>
@@ -536,7 +522,6 @@
       <div id="drag-ghost">📍</div>
     </div>
 
-  <!-- ── MODAL CONFIGURAÇÃO JSONBIN ── -->
   <div id="modal-config" class="modal-overlay oculto">
     <div class="modal-box">
       <div class="modal-icon">☁️</div>
@@ -568,7 +553,6 @@
     </div>
   </div>
 
-  <!-- ── TOAST ── -->
   <div id="toast"></div>
 
     <div id="painel">
@@ -586,7 +570,6 @@
 
       <div id="lados-lista">
         <h3>Lados de quadra marcados</h3>
-        <!-- cards dinâmicos -->
       </div>
 
       <div id="total-geral">
@@ -642,7 +625,6 @@ function mostrarToast(msg, dur = 2500) {
   setTimeout(() => t.classList.remove('visivel'), dur);
 }
 
-// Serializa apenas o necessário (sem marker)
 function serializarLados() {
   return lados.map(l => ({
     id: l.id, lat: l.lat, lng: l.lng,
@@ -651,10 +633,8 @@ function serializarLados() {
   }));
 }
 
-// Carrega lados a partir de dados JSON (sem refazer o mapa do zero se não precisar)
 async function carregarDados(dados) {
   if (!Array.isArray(dados)) return;
-  // Remove marcadores antigos
   lados.forEach(l => { try { map.removeLayer(l.marker); } catch {} });
   lados = [];
   proximoId = 1;
@@ -668,11 +648,12 @@ async function carregarDados(dados) {
   agendarSave();
 }
 
-// Adiciona lado sem abrir card nem fazer geocodificação
+// ─── MUDANÇA 1: ângulo do lado congelado — sem compensar mapBearing ───
 async function adicionarLadoSilencioso(d) {
   const id = d.id;
   const angulo = d.angulo || 0;
-  let ang = (angulo - mapBearing + 360) % 360;
+  // Usa o ângulo puro da rua, sem compensação de rotação do mapa
+  let ang = angulo;
   if (ang >  90) ang -= 180;
   if (ang < -90) ang += 180;
   const acsLbl = d.acs || `#${id}`;
@@ -704,7 +685,6 @@ async function adicionarLadoSilencioso(d) {
   lados.push({ id, lat: d.lat, lng: d.lng, rua: d.rua, angulo, acs: d.acs || '', pessoas: d.pessoas || 0, marker });
 }
 
-// ── SAVE com debounce ──
 function agendarSave() {
   if (!jbApiKey) return;
   clearTimeout(saveTimer);
@@ -718,7 +698,6 @@ async function salvarNuvem() {
   try {
     let res;
     if (!jbBinId) {
-      // Cria bin novo
       res = await fetch('https://api.jsonbin.io/v3/b', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Master-Key': jbApiKey, 'X-Bin-Name': 'acs-varjota' },
@@ -748,7 +727,6 @@ async function salvarNuvem() {
   }
 }
 
-// ── LOAD from nuvem ──
 async function carregarNuvem(silencioso = false) {
   if (!jbApiKey || !jbBinId) return false;
   try {
@@ -758,7 +736,7 @@ async function carregarNuvem(silencioso = false) {
     if (!res.ok) throw new Error(await res.text());
     const j = await res.json();
     const dados = j.record;
-    if (dados?.ts && dados.ts === lastSaveTs) return true; // sem mudanças
+    if (dados?.ts && dados.ts === lastSaveTs) return true;
     if (dados?.lados) {
       proximoId = dados.proximoId || 1;
       await carregarDados(dados.lados);
@@ -773,14 +751,12 @@ async function carregarNuvem(silencioso = false) {
   }
 }
 
-// ── POLLING a cada 15s ──
 function iniciarPolling() {
   clearInterval(pollTimer);
   if (!jbApiKey || !jbBinId) return;
   pollTimer = setInterval(() => carregarNuvem(true), 15000);
 }
 
-// ── MODAL CONFIG ──
 function abrirConfig() {
   document.getElementById('modal-config').classList.remove('oculto');
   document.getElementById('input-apikey').value = jbApiKey;
@@ -813,7 +789,6 @@ document.getElementById('btn-modal-avancar').addEventListener('click', async () 
       erro.textContent = 'Não foi possível carregar o Bin. Verifique a chave e o ID.';
     }
   } else {
-    // Vai criar bin no primeiro save
     setStatus('conectado', 'Pronto p/ salvar');
     iniciarPolling();
     document.getElementById('modal-config').classList.add('oculto');
@@ -839,7 +814,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 // ─────────────────────────────────────────
-//  DRAG-TO-MAP PARA ADICIONAR LADO
+//  DRAG-TO-MAP
 // ─────────────────────────────────────────
 const dragHandle = document.getElementById('drag-handle');
 const dragGhost  = document.getElementById('drag-ghost');
@@ -857,7 +832,6 @@ dragHandle.addEventListener('mousedown', (e) => {
   dica.classList.add('visivel');
 });
 
-// Touch support
 dragHandle.addEventListener('touchstart', (e) => {
   isDraggingNew = true;
   dragHandle.classList.add('dragging');
@@ -903,12 +877,10 @@ async function finalizarDrag(cx, cy) {
   map.dragging.enable();
   dica.classList.remove('visivel');
 
-  // Verifica se soltou sobre o mapa
   const mapEl = map.getContainer();
   const rect  = mapEl.getBoundingClientRect();
   if (cx < rect.left || cx > rect.right || cy < rect.top || cy > rect.bottom) return;
 
-  // Converte pixel → coordenada
   const point  = L.point(cx - rect.left, cy - rect.top);
   const latlng = map.containerPointToLatLng(point);
 
@@ -917,18 +889,12 @@ async function finalizarDrag(cx, cy) {
 }
 
 // ─────────────────────────────────────────
-//  GEOCODIFICAÇÃO REVERSA (Nominatim)
+//  GEOCODIFICAÇÃO REVERSA
 // ─────────────────────────────────────────
-async function buscarNomeRua(lat, lng) {
-  const res = await buscarRuaEAngulo(lat, lng);
-  return res.rua;
-}
-
 async function buscarRuaEAngulo(lat, lng) {
   let rua = 'Localização marcada';
   let angulo = 0;
   try {
-    // Nominatim para o nome
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
     const r = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
     const d = await r.json();
@@ -936,7 +902,6 @@ async function buscarRuaEAngulo(lat, lng) {
   } catch {}
 
   try {
-    // Overpass: busca o way de highway mais próximo num raio de 30m
     const delta = 0.0003;
     const bbox = `${lat-delta},${lng-delta},${lat+delta},${lng+delta}`;
     const query = `[out:json][timeout:5];way[highway](${bbox});out geom;`;
@@ -950,7 +915,6 @@ async function buscarRuaEAngulo(lat, lng) {
 
     for (const way of (od.elements || [])) {
       if (!way.geometry || way.geometry.length < 2) continue;
-      // Percorre cada segmento e acha o mais próximo
       for (let i = 0; i < way.geometry.length - 1; i++) {
         const a = way.geometry[i];
         const b = way.geometry[i + 1];
@@ -960,7 +924,6 @@ async function buscarRuaEAngulo(lat, lng) {
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist < melhorDist) {
           melhorDist = dist;
-          // Ângulo do segmento em graus (lon=x, lat=y)
           const dLon = (b.lon - a.lon) * Math.cos(lat * Math.PI / 180);
           const dLat = b.lat - a.lat;
           melhorAng = Math.atan2(dLon, dLat) * 180 / Math.PI;
@@ -979,14 +942,13 @@ async function buscarRuaEAngulo(lat, lng) {
 function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
   const id = proximoId++;
 
-  // Marcador no mapa — com ângulo paralelo à rua
-  // Use angulo na label desde o início
+  // ─── MUDANÇA 2: ângulo puro da rua, sem compensação de mapBearing ───
   function buildIconWithAngle(acs, pessoas, ang) {
     const acsLbl = acs || `#${id}`;
     const acsCls = acs ? 'lbl-acs' : 'lbl-acs vazio';
     const qtdLbl = pessoas > 0 ? `${pessoas} pessoas` : '– pessoas';
     const pre    = !!(acs || pessoas);
-    let a = ((ang || 0) - mapBearing + 360) % 360;
+    let a = ang || 0;
     if (a >  90) a -= 180;
     if (a < -90) a += 180;
     return L.divIcon({
@@ -996,9 +958,8 @@ function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
                  <span class="${acsCls}">${acsLbl}</span>
                  <span class="lbl-qtd">${qtdLbl}</span>
                </div>
-             </div>
-             <div class="marker-pin"></div>
-           </div>`,
+               <div class="marker-pin"></div>
+             </div>`,
       iconAnchor: [0, 0],
       iconSize:   [1, 1]
     });
@@ -1033,7 +994,7 @@ function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
 }
 
 // ─────────────────────────────────────────
-//  RENDER CARDS (painel lateral)
+//  RENDER CARDS
 // ─────────────────────────────────────────
 function renderCards() {
   const lista = document.getElementById('lados-lista');
@@ -1044,7 +1005,7 @@ function renderCards() {
   if (lados.length === 0) {
     const vazio = document.createElement('p');
     vazio.style.cssText = 'font-size:12px;color:var(--muted);font-style:italic;margin-top:6px';
-    vazio.textContent = 'Nenhum lado marcado. Clique em "Adicionar Lado" e clique no mapa.';
+    vazio.textContent = 'Nenhum lado marcado. Arraste o marcador para o mapa.';
     lista.appendChild(vazio);
     return;
   }
@@ -1068,7 +1029,6 @@ function renderCards() {
     const body = document.createElement('div');
     body.className = 'lado-card-body';
 
-    // Input Rua
     const campoRua = document.createElement('div');
     campoRua.className = 'campo';
     campoRua.innerHTML = '<label>🏘️ Nome da Rua / Localização</label>';
@@ -1081,7 +1041,6 @@ function renderCards() {
     });
     campoRua.appendChild(inputRua);
 
-    // Input ACS
     const campoAcs = document.createElement('div');
     campoAcs.className = 'campo';
     campoAcs.innerHTML = '<label>👤 Nome da ACS</label>';
@@ -1094,7 +1053,6 @@ function renderCards() {
     });
     campoAcs.appendChild(inputAcs);
 
-    // Input Pessoas
     const campoPessoas = document.createElement('div');
     campoPessoas.className = 'campo';
     campoPessoas.innerHTML = '<label>👥 Total de pessoas neste lado</label>';
@@ -1108,7 +1066,6 @@ function renderCards() {
     });
     campoPessoas.appendChild(inputPessoas);
 
-    // Botão remover
     const btnRem = document.createElement('button');
     btnRem.className = 'btn-remover';
     btnRem.textContent = '🗑️ Remover este lado';
@@ -1131,7 +1088,6 @@ function toggleCard(id) {
 }
 
 function abrirCard(id) {
-  // Só abre o card sem recriar o DOM
   const card = document.getElementById(`card-${id}`);
   if (card) {
     card.classList.add('aberto');
@@ -1153,7 +1109,7 @@ function atualizarCardHeader(id) {
 }
 
 // ─────────────────────────────────────────
-//  ATUALIZAR DADOS DE UM LADO (SEM recriar DOM)
+//  ATUALIZAR DADOS DE UM LADO
 // ─────────────────────────────────────────
 function atualizarLado(id, campo, valor) {
   const lado = lados.find(x => x.id === id);
@@ -1165,7 +1121,6 @@ function atualizarLado(id, campo, valor) {
     lado[campo] = valor;
   }
 
-  // Atualiza só o sub-texto e classe do card — sem recriar inputs
   const cardEl = document.getElementById(`card-${id}`);
   if (cardEl) {
     const sub = cardEl.querySelector('.sub');
@@ -1175,9 +1130,7 @@ function atualizarLado(id, campo, valor) {
     cardEl.classList.toggle('preenchido', !!(lado.acs || lado.pessoas));
   }
 
-  // Atualiza marcador no mapa
   atualizarIconeMarcador(id);
-
   atualizarResumo();
   agendarSave();
 }
@@ -1197,6 +1150,8 @@ function removerLado(id) {
 
 // ─────────────────────────────────────────
 //  ATUALIZAR ÍCONE DO MARCADOR
+//  MUDANÇA 3: usa lado.angulo direto, sem compensar mapBearing
+//  → label permanece paralela à rua independente da rotação do mapa
 // ─────────────────────────────────────────
 function atualizarIconeMarcador(id) {
   const lado = lados.find(x => x.id === id);
@@ -1205,8 +1160,8 @@ function atualizarIconeMarcador(id) {
   const acsClass   = lado.acs ? 'lbl-acs' : 'lbl-acs vazio';
   const qtdLabel   = lado.pessoas > 0 ? `${lado.pessoas} pessoas` : '– pessoas';
   const preenchido = !!(lado.acs || lado.pessoas);
-  // Normaliza ângulo compensando a rotação atual do mapa
-  let ang = ((lado.angulo || 0) - mapBearing + 360) % 360;
+  // Ângulo congelado: calculado na inserção, não muda com rotação do mapa
+  let ang = lado.angulo || 0;
   if (ang >  90) ang -= 180;
   if (ang < -90) ang += 180;
   const novoIcon = L.divIcon({
@@ -1231,7 +1186,6 @@ function atualizarResumo() {
   const listaEl = document.getElementById('lista-acs');
   const totalEl = document.getElementById('total-num');
 
-  // Agrupa por ACS
   const mapa = {};
   let total = 0;
   lados.forEach(l => {
@@ -1266,9 +1220,6 @@ function atualizarBadge() {
   document.getElementById('badge-lados').textContent = `${lados.length} lado${lados.length !== 1 ? 's' : ''}`;
 }
 
-// ─────────────────────────────────────────
-//  EXPORTAR JSON
-// ─────────────────────────────────────────
 // ─────────────────────────────────────────
 //  CAMADA DE RUAS (Overpass OSM)
 // ─────────────────────────────────────────
@@ -1347,13 +1298,13 @@ document.getElementById('btn-ruas').addEventListener('click', () => {
   }
 });
 
-// CSS tooltip rua inline
 const styleRua = document.createElement('style');
 styleRua.textContent = `.tooltip-rua { background:#fff; border:1px solid #ccc; border-radius:4px; padding:2px 7px; font-size:11px; font-family:'Sora',sans-serif; font-weight:600; color:#1e2a38; box-shadow:0 1px 4px rgba(0,0,0,.15); }`;
 document.head.appendChild(styleRua);
 
 // ─────────────────────────────────────────
 //  ROTAÇÃO DO MAPA
+//  MUDANÇA 4: não recalcula ícones ao girar — ângulos permanecem congelados
 // ─────────────────────────────────────────
 const rotInput = document.getElementById('rot-input');
 
@@ -1366,8 +1317,7 @@ function aplicarRotacao() {
   map.setBearing(mapBearing);
   rotInput.value = Math.round(mapBearing);
   document.getElementById('btn-rot-reset').textContent = mapBearing === 0 ? 'N' : '↺';
-  // Reatualiza todos os marcadores com o novo bearing
-  lados.forEach(l => atualizarIconeMarcador(l.id));
+  // Ângulos dos marcadores congelados — não recalcula ao girar
 }
 
 document.getElementById('btn-rot-esq').addEventListener('click', () => girarMapa(-10));
@@ -1385,7 +1335,7 @@ rotInput.addEventListener('input', () => {
   mapBearing = ((val % 360) + 360) % 360;
   map.setBearing(mapBearing);
   document.getElementById('btn-rot-reset').textContent = mapBearing === 0 ? 'N' : '↺';
-  lados.forEach(l => atualizarIconeMarcador(l.id));
+  // Não recalcula ícones — ângulos permanecem congelados
 });
 
 rotInput.addEventListener('keydown', (e) => {
@@ -1443,13 +1393,10 @@ if (jbApiKey && jbBinId) {
     if (ok) { setStatus('conectado', `Bin: ${jbBinId.slice(-6)}`); iniciarPolling(); }
     else    { setStatus('erro', 'Erro ao conectar'); }
   });
-  // Abre modal só se não tiver config
 } else {
-  // Sem config — mostra modal
   renderCards();
   atualizarResumo();
   if (!jbApiKey) {
-    // pequeno delay para o mapa carregar
     setTimeout(() => document.getElementById('modal-config').classList.remove('oculto'), 600);
   }
 }
