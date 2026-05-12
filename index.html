@@ -841,7 +841,7 @@ function calcZoomScale(zoom) {
   // zoom out → scale < 1 (card diminui junto com o mapa)
   // zoom in  → scale > 1 (card cresce junto com o mapa)
   const scale = Math.pow(2, (zoom - 16) * 0.6);
-  return Math.min(3.0, Math.max(0.15, scale));
+  return Math.min(3.0, Math.max(0.15, scale))*0.5;
 }
 
 function atualizarEscalaZoom() {
