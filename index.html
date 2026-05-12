@@ -310,47 +310,55 @@
 
   #toolbar {
     position: absolute;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 12px;
+    left: 10px;
+    right: 10px;
     z-index: 900;
     display: flex;
-    gap: 8px;
+    align-items: center;
+    gap: 5px;
     background: #ffffffee;
-    padding: 8px 14px;
-    border-radius: 50px;
+    padding: 5px 10px;
+    border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0,0,0,.18);
     backdrop-filter: blur(6px);
   }
   #toolbar button {
-    padding: 8px 18px;
-    border-radius: 50px;
+    padding: 5px 12px;
+    border-radius: 8px;
     border: none;
     cursor: pointer;
     font-family: 'Sora', sans-serif;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     transition: all .2s;
+    white-space: nowrap;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
   #drag-handle {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 6px;
     background: var(--verde);
     color: #fff;
-    padding: 8px 18px;
-    border-radius: 50px;
+    padding: 5px 14px;
+    border-radius: 8px;
     cursor: grab;
     font-family: 'Sora', sans-serif;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     user-select: none;
+    white-space: nowrap;
+    height: 32px;
     transition: background .2s, transform .1s;
   }
   #drag-handle:hover { background: var(--verde2); }
   #drag-handle:active { cursor: grabbing; transform: scale(.96); }
   #drag-handle.dragging { background: var(--laranja); opacity: .7; }
-  .drag-icon { font-size: 16px; }
+  .drag-icon { font-size: 13px; }
   #drag-ghost {
     position: fixed;
     pointer-events: none;
@@ -389,20 +397,21 @@
   #rot-controls {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 1px;
     background: var(--cinza);
     border: 1px solid var(--borda);
-    border-radius: 50px;
-    padding: 2px 4px;
+    border-radius: 8px;
+    padding: 1px 3px;
+    height: 32px;
   }
   #rot-controls button {
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
     border: none;
     background: transparent;
-    border-radius: 50%;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--texto);
     display: flex;
@@ -413,14 +422,14 @@
     line-height: 1;
   }
   #rot-controls button:hover { background: var(--borda); }
-  #btn-rot-reset { font-size: 11px; font-family: 'Sora', sans-serif; font-weight: 700; color: var(--azul); }
+  #btn-rot-reset { font-size: 10px; font-family: 'Sora', sans-serif; font-weight: 700; color: var(--azul); }
   #rot-input {
-    width: 48px;
-    padding: 3px 5px;
+    width: 42px;
+    padding: 2px 4px;
     border: 1px solid var(--borda);
-    border-radius: 20px;
+    border-radius: 6px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--texto);
     background: #fff;
