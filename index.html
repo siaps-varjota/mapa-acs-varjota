@@ -837,7 +837,7 @@ function atualizarTodosOsIcones() {
 //  scale = 2^(zoom - 16) mas limitado a [0.25, 2.0]
 // ─────────────────────────────────────────
 function calcZoomScale(zoom) {
-  // zoom 16 = escala 1.0 (referência)
+  // zoom 16 = escala 0.7 (referência)
   // zoom out → scale < 1 (card diminui junto com o mapa)
   // zoom in  → scale > 1 (card cresce junto com o mapa)
   const scale = Math.pow(2, (zoom - 16) * 0.6);
