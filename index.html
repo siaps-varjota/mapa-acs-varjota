@@ -258,6 +258,46 @@
   .rotacao-preview-label .prev-acs.vazio { color: var(--muted); font-style: italic; }
   .rotacao-preview-label .prev-qtd { display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; }
 
+  /* ─── TOGGLE FIXAR ──────────────────────────────────────────────────────── */
+  .fixar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 6px 8px;
+    background: var(--cinza);
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s, border-color .15s;
+  }
+  .fixar-row:hover { background: var(--verde-bg); border-color: var(--verde2); }
+  .fixar-row.ativo { background: var(--verde-bg); border-color: var(--verde2); }
+  .fixar-toggle {
+    width: 36px; height: 20px;
+    background: var(--borda);
+    border-radius: 20px;
+    position: relative;
+    flex-shrink: 0;
+    transition: background .2s;
+  }
+  .fixar-toggle::after {
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: transform .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  }
+  .fixar-row.ativo .fixar-toggle { background: var(--verde2); }
+  .fixar-row.ativo .fixar-toggle::after { transform: translateX(16px); }
+  .fixar-txt { font-size: 11px; font-weight: 600; color: var(--muted); flex: 1; }
+  .fixar-row.ativo .fixar-txt { color: var(--verde); }
+  .fixar-icon { font-size: 13px; }
+
   .btn-remover {
     display: flex; align-items: center; gap: 5px;
     background: none; border: none; cursor: pointer;
@@ -715,6 +755,7 @@ function serializarLados() {
     id: l.id, lat: l.lat, lng: l.lng,
     rua: l.rua, angulo: l.angulo || 0,
     rotacaoManual: l.rotacaoManual || 0,
+    fixado: !!l.fixado,
     acs: l.acs, pessoas: l.pessoas
   }));
 }
@@ -736,10 +777,13 @@ async function carregarDados(dados) {
 
 // ─────────────────────────────────────────
 //  CÁLCULO DE ÂNGULO DO LABEL
-//  ângulo final = anguloRua - mapBearing + rotacaoManual
-//  rotacaoManual é definido individualmente por cada marcador
+//  Modo normal:  anguloRua - mapBearing + rotacaoManual (segue a rua, compensa mapa)
+//  Modo fixado:  apenas rotacaoManual (ângulo absoluto — não gira com o mapa)
 // ─────────────────────────────────────────
-function calcAngLabel(anguloRua, rotacaoManual) {
+function calcAngLabel(anguloRua, rotacaoManual, fixado) {
+  if (fixado) {
+    return rotacaoManual || 0;
+  }
   let a = (anguloRua - mapBearing + (rotacaoManual || 0) + 360) % 360;
   // Normaliza para [-90, 90] para que o texto fique legível
   if (a >  90 && a <= 270) a -= 180;
@@ -750,12 +794,12 @@ function calcAngLabel(anguloRua, rotacaoManual) {
 // ─────────────────────────────────────────
 //  GERAR HTML DO MARCADOR
 // ─────────────────────────────────────────
-function buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual) {
+function buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual, fixado) {
   const acsLbl = acs || `#${id}`;
   const acsCls = acs ? 'lbl-acs' : 'lbl-acs vazio';
   const qtdLbl = pessoas > 0 ? `${pessoas} pessoas` : '– pessoas';
   const pre    = !!(acs || pessoas);
-  const ang    = calcAngLabel(anguloRua, rotacaoManual || 0);
+  const ang    = calcAngLabel(anguloRua, rotacaoManual || 0, fixado);
   return `<div class="marker-wrapper${pre ? ' preenchido' : ''}" id="marker-${id}">
             <div class="marker-label" style="--ang:${ang}deg">
               <span class="${acsCls}">${escHtml(acsLbl)}</span>
@@ -765,10 +809,10 @@ function buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual) {
           </div>`;
 }
 
-function buildIcon(id, acs, pessoas, anguloRua, rotacaoManual) {
+function buildIcon(id, acs, pessoas, anguloRua, rotacaoManual, fixado) {
   return L.divIcon({
     className: '',
-    html: buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual),
+    html: buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual, fixado),
     iconAnchor: [0, 0],
     iconSize:   [1, 1]
   });
@@ -785,8 +829,9 @@ async function adicionarLadoSilencioso(d) {
   const id = d.id;
   const anguloRua = d.angulo || 0;
   const rotacaoManual = d.rotacaoManual || 0;
+  const fixado = !!d.fixado;
   const marker = L.marker([d.lat, d.lng], {
-    icon: buildIcon(id, d.acs || '', d.pessoas || 0, anguloRua, rotacaoManual),
+    icon: buildIcon(id, d.acs || '', d.pessoas || 0, anguloRua, rotacaoManual, fixado),
     draggable: true
   }).addTo(map);
   marker.bindTooltip(`Lado #${id} — ${d.rua}`, { permanent: false });
@@ -799,7 +844,7 @@ async function adicionarLadoSilencioso(d) {
       if (l2) { l2.rua = nome; l2.angulo = ang2; atualizarCardHeader(id); atualizarIconeMarcador(id); agendarSave(); }
     });
   });
-  lados.push({ id, lat: d.lat, lng: d.lng, rua: d.rua, angulo: anguloRua, rotacaoManual, acs: d.acs || '', pessoas: d.pessoas || 0, marker });
+  lados.push({ id, lat: d.lat, lng: d.lng, rua: d.rua, angulo: anguloRua, rotacaoManual, fixado, acs: d.acs || '', pessoas: d.pessoas || 0, marker });
 }
 
 function agendarSave() {
@@ -1081,7 +1126,7 @@ function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
     });
   });
 
-  const lado = { id, lat, lng, rua, angulo, rotacaoManual: 0, acs: '', pessoas: 0, marker };
+  const lado = { id, lat, lng, rua, angulo, rotacaoManual: 0, fixado: false, acs: '', pessoas: 0, marker };
   lados.push(lado);
 
   renderCards();
@@ -1274,6 +1319,24 @@ function renderCards() {
     controles.appendChild(btnMais10);
     controles.appendChild(btnReset);
     campoRot.appendChild(controles);
+
+    // Toggle Fixar
+    const fixarRow = document.createElement('div');
+    fixarRow.className = 'fixar-row' + (lado.fixado ? ' ativo' : '');
+    fixarRow.title = 'Quando fixado, o nome não gira com o mapa';
+    fixarRow.innerHTML = `
+      <span class="fixar-icon">📌</span>
+      <span class="fixar-txt">${lado.fixado ? 'Nome fixado (não acompanha rotação do mapa)' : 'Fixar posição do nome'}</span>
+      <div class="fixar-toggle"></div>`;
+    fixarRow.addEventListener('click', () => {
+      const novoFixado = !lado.fixado;
+      fixarRow.classList.toggle('ativo', novoFixado);
+      fixarRow.querySelector('.fixar-txt').textContent = novoFixado
+        ? 'Nome fixado (não acompanha rotação do mapa)'
+        : 'Fixar posição do nome';
+      atualizarLado(lado.id, 'fixado', novoFixado);
+    });
+    campoRot.appendChild(fixarRow);
     // ──────────────────────────────────────────────────────────
 
     const btnRem = document.createElement('button');
@@ -1330,6 +1393,8 @@ function atualizarLado(id, campo, valor) {
     lado.pessoas = parseInt(valor, 10) || 0;
   } else if (campo === 'rotacaoManual') {
     lado.rotacaoManual = Number(valor) || 0;
+  } else if (campo === 'fixado') {
+    lado.fixado = !!valor;
   } else {
     lado[campo] = valor;
   }
@@ -1367,7 +1432,7 @@ function removerLado(id) {
 function atualizarIconeMarcador(id) {
   const lado = lados.find(x => x.id === id);
   if (!lado) return;
-  lado.marker.setIcon(buildIcon(id, lado.acs, lado.pessoas, lado.angulo || 0, lado.rotacaoManual || 0));
+  lado.marker.setIcon(buildIcon(id, lado.acs, lado.pessoas, lado.angulo || 0, lado.rotacaoManual || 0, lado.fixado));
 }
 
 // ─────────────────────────────────────────
@@ -1541,7 +1606,8 @@ document.getElementById('btn-exportar').addEventListener('click', () => {
     lng: l.lng,
     acs: l.acs,
     pessoas: l.pessoas,
-    rotacaoManual: l.rotacaoManual || 0
+    rotacaoManual: l.rotacaoManual || 0,
+    fixado: !!l.fixado
   }));
   const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
