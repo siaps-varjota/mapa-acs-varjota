@@ -448,6 +448,9 @@
     display: inline-block;
     margin-left: -40px;
     margin-top: -18px;
+    /* escala proporcional ao zoom — atualizada via JS */
+    transform: scale(var(--zoom-scale, 1));
+    transform-origin: center center;
   }
   .marker-pin {
     position: absolute;
@@ -773,6 +776,7 @@ async function carregarDados(dados) {
   atualizarResumo();
   atualizarBadge();
   agendarSave();
+  setTimeout(atualizarEscalaZoom, 50);
 }
 
 // ─────────────────────────────────────────
@@ -823,6 +827,25 @@ function buildIcon(id, acs, pessoas, anguloRua, rotacaoManual, fixado) {
 // ─────────────────────────────────────────
 function atualizarTodosOsIcones() {
   lados.forEach(l => atualizarIconeMarcador(l.id));
+}
+
+// ─────────────────────────────────────────
+//  ESCALA POR ZOOM
+//  Zoom de referência = 16 (escala 1.0)
+//  Cada nível duplica/divide por 2, então:
+//  scale = 2^(zoom - 16) mas limitado a [0.25, 2.0]
+// ─────────────────────────────────────────
+function calcZoomScale(zoom) {
+  const scale = Math.pow(2, zoom - 16);
+  return Math.min(2.0, Math.max(0.2, scale));
+}
+
+function atualizarEscalaZoom() {
+  const scale = calcZoomScale(map.getZoom());
+  lados.forEach(l => {
+    const el = document.getElementById(`marker-${l.id}`);
+    if (el) el.style.setProperty('--zoom-scale', scale);
+  });
 }
 
 async function adicionarLadoSilencioso(d) {
@@ -974,6 +997,8 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   maxZoom: 19
 }).addTo(map);
+
+map.on('zoom', atualizarEscalaZoom);
 
 // ─────────────────────────────────────────
 //  DRAG-TO-MAP
@@ -1134,6 +1159,8 @@ function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
   abrirCard(id);
   atualizarBadge();
   agendarSave();
+  // Aplica a escala do zoom atual ao novo marcador
+  setTimeout(atualizarEscalaZoom, 50);
 }
 
 // ─────────────────────────────────────────
