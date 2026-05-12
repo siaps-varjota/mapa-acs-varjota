@@ -967,7 +967,7 @@ document.getElementById('btn-modal-pular').addEventListener('click', () => {
 // ─────────────────────────────────────────
 //  MAPA
 // ─────────────────────────────────────────
-const map = L.map('map', { zoomControl: true, rotate: true, rotateControl: false, bearing: 0 }).setView([-4.1928215, -40.4677377], 16);
+const map = L.map('map', { zoomControl: true, rotate: true, rotateControl: false, bearing: 0, zoomDelta: 0.5, zoomSnap: 0.5, wheelPxPerZoomLevel: 120 }).setView([-4.1928215, -40.4677377], 16);
 let mapBearing = 0;
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
