@@ -322,11 +322,16 @@
   }
   #dica.visivel { opacity: 1; }
 
+  /* ─── MARCADOR ─────────────────────────────────────────────────────────────
+     O wrapper NÃO gira mais via transform — a rotação é feita via
+     CSS custom property --ang, aplicada apenas ao label.
+     O pin (bolinha) fica sempre reto no centro.
+  ──────────────────────────────────────────────────────────────────────────── */
   .marker-wrapper {
     position: relative;
     cursor: pointer;
     display: inline-block;
-    transform-origin: 50% 50%;
+    /* sem transform global — pin fica reto, label rotaciona individualmente */
     margin-left: -40px;
     margin-top: -18px;
   }
@@ -346,6 +351,8 @@
   }
   .marker-wrapper:hover .marker-pin { background: var(--laranja); }
   .marker-wrapper.preenchido .marker-pin { background: var(--azul); }
+
+  /* O label rotaciona para ficar paralelo à rua, compensando o bearing do mapa */
   .marker-label {
     display: block;
     background: rgba(255,255,255,0.92);
@@ -361,6 +368,11 @@
     line-height: 1.5;
     text-align: center;
     pointer-events: none;
+    /* rotação aplicada via CSS var, calculada em JS = anguloRua - mapBearing */
+    transform: rotate(var(--ang, 0deg));
+    transform-origin: center center;
+    position: relative;
+    z-index: 3;
   }
   .marker-label .lbl-acs {
     display: block;
@@ -648,30 +660,61 @@ async function carregarDados(dados) {
   agendarSave();
 }
 
-// ─── MUDANÇA 1: ângulo do lado congelado — sem compensar mapBearing ───
+// ─────────────────────────────────────────
+//  CÁLCULO DE ÂNGULO DO LABEL
+//  ângulo final = anguloRua - mapBearing
+//  Isso "descongela" o label da rotação do mapa,
+//  mantendo-o sempre paralelo à rua na tela.
+// ─────────────────────────────────────────
+function calcAngLabel(anguloRua) {
+  let a = (anguloRua - mapBearing + 360) % 360;
+  // Normaliza para [-90, 90] para que o texto fique legível
+  if (a >  90 && a <= 270) a -= 180;
+  if (a > 270)              a -= 360;
+  return a;
+}
+
+// ─────────────────────────────────────────
+//  GERAR HTML DO MARCADOR
+// ─────────────────────────────────────────
+function buildMarkerHtml(id, acs, pessoas, anguloRua) {
+  const acsLbl = acs || `#${id}`;
+  const acsCls = acs ? 'lbl-acs' : 'lbl-acs vazio';
+  const qtdLbl = pessoas > 0 ? `${pessoas} pessoas` : '– pessoas';
+  const pre    = !!(acs || pessoas);
+  const ang    = calcAngLabel(anguloRua);
+  return `<div class="marker-wrapper${pre ? ' preenchido' : ''}" id="marker-${id}">
+            <div class="marker-label" style="--ang:${ang}deg">
+              <span class="${acsCls}">${escHtml(acsLbl)}</span>
+              <span class="lbl-qtd">${escHtml(qtdLbl)}</span>
+            </div>
+            <div class="marker-pin"></div>
+          </div>`;
+}
+
+function buildIcon(id, acs, pessoas, anguloRua) {
+  return L.divIcon({
+    className: '',
+    html: buildMarkerHtml(id, acs, pessoas, anguloRua),
+    iconAnchor: [0, 0],
+    iconSize:   [1, 1]
+  });
+}
+
+// ─────────────────────────────────────────
+//  ATUALIZAR TODOS OS ÍCONES (chamado ao girar o mapa)
+// ─────────────────────────────────────────
+function atualizarTodosOsIcones() {
+  lados.forEach(l => atualizarIconeMarcador(l.id));
+}
+
 async function adicionarLadoSilencioso(d) {
   const id = d.id;
-  const angulo = d.angulo || 0;
-  // Usa o ângulo puro da rua, sem compensação de rotação do mapa
-  let ang = angulo;
-  if (ang >  90) ang -= 180;
-  if (ang < -90) ang += 180;
-  const acsLbl = d.acs || `#${id}`;
-  const acsCls = d.acs ? 'lbl-acs' : 'lbl-acs vazio';
-  const qtdLbl = d.pessoas > 0 ? `${d.pessoas} pessoas` : '– pessoas';
-  const pre    = !!(d.acs || d.pessoas);
-  const icon = L.divIcon({
-    className: '',
-    html: `<div class="marker-wrapper${pre?' preenchido':''}" id="marker-${id}" style="transform:rotate(${ang}deg);">
-             <div class="marker-label">
-               <span class="${acsCls}">${escHtml(acsLbl)}</span>
-               <span class="lbl-qtd">${escHtml(qtdLbl)}</span>
-             </div>
-             <div class="marker-pin"></div>
-           </div>`,
-    iconAnchor: [0, 0], iconSize: [1, 1]
-  });
-  const marker = L.marker([d.lat, d.lng], { icon, draggable: true }).addTo(map);
+  const anguloRua = d.angulo || 0;
+  const marker = L.marker([d.lat, d.lng], {
+    icon: buildIcon(id, d.acs || '', d.pessoas || 0, anguloRua),
+    draggable: true
+  }).addTo(map);
   marker.bindTooltip(`Lado #${id} — ${d.rua}`, { permanent: false });
   marker.on('click', () => abrirCard(id));
   marker.on('dragend', (e) => {
@@ -682,7 +725,7 @@ async function adicionarLadoSilencioso(d) {
       if (l2) { l2.rua = nome; l2.angulo = ang2; atualizarCardHeader(id); atualizarIconeMarcador(id); agendarSave(); }
     });
   });
-  lados.push({ id, lat: d.lat, lng: d.lng, rua: d.rua, angulo, acs: d.acs || '', pessoas: d.pessoas || 0, marker });
+  lados.push({ id, lat: d.lat, lng: d.lng, rua: d.rua, angulo: anguloRua, acs: d.acs || '', pessoas: d.pessoas || 0, marker });
 }
 
 function agendarSave() {
@@ -942,31 +985,12 @@ async function buscarRuaEAngulo(lat, lng) {
 function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
   const id = proximoId++;
 
-  // ─── MUDANÇA 2: ângulo puro da rua, sem compensação de mapBearing ───
-  function buildIconWithAngle(acs, pessoas, ang) {
-    const acsLbl = acs || `#${id}`;
-    const acsCls = acs ? 'lbl-acs' : 'lbl-acs vazio';
-    const qtdLbl = pessoas > 0 ? `${pessoas} pessoas` : '– pessoas';
-    const pre    = !!(acs || pessoas);
-    let a = ang || 0;
-    if (a >  90) a -= 180;
-    if (a < -90) a += 180;
-    return L.divIcon({
-      className: '',
-      html: `<div class="marker-wrapper${pre ? ' preenchido' : ''}" id="marker-${id}" style="transform:rotate(${a}deg);">
-               <div class="marker-label">
-                 <span class="${acsCls}">${acsLbl}</span>
-                 <span class="lbl-qtd">${qtdLbl}</span>
-               </div>
-               <div class="marker-pin"></div>
-             </div>`,
-      iconAnchor: [0, 0],
-      iconSize:   [1, 1]
-    });
-  }
-  const marker = L.marker([lat, lng], { icon: buildIconWithAngle('', 0, angulo), draggable: true }).addTo(map);
-  marker.bindTooltip(`Lado #${id} — ${rua}`, { permanent: false });
+  const marker = L.marker([lat, lng], {
+    icon: buildIcon(id, '', 0, angulo),
+    draggable: true
+  }).addTo(map);
 
+  marker.bindTooltip(`Lado #${id} — ${rua}`, { permanent: false });
   marker.on('click', () => abrirCard(id));
   marker.on('dragend', (e) => {
     const l = lados.find(x => x.id === id);
@@ -1150,33 +1174,13 @@ function removerLado(id) {
 
 // ─────────────────────────────────────────
 //  ATUALIZAR ÍCONE DO MARCADOR
-//  MUDANÇA 3: usa lado.angulo direto, sem compensar mapBearing
-//  → label permanece paralela à rua independente da rotação do mapa
+//  Recalcula o ângulo do label usando calcAngLabel(),
+//  que compensa automaticamente o bearing atual do mapa.
 // ─────────────────────────────────────────
 function atualizarIconeMarcador(id) {
   const lado = lados.find(x => x.id === id);
   if (!lado) return;
-  const acsLabel   = lado.acs || `#${id}`;
-  const acsClass   = lado.acs ? 'lbl-acs' : 'lbl-acs vazio';
-  const qtdLabel   = lado.pessoas > 0 ? `${lado.pessoas} pessoas` : '– pessoas';
-  const preenchido = !!(lado.acs || lado.pessoas);
-  // Ângulo congelado: calculado na inserção, não muda com rotação do mapa
-  let ang = lado.angulo || 0;
-  if (ang >  90) ang -= 180;
-  if (ang < -90) ang += 180;
-  const novoIcon = L.divIcon({
-    className: '',
-    html: `<div class="marker-wrapper${preenchido ? ' preenchido' : ''}" id="marker-${id}" style="transform:rotate(${ang}deg);">
-             <div class="marker-label">
-               <span class="${acsClass}">${acsLabel}</span>
-               <span class="lbl-qtd">${qtdLabel}</span>
-             </div>
-             <div class="marker-pin"></div>
-           </div>`,
-    iconAnchor: [0, 0],
-    iconSize:   [1, 1]
-  });
-  lado.marker.setIcon(novoIcon);
+  lado.marker.setIcon(buildIcon(id, lado.acs, lado.pessoas, lado.angulo || 0));
 }
 
 // ─────────────────────────────────────────
@@ -1304,7 +1308,9 @@ document.head.appendChild(styleRua);
 
 // ─────────────────────────────────────────
 //  ROTAÇÃO DO MAPA
-//  MUDANÇA 4: não recalcula ícones ao girar — ângulos permanecem congelados
+//  Ao girar, recalcula TODOS os ícones com o novo bearing.
+//  calcAngLabel() subtrai o bearing atual → labels ficam "congelados"
+//  na orientação da rua, independente da rotação do mapa.
 // ─────────────────────────────────────────
 const rotInput = document.getElementById('rot-input');
 
@@ -1317,7 +1323,8 @@ function aplicarRotacao() {
   map.setBearing(mapBearing);
   rotInput.value = Math.round(mapBearing);
   document.getElementById('btn-rot-reset').textContent = mapBearing === 0 ? 'N' : '↺';
-  // Ângulos dos marcadores congelados — não recalcula ao girar
+  // ← PONTO-CHAVE: recalcula todos os labels com o novo bearing
+  atualizarTodosOsIcones();
 }
 
 document.getElementById('btn-rot-esq').addEventListener('click', () => girarMapa(-10));
@@ -1335,7 +1342,8 @@ rotInput.addEventListener('input', () => {
   mapBearing = ((val % 360) + 360) % 360;
   map.setBearing(mapBearing);
   document.getElementById('btn-rot-reset').textContent = mapBearing === 0 ? 'N' : '↺';
-  // Não recalcula ícones — ângulos permanecem congelados
+  // ← PONTO-CHAVE: recalcula todos os labels com o novo bearing
+  atualizarTodosOsIcones();
 });
 
 rotInput.addEventListener('keydown', (e) => {
