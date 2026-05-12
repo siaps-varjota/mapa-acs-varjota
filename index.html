@@ -672,7 +672,7 @@ async function carregarDados(dados) {
 async function adicionarLadoSilencioso(d) {
   const id = d.id;
   const angulo = d.angulo || 0;
-  let ang = angulo % 360;
+  let ang = (angulo - mapBearing + 360) % 360;
   if (ang >  90) ang -= 180;
   if (ang < -90) ang += 180;
   const acsLbl = d.acs || `#${id}`;
@@ -986,7 +986,7 @@ function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
     const acsCls = acs ? 'lbl-acs' : 'lbl-acs vazio';
     const qtdLbl = pessoas > 0 ? `${pessoas} pessoas` : '– pessoas';
     const pre    = !!(acs || pessoas);
-    let a = (ang || 0) % 360;
+    let a = ((ang || 0) - mapBearing + 360) % 360;
     if (a >  90) a -= 180;
     if (a < -90) a += 180;
     return L.divIcon({
@@ -1205,8 +1205,8 @@ function atualizarIconeMarcador(id) {
   const acsClass   = lado.acs ? 'lbl-acs' : 'lbl-acs vazio';
   const qtdLabel   = lado.pessoas > 0 ? `${lado.pessoas} pessoas` : '– pessoas';
   const preenchido = !!(lado.acs || lado.pessoas);
-  // Normaliza ângulo para -90..90 (texto nunca de cabeça pra baixo)
-  let ang = (lado.angulo || 0) % 360;
+  // Normaliza ângulo compensando a rotação atual do mapa
+  let ang = ((lado.angulo || 0) - mapBearing + 360) % 360;
   if (ang >  90) ang -= 180;
   if (ang < -90) ang += 180;
   const novoIcon = L.divIcon({
@@ -1366,6 +1366,8 @@ function aplicarRotacao() {
   map.setBearing(mapBearing);
   rotInput.value = Math.round(mapBearing);
   document.getElementById('btn-rot-reset').textContent = mapBearing === 0 ? 'N' : '↺';
+  // Reatualiza todos os marcadores com o novo bearing
+  lados.forEach(l => atualizarIconeMarcador(l.id));
 }
 
 document.getElementById('btn-rot-esq').addEventListener('click', () => girarMapa(-10));
@@ -1383,6 +1385,7 @@ rotInput.addEventListener('input', () => {
   mapBearing = ((val % 360) + 360) % 360;
   map.setBearing(mapBearing);
   document.getElementById('btn-rot-reset').textContent = mapBearing === 0 ? 'N' : '↺';
+  lados.forEach(l => atualizarIconeMarcador(l.id));
 });
 
 rotInput.addEventListener('keydown', (e) => {
