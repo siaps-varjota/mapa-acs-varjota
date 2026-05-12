@@ -178,6 +178,86 @@
   .campo input:focus { border-color: var(--verde2); }
   .campo input[type="number"] { font-family: 'JetBrains Mono', monospace; }
 
+  /* ─── CONTROLE DE ROTAÇÃO DO LABEL ───────────────────────────────────────── */
+  .campo-rotacao { margin-bottom: 10px; flex-shrink: 0; }
+  .campo-rotacao label { font-size: 11px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 5px; }
+  .rotacao-controles {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    padding: 5px 8px;
+  }
+  .rotacao-controles button {
+    width: 28px; height: 28px;
+    border: 1px solid var(--borda);
+    border-radius: 6px;
+    background: var(--cinza);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, border-color .15s;
+    flex-shrink: 0;
+    padding: 0;
+    line-height: 1;
+  }
+  .rotacao-controles button:hover { background: var(--borda); border-color: var(--verde2); }
+  .rotacao-controles button.btn-rot-snap {
+    font-size: 10px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    color: var(--azul);
+    width: auto;
+    padding: 0 8px;
+  }
+  .rotacao-controles .rot-input-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .rotacao-controles input[type="range"] {
+    flex: 1;
+    height: 4px;
+    accent-color: var(--verde2);
+    cursor: pointer;
+  }
+  .rotacao-controles .rot-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--texto);
+    min-width: 32px;
+    text-align: right;
+  }
+  .rotacao-preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0 2px;
+  }
+  .rotacao-preview-label {
+    background: rgba(255,255,255,0.92);
+    color: var(--texto);
+    border-radius: 5px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'Sora', sans-serif;
+    white-space: nowrap;
+    box-shadow: 0 1px 6px rgba(0,0,0,.18);
+    border: 1px solid rgba(0,0,0,.08);
+    line-height: 1.5;
+    text-align: center;
+    pointer-events: none;
+    transition: transform .1s;
+  }
+  .rotacao-preview-label .prev-acs { display: block; color: var(--verde); font-size: 11px; }
+  .rotacao-preview-label .prev-acs.vazio { color: var(--muted); font-style: italic; }
+  .rotacao-preview-label .prev-qtd { display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; }
+
   .btn-remover {
     display: flex; align-items: center; gap: 5px;
     background: none; border: none; cursor: pointer;
@@ -322,16 +402,10 @@
   }
   #dica.visivel { opacity: 1; }
 
-  /* ─── MARCADOR ─────────────────────────────────────────────────────────────
-     O wrapper NÃO gira mais via transform — a rotação é feita via
-     CSS custom property --ang, aplicada apenas ao label.
-     O pin (bolinha) fica sempre reto no centro.
-  ──────────────────────────────────────────────────────────────────────────── */
   .marker-wrapper {
     position: relative;
     cursor: pointer;
     display: inline-block;
-    /* sem transform global — pin fica reto, label rotaciona individualmente */
     margin-left: -40px;
     margin-top: -18px;
   }
@@ -352,7 +426,6 @@
   .marker-wrapper:hover .marker-pin { background: var(--laranja); }
   .marker-wrapper.preenchido .marker-pin { background: var(--azul); }
 
-  /* O label rotaciona para ficar paralelo à rua, compensando o bearing do mapa */
   .marker-label {
     display: block;
     background: rgba(255,255,255,0.92);
@@ -368,7 +441,7 @@
     line-height: 1.5;
     text-align: center;
     pointer-events: none;
-    /* rotação aplicada via CSS var, calculada em JS = anguloRua - mapBearing */
+    /* rotação: anguloLabel (relativo à rua) - mapBearing + rotacaoManual */
     transform: rotate(var(--ang, 0deg));
     transform-origin: center center;
     position: relative;
@@ -641,6 +714,7 @@ function serializarLados() {
   return lados.map(l => ({
     id: l.id, lat: l.lat, lng: l.lng,
     rua: l.rua, angulo: l.angulo || 0,
+    rotacaoManual: l.rotacaoManual || 0,
     acs: l.acs, pessoas: l.pessoas
   }));
 }
@@ -662,12 +736,11 @@ async function carregarDados(dados) {
 
 // ─────────────────────────────────────────
 //  CÁLCULO DE ÂNGULO DO LABEL
-//  ângulo final = anguloRua - mapBearing
-//  Isso "descongela" o label da rotação do mapa,
-//  mantendo-o sempre paralelo à rua na tela.
+//  ângulo final = anguloRua - mapBearing + rotacaoManual
+//  rotacaoManual é definido individualmente por cada marcador
 // ─────────────────────────────────────────
-function calcAngLabel(anguloRua) {
-  let a = (anguloRua - mapBearing + 360) % 360;
+function calcAngLabel(anguloRua, rotacaoManual) {
+  let a = (anguloRua - mapBearing + (rotacaoManual || 0) + 360) % 360;
   // Normaliza para [-90, 90] para que o texto fique legível
   if (a >  90 && a <= 270) a -= 180;
   if (a > 270)              a -= 360;
@@ -677,12 +750,12 @@ function calcAngLabel(anguloRua) {
 // ─────────────────────────────────────────
 //  GERAR HTML DO MARCADOR
 // ─────────────────────────────────────────
-function buildMarkerHtml(id, acs, pessoas, anguloRua) {
+function buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual) {
   const acsLbl = acs || `#${id}`;
   const acsCls = acs ? 'lbl-acs' : 'lbl-acs vazio';
   const qtdLbl = pessoas > 0 ? `${pessoas} pessoas` : '– pessoas';
   const pre    = !!(acs || pessoas);
-  const ang    = calcAngLabel(anguloRua);
+  const ang    = calcAngLabel(anguloRua, rotacaoManual || 0);
   return `<div class="marker-wrapper${pre ? ' preenchido' : ''}" id="marker-${id}">
             <div class="marker-label" style="--ang:${ang}deg">
               <span class="${acsCls}">${escHtml(acsLbl)}</span>
@@ -692,10 +765,10 @@ function buildMarkerHtml(id, acs, pessoas, anguloRua) {
           </div>`;
 }
 
-function buildIcon(id, acs, pessoas, anguloRua) {
+function buildIcon(id, acs, pessoas, anguloRua, rotacaoManual) {
   return L.divIcon({
     className: '',
-    html: buildMarkerHtml(id, acs, pessoas, anguloRua),
+    html: buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual),
     iconAnchor: [0, 0],
     iconSize:   [1, 1]
   });
@@ -711,8 +784,9 @@ function atualizarTodosOsIcones() {
 async function adicionarLadoSilencioso(d) {
   const id = d.id;
   const anguloRua = d.angulo || 0;
+  const rotacaoManual = d.rotacaoManual || 0;
   const marker = L.marker([d.lat, d.lng], {
-    icon: buildIcon(id, d.acs || '', d.pessoas || 0, anguloRua),
+    icon: buildIcon(id, d.acs || '', d.pessoas || 0, anguloRua, rotacaoManual),
     draggable: true
   }).addTo(map);
   marker.bindTooltip(`Lado #${id} — ${d.rua}`, { permanent: false });
@@ -725,7 +799,7 @@ async function adicionarLadoSilencioso(d) {
       if (l2) { l2.rua = nome; l2.angulo = ang2; atualizarCardHeader(id); atualizarIconeMarcador(id); agendarSave(); }
     });
   });
-  lados.push({ id, lat: d.lat, lng: d.lng, rua: d.rua, angulo: anguloRua, acs: d.acs || '', pessoas: d.pessoas || 0, marker });
+  lados.push({ id, lat: d.lat, lng: d.lng, rua: d.rua, angulo: anguloRua, rotacaoManual, acs: d.acs || '', pessoas: d.pessoas || 0, marker });
 }
 
 function agendarSave() {
@@ -986,7 +1060,7 @@ function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
   const id = proximoId++;
 
   const marker = L.marker([lat, lng], {
-    icon: buildIcon(id, '', 0, angulo),
+    icon: buildIcon(id, '', 0, angulo, 0),
     draggable: true
   }).addTo(map);
 
@@ -1007,7 +1081,7 @@ function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
     });
   });
 
-  const lado = { id, lat, lng, rua, angulo, acs: '', pessoas: 0, marker };
+  const lado = { id, lat, lng, rua, angulo, rotacaoManual: 0, acs: '', pessoas: 0, marker };
   lados.push(lado);
 
   renderCards();
@@ -1053,6 +1127,7 @@ function renderCards() {
     const body = document.createElement('div');
     body.className = 'lado-card-body';
 
+    // Campo Rua
     const campoRua = document.createElement('div');
     campoRua.className = 'campo';
     campoRua.innerHTML = '<label>🏘️ Nome da Rua / Localização</label>';
@@ -1065,6 +1140,7 @@ function renderCards() {
     });
     campoRua.appendChild(inputRua);
 
+    // Campo ACS
     const campoAcs = document.createElement('div');
     campoAcs.className = 'campo';
     campoAcs.innerHTML = '<label>👤 Nome da ACS</label>';
@@ -1074,9 +1150,16 @@ function renderCards() {
     inputAcs.value = lado.acs || '';
     inputAcs.addEventListener('input', function() {
       atualizarLado(lado.id, 'acs', this.value);
+      // Atualiza preview de rotação
+      const prev = body.querySelector('.rotacao-preview-label .prev-acs');
+      if (prev) {
+        prev.textContent = this.value || `#${lado.id}`;
+        prev.className = 'prev-acs' + (this.value ? '' : ' vazio');
+      }
     });
     campoAcs.appendChild(inputAcs);
 
+    // Campo Pessoas
     const campoPessoas = document.createElement('div');
     campoPessoas.className = 'campo';
     campoPessoas.innerHTML = '<label>👥 Total de pessoas neste lado</label>';
@@ -1087,8 +1170,111 @@ function renderCards() {
     inputPessoas.value = lado.pessoas > 0 ? lado.pessoas : '';
     inputPessoas.addEventListener('input', function() {
       atualizarLado(lado.id, 'pessoas', this.value);
+      // Atualiza preview de rotação
+      const prev = body.querySelector('.rotacao-preview-label .prev-qtd');
+      if (prev) {
+        const v = parseInt(this.value, 10) || 0;
+        prev.textContent = v > 0 ? `${v} pessoas` : '– pessoas';
+      }
     });
     campoPessoas.appendChild(inputPessoas);
+
+    // ─── CAMPO DE ROTAÇÃO DO LABEL ───────────────────────────
+    const campoRot = document.createElement('div');
+    campoRot.className = 'campo-rotacao';
+
+    const labelRot = document.createElement('label');
+    labelRot.innerHTML = '🔄 Rotação do nome no mapa';
+    campoRot.appendChild(labelRot);
+
+    // Preview
+    const preview = document.createElement('div');
+    preview.className = 'rotacao-preview';
+    const previewLabel = document.createElement('div');
+    previewLabel.className = 'rotacao-preview-label';
+    const acsLblVal = lado.acs || `#${lado.id}`;
+    const acsCls = lado.acs ? 'prev-acs' : 'prev-acs vazio';
+    const qtdLblVal = lado.pessoas > 0 ? `${lado.pessoas} pessoas` : '– pessoas';
+    previewLabel.innerHTML = `<span class="${acsCls}">${escHtml(acsLblVal)}</span><span class="prev-qtd">${escHtml(qtdLblVal)}</span>`;
+    const rotManual = lado.rotacaoManual || 0;
+    previewLabel.style.transform = `rotate(${rotManual}deg)`;
+    preview.appendChild(previewLabel);
+    campoRot.appendChild(preview);
+
+    // Controles
+    const controles = document.createElement('div');
+    controles.className = 'rotacao-controles';
+
+    // Botão -10
+    const btnMenos10 = document.createElement('button');
+    btnMenos10.textContent = '↺';
+    btnMenos10.title = 'Girar -10°';
+
+    // Botão -1
+    const btnMenos1 = document.createElement('button');
+    btnMenos1.textContent = '−';
+    btnMenos1.title = 'Girar -1°';
+    btnMenos1.style.fontSize = '16px';
+    btnMenos1.style.fontWeight = '700';
+
+    // Slider + valor
+    const wrapSlider = document.createElement('div');
+    wrapSlider.className = 'rot-input-wrap';
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = '-180';
+    slider.max = '180';
+    slider.step = '1';
+    slider.value = String(rotManual);
+    const valDisplay = document.createElement('span');
+    valDisplay.className = 'rot-val';
+    valDisplay.textContent = `${rotManual}°`;
+    wrapSlider.appendChild(slider);
+    wrapSlider.appendChild(valDisplay);
+
+    // Botão +1
+    const btnMais1 = document.createElement('button');
+    btnMais1.textContent = '+';
+    btnMais1.title = 'Girar +1°';
+    btnMais1.style.fontSize = '16px';
+    btnMais1.style.fontWeight = '700';
+
+    // Botão +10
+    const btnMais10 = document.createElement('button');
+    btnMais10.textContent = '↻';
+    btnMais10.title = 'Girar +10°';
+
+    // Botão reset
+    const btnReset = document.createElement('button');
+    btnReset.textContent = '0°';
+    btnReset.className = 'btn-rot-snap';
+    btnReset.title = 'Resetar rotação';
+
+    function aplicarRotacaoLabel(val) {
+      let v = Math.round(val);
+      if (v > 180) v = 180;
+      if (v < -180) v = -180;
+      slider.value = String(v);
+      valDisplay.textContent = `${v}°`;
+      previewLabel.style.transform = `rotate(${v}deg)`;
+      atualizarLado(lado.id, 'rotacaoManual', v);
+    }
+
+    btnMenos10.addEventListener('click', () => aplicarRotacaoLabel((lado.rotacaoManual || 0) - 10));
+    btnMenos1.addEventListener('click',  () => aplicarRotacaoLabel((lado.rotacaoManual || 0) - 1));
+    btnMais1.addEventListener('click',   () => aplicarRotacaoLabel((lado.rotacaoManual || 0) + 1));
+    btnMais10.addEventListener('click',  () => aplicarRotacaoLabel((lado.rotacaoManual || 0) + 10));
+    btnReset.addEventListener('click',   () => aplicarRotacaoLabel(0));
+    slider.addEventListener('input', () => aplicarRotacaoLabel(parseFloat(slider.value)));
+
+    controles.appendChild(btnMenos10);
+    controles.appendChild(btnMenos1);
+    controles.appendChild(wrapSlider);
+    controles.appendChild(btnMais1);
+    controles.appendChild(btnMais10);
+    controles.appendChild(btnReset);
+    campoRot.appendChild(controles);
+    // ──────────────────────────────────────────────────────────
 
     const btnRem = document.createElement('button');
     btnRem.className = 'btn-remover';
@@ -1098,6 +1284,7 @@ function renderCards() {
     body.appendChild(campoRua);
     body.appendChild(campoAcs);
     body.appendChild(campoPessoas);
+    body.appendChild(campoRot);
     body.appendChild(btnRem);
 
     card.appendChild(header);
@@ -1141,6 +1328,8 @@ function atualizarLado(id, campo, valor) {
 
   if (campo === 'pessoas') {
     lado.pessoas = parseInt(valor, 10) || 0;
+  } else if (campo === 'rotacaoManual') {
+    lado.rotacaoManual = Number(valor) || 0;
   } else {
     lado[campo] = valor;
   }
@@ -1174,13 +1363,11 @@ function removerLado(id) {
 
 // ─────────────────────────────────────────
 //  ATUALIZAR ÍCONE DO MARCADOR
-//  Recalcula o ângulo do label usando calcAngLabel(),
-//  que compensa automaticamente o bearing atual do mapa.
 // ─────────────────────────────────────────
 function atualizarIconeMarcador(id) {
   const lado = lados.find(x => x.id === id);
   if (!lado) return;
-  lado.marker.setIcon(buildIcon(id, lado.acs, lado.pessoas, lado.angulo || 0));
+  lado.marker.setIcon(buildIcon(id, lado.acs, lado.pessoas, lado.angulo || 0, lado.rotacaoManual || 0));
 }
 
 // ─────────────────────────────────────────
@@ -1308,9 +1495,6 @@ document.head.appendChild(styleRua);
 
 // ─────────────────────────────────────────
 //  ROTAÇÃO DO MAPA
-//  Ao girar, recalcula TODOS os ícones com o novo bearing.
-//  calcAngLabel() subtrai o bearing atual → labels ficam "congelados"
-//  na orientação da rua, independente da rotação do mapa.
 // ─────────────────────────────────────────
 const rotInput = document.getElementById('rot-input');
 
@@ -1323,7 +1507,6 @@ function aplicarRotacao() {
   map.setBearing(mapBearing);
   rotInput.value = Math.round(mapBearing);
   document.getElementById('btn-rot-reset').textContent = mapBearing === 0 ? 'N' : '↺';
-  // ← PONTO-CHAVE: recalcula todos os labels com o novo bearing
   atualizarTodosOsIcones();
 }
 
@@ -1342,7 +1525,6 @@ rotInput.addEventListener('input', () => {
   mapBearing = ((val % 360) + 360) % 360;
   map.setBearing(mapBearing);
   document.getElementById('btn-rot-reset').textContent = mapBearing === 0 ? 'N' : '↺';
-  // ← PONTO-CHAVE: recalcula todos os labels com o novo bearing
   atualizarTodosOsIcones();
 });
 
@@ -1358,7 +1540,8 @@ document.getElementById('btn-exportar').addEventListener('click', () => {
     lat: l.lat,
     lng: l.lng,
     acs: l.acs,
-    pessoas: l.pessoas
+    pessoas: l.pessoas,
+    rotacaoManual: l.rotacaoManual || 0
   }));
   const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
