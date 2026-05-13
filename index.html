@@ -686,7 +686,7 @@
     <div class="modal-box">
       <div class="modal-icon">☁️</div>
       <h2>Configurar armazenamento na nuvem</h2>
-      <p>Para salvar e compartilhar os dados com outras , informe sua chave do <strong>JSONBin.io</strong> (gratuito).</p>
+      <p>Para salvar e compartilhar os dados com outras pessoas, informe sua chave do <strong>JSONBin.io</strong> (gratuito).</p>
 
       <div class="modal-steps">
         <div class="step"><span>1</span> Acesse <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> e crie uma conta gratuita</div>
@@ -733,7 +733,7 @@
       </div>
 
       <div id="total-geral">
-        <span>Total geral de </span>
+        <span>Total geral de pessoas</span>
         <span class="num" id="total-num">0</span>
       </div>
     </div>
@@ -791,7 +791,7 @@ function serializarLados() {
     rua: l.rua, angulo: l.angulo || 0,
     rotacaoManual: l.rotacaoManual || 0,
     fixado: !!l.fixado,
-    acs: l.acs, : l.
+    acs: l.acs, pessoas: l.pessoas
   }));
 }
 
@@ -830,11 +830,11 @@ function calcAngLabel(anguloRua, rotacaoManual, fixado) {
 // ─────────────────────────────────────────
 //  GERAR HTML DO MARCADOR
 // ─────────────────────────────────────────
-function buildMarkerHtml(id, acs, , anguloRua, rotacaoManual, fixado) {
+function buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual, fixado) {
   const acsLbl = acs || `#${id}`;
   const acsCls = acs ? 'lbl-acs' : 'lbl-acs vazio';
-  const qtdLbl =  > 0 ? `${} ` : '– ';
-  const pre    = !!(acs || );
+  const qtdLbl = pessoas > 0 ? `${pessoas} pessoas` : '– pessoas';
+  const pre    = !!(acs || pessoas);
   const ang    = calcAngLabel(anguloRua, rotacaoManual || 0, fixado);
   return `<div class="marker-wrapper${pre ? ' preenchido' : ''}" id="marker-${id}">
             <div class="marker-label" style="--ang:${ang}deg">
@@ -844,10 +844,10 @@ function buildMarkerHtml(id, acs, , anguloRua, rotacaoManual, fixado) {
           </div>`;
 }
 
-function buildIcon(id, acs, , anguloRua, rotacaoManual, fixado) {
+function buildIcon(id, acs, pessoas, anguloRua, rotacaoManual, fixado) {
   return L.divIcon({
     className: '',
-    html: buildMarkerHtml(id, acs, , anguloRua, rotacaoManual, fixado),
+    html: buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual, fixado),
     iconAnchor: [0, 0],
     iconSize:   [1, 1]
   });
@@ -867,8 +867,8 @@ function atualizarTodosOsIcones() {
 //  scale = 2^(zoom - 16) * 0.5 limitado proporcionalmente
 // ─────────────────────────────────────────
 function calcZoomScale(zoom) {
-  const scale = Math.pow(2, (zoom - 16) * 0.5);
-  return Math.min(3.0, Math.max(0.15, scale)) * 0.45;
+  const scale = Math.pow(2, (zoom - 16) * 0.6);
+  return Math.min(3.0, Math.max(0.15, scale)) * 0.5;
 }
 
 function atualizarEscalaZoom() {
@@ -893,7 +893,7 @@ async function adicionarLadoSilencioso(d) {
   const rotacaoManual = d.rotacaoManual || 0;
   const fixado = !!d.fixado;
   const marker = L.marker([d.lat, d.lng], {
-    icon: buildIcon(id, d.acs || '', d. || 0, anguloRua, rotacaoManual, fixado),
+    icon: buildIcon(id, d.acs || '', d.pessoas || 0, anguloRua, rotacaoManual, fixado),
     draggable: true
   }).addTo(map);
   marker.bindTooltip(`Lado #${id} — ${d.rua}`, { permanent: false });
@@ -906,7 +906,7 @@ async function adicionarLadoSilencioso(d) {
       if (l2) { l2.rua = nome; l2.angulo = ang2; atualizarCardHeader(id); atualizarIconeMarcador(id); agendarSave(); }
     });
   });
-  lados.push({ id, lat: d.lat, lng: d.lng, rua: d.rua, angulo: anguloRua, rotacaoManual, fixado, acs: d.acs || '', : d. || 0, marker });
+  lados.push({ id, lat: d.lat, lng: d.lng, rua: d.rua, angulo: anguloRua, rotacaoManual, fixado, acs: d.acs || '', pessoas: d.pessoas || 0, marker });
 }
 
 function agendarSave() {
