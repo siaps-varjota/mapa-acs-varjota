@@ -863,7 +863,7 @@ function atualizarTodosOsIcones() {
 // ─────────────────────────────────────────
 function calcZoomScale(zoom) {
   // zoom 16 = escala base * 0.5 (redução de 50% do tamanho original)
-  const scale = Math.pow(2, (zoom - 16) * 0.5);
+  const scale = Math.pow(2, (zoom - 16) * 0.4);
   return Math.min(3.0, Math.max(0.15, scale)) * 0.4;
 }
 
