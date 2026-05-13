@@ -463,10 +463,9 @@
     position: relative;
     cursor: pointer;
     display: inline-block;
-    margin-left: -40px;
-    margin-top: -18px;
-    transform: scale(var(--zoom-scale, 1));
-    transform-origin: center bottom;   /* ancora no pino — cresce para cima */
+    /* translate(-50%,-50%) centra pelo tamanho próprio do card — escala-independente */
+    transform: translate(-50%, -50%) scale(var(--zoom-scale, 0.5));
+    transform-origin: 50% 50%;
     transition: transform 0.15s ease-out;
   }
 
@@ -876,14 +875,13 @@ function atualizarEscalaZoom() {
   const zoom  = map.getZoom();
   const scale = calcZoomScale(zoom);
 
-  // Limiares de modo (ajuste fino conforme preferência)
   const isMini  = zoom < 14;
   const isMedio = zoom >= 14 && zoom < 15.5;
 
   lados.forEach(l => {
     const el = document.getElementById(`marker-${l.id}`);
     if (!el) return;
-    el.style.setProperty('--zoom-scale', scale);
+    el.style.transform = `translate(-50%, -50%) scale(${scale})`;
     el.classList.toggle('mini',  isMini);
     el.classList.toggle('medio', isMedio);
   });
