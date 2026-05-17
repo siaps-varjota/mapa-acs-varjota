@@ -72,24 +72,25 @@
     overflow: hidden;
     box-shadow: -3px 0 12px rgba(0,0,0,.07);
     min-height: 0;
-    position: relative;
     flex-shrink: 0;
-    transition: transform 0.32s cubic-bezier(.4,0,.2,1), min-width 0.32s cubic-bezier(.4,0,.2,1), width 0.32s cubic-bezier(.4,0,.2,1);
+    /* A transição anima a largura, não transform, para que o mapa expanda */
+    transition: min-width 0.32s cubic-bezier(.4,0,.2,1), width 0.32s cubic-bezier(.4,0,.2,1), box-shadow 0.32s;
   }
   #painel.recolhido {
-    transform: translateX(100%);
-    min-width: 0;
-    width: 0;
+    min-width: 0 !important;
+    width: 0 !important;
+    box-shadow: none;
+    border-left: none;
   }
 
-  /* ─── BOTÃO TOGGLE DO PAINEL ────────────────────────────────────────────── */
+  /* ─── BOTÃO TOGGLE — fica no #map, sempre visível na borda direita ──────── */
   #painel-toggle {
     position: absolute;
-    left: -34px;
+    right: 0;
     top: 50%;
     transform: translateY(-50%);
-    width: 34px;
-    height: 70px;
+    width: 28px;
+    height: 72px;
     background: var(--verde);
     color: #fff;
     border: none;
@@ -99,68 +100,26 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 6px;
     z-index: 850;
-    box-shadow: -4px 0 14px rgba(0,0,0,.18);
-    transition: background .2s, left .32s cubic-bezier(.4,0,.2,1);
+    box-shadow: -3px 0 12px rgba(0,0,0,.2);
+    transition: background .2s, width .15s;
     padding: 0;
   }
-  #painel-toggle:hover { background: var(--verde2); }
-  #painel.recolhido #painel-toggle {
-    left: -34px; /* stays at left edge of painel, but painel is off-screen */
-    border-radius: 10px;
-    box-shadow: -4px 0 18px rgba(0,0,0,.22);
-  }
-  #painel-toggle .toggle-icon {
-    font-size: 13px;
-    transition: transform .32s;
+  #painel-toggle:hover { background: var(--verde2); width: 32px; }
+  #painel-toggle #toggle-icon-el {
+    font-size: 11px;
     line-height: 1;
   }
-  #painel.recolhido #painel-toggle .toggle-icon { transform: scaleX(-1); }
   #painel-toggle .toggle-label {
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 700;
-    letter-spacing: .6px;
+    letter-spacing: .5px;
     text-transform: uppercase;
     writing-mode: vertical-rl;
-    text-orientation: mixed;
-    opacity: .75;
+    opacity: .8;
     line-height: 1;
-  }
-
-  /* Quando recolhido, o toggle fica fixo à direita do mapa */
-  #painel-tab-fixo {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 34px;
-    height: 70px;
-    background: var(--verde);
-    color: #fff;
-    border: none;
-    border-radius: 10px 0 0 10px;
-    cursor: pointer;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    z-index: 850;
-    box-shadow: -4px 0 14px rgba(0,0,0,.2);
-    transition: background .2s;
-    padding: 0;
-  }
-  #painel-tab-fixo:hover { background: var(--verde2); }
-  #painel-tab-fixo.visivel { display: flex; }
-  #painel-tab-fixo .toggle-icon { font-size: 13px; }
-  #painel-tab-fixo .toggle-label {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: .6px;
-    text-transform: uppercase;
-    writing-mode: vertical-rl;
-    opacity: .75;
+    font-family: 'Sora', sans-serif;
   }
 
   #painel-header {
@@ -817,9 +776,9 @@
         <strong>*</strong> = número de pessoas cadastradas
       </div>
 
-      <!-- Tab fixo que aparece quando painel está recolhido -->
-      <button id="painel-tab-fixo" onclick="expandirPainel()" title="Abrir painel">
-        <span class="toggle-icon">◀</span>
+      <!-- Botão toggle do painel — sempre visível na borda direita do mapa -->
+      <button id="painel-toggle" onclick="togglePainel()" title="Recolher/expandir painel">
+        <span id="toggle-icon-el">▶</span>
         <span class="toggle-label">Painel</span>
       </button>
 
@@ -884,12 +843,6 @@
   <div id="toast"></div>
 
     <div id="painel">
-      <!-- Botão toggle do painel (fica na borda esquerda) -->
-      <button id="painel-toggle" onclick="recolherPainel()" title="Recolher painel">
-        <span class="toggle-icon">▶</span>
-        <span class="toggle-label">Painel</span>
-      </button>
-
       <div id="painel-header">
         <h2>📊 Totais por ACS</h2>
         <p>Atualizado em tempo real conforme preenchimento</p>
@@ -925,19 +878,16 @@ let proximoId = 1;
 // ─────────────────────────────────────────
 //  PAINEL RECOLHÍVEL
 // ─────────────────────────────────────────
-function recolherPainel() {
-  const painel = document.getElementById('painel');
-  const tab    = document.getElementById('painel-tab-fixo');
-  painel.classList.add('recolhido');
-  tab.classList.add('visivel');
-  setTimeout(() => map.invalidateSize(), 340);
-}
+let painelAberto = true;
 
-function expandirPainel() {
+function togglePainel() {
   const painel = document.getElementById('painel');
-  const tab    = document.getElementById('painel-tab-fixo');
-  painel.classList.remove('recolhido');
-  tab.classList.remove('visivel');
+  const icon   = document.getElementById('toggle-icon-el');
+  painelAberto = !painelAberto;
+  painel.classList.toggle('recolhido', !painelAberto);
+  // Seta aponta para esquerda quando painel está aberto (clique fecha)
+  // Seta aponta para direita quando painel está fechado (clique abre)
+  icon.textContent = painelAberto ? '▶' : '◀';
   setTimeout(() => map.invalidateSize(), 340);
 }
 
@@ -1380,8 +1330,8 @@ function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
   lados.push(lado);
 
   // Abrir painel se estiver recolhido
-  if (document.getElementById('painel').classList.contains('recolhido')) {
-    expandirPainel();
+  if (!painelAberto) {
+    togglePainel();
   }
 
   renderCards();
@@ -1908,14 +1858,11 @@ document.getElementById('btn-capturar').addEventListener('click', async () => {
   const statusNuvem   = document.getElementById('status-nuvem');
   const dica          = document.getElementById('dica');
   const legendaAst    = document.getElementById('legenda-asterisco');
-  const painelToggle  = document.getElementById('painel-toggle');
-  const painelTab     = document.getElementById('painel-tab-fixo');
   toolbar.style.display      = 'none';
   statusNuvem.style.display  = 'none';
   dica.style.display         = 'none';
   legendaAst.style.display   = 'none';
-  painelToggle.style.display = 'none';
-  painelTab.style.display    = 'none';
+  document.getElementById('painel-toggle').style.visibility = 'hidden';
 
   try {
     const mapEl = document.getElementById('map');
@@ -1960,7 +1907,7 @@ document.getElementById('btn-capturar').addEventListener('click', async () => {
     toolbar.style.display      = '';
     statusNuvem.style.display  = '';
     legendaAst.style.display   = '';
-    painelToggle.style.display = '';
+    document.getElementById('painel-toggle').style.visibility = '';
     btn.classList.remove('capturando');
     btn.textContent = '🖼️ Salvar Mapa';
   }
