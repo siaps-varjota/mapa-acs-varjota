@@ -285,24 +285,24 @@
     padding: 8px 0 2px;
   }
   .rotacao-preview-label {
-    background: rgba(255,255,255,0.92);
-    color: var(--texto);
+    background: rgba(0,0,0,0.65);
+    color: #ffffff;
     border-radius: 5px;
     padding: 3px 10px;
     font-size: 11px;
     font-weight: 600;
     font-family: 'Sora', sans-serif;
     white-space: nowrap;
-    box-shadow: 0 1px 6px rgba(0,0,0,.18);
-    border: 1px solid rgba(0,0,0,.08);
+    box-shadow: 0 1px 6px rgba(0,0,0,.5);
+    border: 1px solid rgba(255,255,255,.2);
     line-height: 1.5;
     text-align: center;
     pointer-events: none;
     transition: transform .1s;
   }
-  .rotacao-preview-label .prev-acs { display: block; color: var(--verde); font-size: 11px; }
-  .rotacao-preview-label .prev-acs.vazio { color: var(--muted); font-style: italic; }
-  .rotacao-preview-label .prev-qtd { display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; }
+  .rotacao-preview-label .prev-acs { display: block; color: #a8e6c2; font-size: 11px; }
+  .rotacao-preview-label .prev-acs.vazio { color: rgba(255,255,255,.45); font-style: italic; }
+  .rotacao-preview-label .prev-qtd { display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: #ffffff; }
 
   .fixar-row {
     display: flex;
@@ -595,16 +595,16 @@
 
   .marker-label {
     display: block;
-    background: rgba(255,255,255,0.92);
-    color: var(--texto);
+    background: rgba(0,0,0,0.65);
+    color: #ffffff;
     border-radius: 5px;
     padding: 2px 8px;
     font-size: 11px;
     font-weight: 600;
     font-family: 'Sora', sans-serif;
     white-space: nowrap;
-    box-shadow: 0 1px 6px rgba(0,0,0,.18);
-    border: 1px solid rgba(0,0,0,.08);
+    box-shadow: 0 1px 6px rgba(0,0,0,.5);
+    border: 1px solid rgba(255,255,255,.2);
     line-height: 1.6;
     text-align: center;
     pointer-events: none;
@@ -613,10 +613,10 @@
     position: relative;
     z-index: 3;
   }
-  .marker-label .lbl-acs { display: inline; color: var(--verde); font-size: 11px; font-weight: 700; }
-  .marker-label .lbl-acs.vazio { color: var(--muted); font-style: italic; }
-  .marker-label .lbl-sep { display: inline; color: var(--borda); font-size: 10px; margin: 0 4px; }
-  .marker-label .lbl-qtd { display: inline; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--texto); letter-spacing: .3px; }
+  .marker-label .lbl-acs { display: inline; color: #a8e6c2; font-size: 11px; font-weight: 700; }
+  .marker-label .lbl-acs.vazio { color: rgba(255,255,255,.45); font-style: italic; }
+  .marker-label .lbl-sep { display: inline; color: rgba(255,255,255,.25); font-size: 10px; margin: 0 4px; }
+  .marker-label .lbl-qtd { display: inline; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #ffffff; letter-spacing: .3px; }
   .marker-label .lbl-ast { display: inline; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: var(--verde2); vertical-align: super; line-height: 0; }
 
   #lados-lista::-webkit-scrollbar { width: 5px; }
@@ -1198,7 +1198,7 @@ const tileEsriSat = L.tileLayer(
 // Entrega apenas textos (nomes de ruas, bairros, municípios) sem fundo de mapa,
 // deixando a imagem aérea visível por baixo. Cobertura boa até zoom 18-19.
 const tileEsriLabels = L.tileLayer(
-  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
+  'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
   attribution: '© <a href="https://carto.com/">CARTO</a>',
   subdomains: 'abcd',
   maxNativeZoom: 19,
