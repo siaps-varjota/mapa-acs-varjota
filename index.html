@@ -1198,8 +1198,8 @@ const tileEsriSat = L.tileLayer(
 // Entrega apenas textos (nomes de ruas, bairros, municípios) sem fundo de mapa,
 // deixando a imagem aérea visível por baixo. Cobertura boa até zoom 18-19.
 const tileEsriLabels = L.tileLayer(
-  'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
-  attribution: '© <a href="https://carto.com/">CARTO</a>',
+  'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles © Esri',
   subdomains: 'abcd',
   maxNativeZoom: 19,
   maxZoom: 22,
