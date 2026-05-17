@@ -1198,13 +1198,12 @@ const tileEsriSat = L.tileLayer(
 // Entrega apenas textos (nomes de ruas, bairros, municípios) sem fundo de mapa,
 // deixando a imagem aérea visível por baixo. Cobertura boa até zoom 18-19.
 const tileEsriLabels = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
+  'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
   attribution: 'Tiles © Esri',
-  subdomains: 'abcd',
   maxNativeZoom: 19,
   maxZoom: 22,
   pane: 'overlayPane',
-  opacity: 1.0
+  opacity: 0.9
 });
 
 let sateliteAtivo = false;
