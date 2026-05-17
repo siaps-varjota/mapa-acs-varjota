@@ -442,6 +442,18 @@
   #btn-ruas:hover { background: var(--borda); }
   #btn-ruas.ativo { background: #e3f2fd; color: var(--azul); border-color: #90caf9; }
 
+  #btn-satelite {
+    background: var(--cinza);
+    color: var(--texto);
+    border: 1px solid var(--borda);
+  }
+  #btn-satelite:hover { background: var(--borda); }
+  #btn-satelite.ativo {
+    background: #1a1a2e;
+    color: #a8d8a8;
+    border-color: #4caf50;
+  }
+
   /* ─── CONTROLE DE ROTAÇÃO DO MAPA ───────────────────────────────────────── */
   #rot-controls {
     display: flex;
@@ -791,6 +803,7 @@
           <button id="btn-rot-reset" title="Norte para cima">N</button>
         </div>
 
+        <button id="btn-satelite">🛰️ Satélite</button>
         <button id="btn-ruas">🛣️ Ruas</button>
         <button id="btn-capturar">🖼️ Salvar Mapa</button>
         <button id="btn-exportar">📋 Exportar JSON</button>
@@ -1168,10 +1181,53 @@ const map = L.map('map', {
 
 let mapBearing = 0;
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+// ─── CAMADAS BASE ────────────────────────────────────────────────────────────
+const tileOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   maxZoom: 19
-}).addTo(map);
+});
+
+const tileEsriSat = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles © Esri — Source: Esri, DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community',
+  maxZoom: 19
+});
+
+// Camada de rótulos sobre o satélite (nomes de ruas, bairros etc.)
+const tileEsriLabels = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+  maxZoom: 19,
+  pane: 'overlayPane',
+  opacity: 0.9
+});
+
+let sateliteAtivo = false;
+tileOSM.addTo(map);
+
+function ativarSatelite() {
+  map.removeLayer(tileOSM);
+  tileEsriSat.addTo(map);
+  tileEsriLabels.addTo(map);
+  sateliteAtivo = true;
+  const btn = document.getElementById('btn-satelite');
+  btn.textContent = '🛰️ Satélite ✓';
+  btn.classList.add('ativo');
+}
+
+function desativarSatelite() {
+  map.removeLayer(tileEsriSat);
+  map.removeLayer(tileEsriLabels);
+  tileOSM.addTo(map);
+  sateliteAtivo = false;
+  const btn = document.getElementById('btn-satelite');
+  btn.textContent = '🛰️ Satélite';
+  btn.classList.remove('ativo');
+}
+
+document.getElementById('btn-satelite').addEventListener('click', () => {
+  if (sateliteAtivo) desativarSatelite();
+  else ativarSatelite();
+});
 
 map.on('zoomend', atualizarEscalaZoom);
 
