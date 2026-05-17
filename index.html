@@ -1190,13 +1190,15 @@ const tileOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 const tileEsriSat = L.tileLayer(
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
   attribution: 'Tiles © Esri — Source: Esri, DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community',
-  maxZoom: 19
+  maxNativeZoom: 17,   // Esri só tem tiles até zoom 17 para esta região
+  maxZoom: 22          // Leaflet escala o tile do zoom 17 nos níveis acima
 });
 
 // Camada de rótulos sobre o satélite (nomes de ruas, bairros etc.)
 const tileEsriLabels = L.tileLayer(
   'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-  maxZoom: 19,
+  maxNativeZoom: 17,
+  maxZoom: 22,
   pane: 'overlayPane',
   opacity: 0.9
 });
