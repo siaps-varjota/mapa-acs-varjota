@@ -27,6 +27,8 @@
     --vermelho: #d32f2f;
     --laranja:  #e65100;
     --borda:    #dde3ec;
+    --painel-w: 380px;
+    --aba-w: 26px;
   }
 
   html, body { height: 100%; font-family: 'Sora', sans-serif; background: var(--cinza); color: var(--texto); }
@@ -48,11 +50,89 @@
   #main { display: flex; flex: 1; overflow: hidden; }
   #map  { flex: 1; position: relative; }
 
-  #painel {
-    width: 380px; background: #fff; border-left: 1px solid var(--borda);
-    display: flex; flex-direction: column; overflow: hidden;
-    box-shadow: -3px 0 12px rgba(0,0,0,.07); min-height: 0;
+  /* ──────────────────────────────────────────────────────────────────────────
+     PAINEL LATERAL RECOLHÍVEL
+     Estrutura: #painel-outer [ #painel-aba | #painel ]
+     A aba fica SEMPRE visível à esquerda do painel.
+     Quando recolhido, #painel-outer encolhe para só mostrar a aba.
+  ────────────────────────────────────────────────────────────────────────── */
+  #painel-outer {
+    display: flex;
+    flex-direction: row;
+    flex-shrink: 0;
+    width: calc(var(--painel-w) + var(--aba-w));
+    transition: width 0.32s cubic-bezier(.4,0,.2,1);
+    overflow: hidden;
+    box-shadow: -3px 0 12px rgba(0,0,0,.07);
+    z-index: 800;
   }
+  #painel-outer.recolhido {
+    width: var(--aba-w);
+  }
+
+  /* Aba vertical — faixa fina sempre visível */
+  #painel-aba {
+    width: var(--aba-w);
+    min-width: var(--aba-w);
+    flex-shrink: 0;
+    background: var(--verde);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    gap: 8px;
+    transition: background 0.2s;
+    position: relative;
+    z-index: 2;
+  }
+  #painel-aba:hover { background: var(--verde2); }
+
+  .aba-seta {
+    color: #fff;
+    font-size: 12px;
+    line-height: 1;
+    transition: transform 0.32s cubic-bezier(.4,0,.2,1);
+    /* aponta para DIREITA (recolher) */
+    display: inline-block;
+    transform: rotate(0deg);
+  }
+  #painel-outer.recolhido .aba-seta {
+    /* aponta para ESQUERDA (expandir) */
+    transform: rotate(180deg);
+  }
+
+  .aba-txt {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.8);
+    font-family: 'Sora', sans-serif;
+    white-space: nowrap;
+  }
+
+  /* Painel de conteúdo */
+  #painel {
+    width: var(--painel-w);
+    flex-shrink: 0;
+    background: #fff;
+    border-left: 1px solid var(--borda);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+    transition: opacity 0.2s;
+  }
+  #painel-outer.recolhido #painel {
+    opacity: 0;
+    pointer-events: none;
+  }
+
   #painel-header { padding: 16px 18px 12px; border-bottom: 1px solid var(--borda); background: var(--cinza); flex-shrink: 0; }
   #painel-header h2 { font-size: 14px; font-weight: 700; color: var(--verde); }
   #painel-header p  { font-size: 11px; color: var(--muted); margin-top: 2px; }
@@ -113,16 +193,14 @@
   .campo input:focus { border-color: var(--verde2); }
   .campo input[type="number"] { font-family: 'JetBrains Mono', monospace; }
 
-  /* ─── BLOCO DE ROTAÇÃO (compartilhado: card + toolbar) ───────────────────── */
+  /* ─── BLOCO DE ROTAÇÃO ─────────────────────────────────────────────────── */
   .rot-bloco { margin-bottom: 10px; flex-shrink: 0; }
   .rot-bloco > label { font-size: 11px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 5px; }
 
-  /* Container dos controles — versão card (com fundo e borda) */
   .rot-controles {
     display: flex; align-items: center; gap: 5px;
     background: #fff; border: 1px solid var(--borda); border-radius: 8px; padding: 5px 7px;
   }
-  /* versão toolbar: transparente, sem borda */
   .rot-controles.toolbar-mode {
     background: transparent; border: none; padding: 2px 4px; gap: 3px;
   }
@@ -156,7 +234,6 @@
   }
   .rot-controles.toolbar-mode .rot-val { font-size: 10px; min-width: 28px; }
 
-  /* preview */
   .rot-preview { display: flex; justify-content: center; align-items: center; padding: 8px 0 2px; }
   .rot-preview-label {
     background: rgba(255,255,255,0.92); color: var(--texto); border-radius: 5px;
@@ -223,7 +300,6 @@
   #drag-handle:active { cursor: grabbing; transform: scale(.96); }
   #drag-handle.dragging { background: var(--laranja); opacity: .7; }
 
-  /* Bloco de rotação do mapa na toolbar */
   #rot-mapa-wrap {
     display: flex; align-items: center; gap: 5px;
     background: var(--cinza); border: 1px solid var(--borda); border-radius: 8px;
@@ -249,7 +325,6 @@
   #btn-ruas:hover { background: var(--borda); }
   #btn-ruas.ativo { background: #e3f2fd; color: var(--azul); border-color: #90caf9; }
 
-  /* ─── LEGENDA DO ASTERISCO ─────────────────────────────────────────────── */
   #legenda-asterisco {
     position: absolute; bottom: 60px; left: 10px; z-index: 800;
     background: rgba(255,255,255,0.93); border: 1px solid var(--borda); border-radius: 8px;
@@ -371,8 +446,28 @@
   }
   #toast.visivel { opacity: 1; }
 
+  /* ─── MOBILE ─────────────────────────────────────────────────────────────── */
   @media (max-width: 700px) {
-    #painel { width: 100%; position: absolute; bottom: 0; left: 0; right: 0; height: 45%; z-index: 800; border-left: none; border-top: 1px solid var(--borda); }
+    #painel-outer {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      width: 100% !important;
+      height: calc(45% + var(--aba-w));
+      flex-direction: column-reverse;
+      border-top: 1px solid var(--borda);
+      box-shadow: 0 -3px 12px rgba(0,0,0,.07);
+    }
+    #painel-outer.recolhido { height: var(--aba-w) !important; }
+    #painel-aba {
+      width: 100%; min-width: unset;
+      height: var(--aba-w);
+      flex-direction: row;
+      justify-content: center;
+      gap: 8px;
+    }
+    .aba-seta { transform: rotate(-90deg) !important; }
+    #painel-outer.recolhido .aba-seta { transform: rotate(90deg) !important; }
+    .aba-txt { writing-mode: horizontal-tb; transform: none; }
+    #painel { width: 100%; flex: 1; }
     #map { height: 55%; }
     #main { flex-direction: column; }
   }
@@ -391,15 +486,12 @@
 
   <div id="main">
     <div id="map">
-
       <div id="status-nuvem" onclick="abrirConfig()" title="Clique para configurar">
         <div class="dot"></div>
         <span id="status-txt">Sem nuvem</span>
       </div>
 
       <div id="dica">🖱️ Clique no mapa para marcar um lado de quadra</div>
-
-      <!-- Legenda do asterisco -->
       <div id="legenda-asterisco"><strong>*</strong> número de pessoas cadastradas no lado</div>
 
       <div id="toolbar">
@@ -407,7 +499,6 @@
           <span>📍</span><span>Arraste para o mapa</span>
         </div>
 
-        <!-- CONTROLE DE ROTAÇÃO DO MAPA — idêntico ao dos cards -->
         <div id="rot-mapa-wrap">
           <span class="rot-lbl">🧭 Mapa</span>
           <div class="rot-controles toolbar-mode">
@@ -461,27 +552,53 @@
 
     <div id="toast"></div>
 
-    <div id="painel">
-      <div id="painel-header">
-        <h2>📊 Totais por ACS</h2>
-        <p>Atualizado em tempo real conforme preenchimento</p>
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         PAINEL LATERAL RECOLHÍVEL
+         [ ABA-TOGGLE | CONTEÚDO DO PAINEL ]
+    ═══════════════════════════════════════════════════════════════════════ -->
+    <div id="painel-outer">
+
+      <!-- Aba clicável para recolher/expandir -->
+      <div id="painel-aba" onclick="togglePainel()" title="Recolher / expandir painel">
+        <span class="aba-seta">◀</span>
+        <span class="aba-txt">Painel ACS</span>
       </div>
-      <div id="resumo">
-        <h3>ACS cadastradas</h3>
-        <div id="lista-acs"><p id="sem-dados">Nenhum dado inserido ainda.</p></div>
-      </div>
-      <div id="lados-lista">
-        <h3>Lados de quadra marcados</h3>
-      </div>
-      <div id="total-geral">
-        <span>Total geral de pessoas</span>
-        <span class="num" id="total-num">0</span>
+
+      <!-- Conteúdo do painel -->
+      <div id="painel">
+        <div id="painel-header">
+          <h2>📊 Totais por ACS</h2>
+          <p>Atualizado em tempo real conforme preenchimento</p>
+        </div>
+        <div id="resumo">
+          <h3>ACS cadastradas</h3>
+          <div id="lista-acs"><p id="sem-dados">Nenhum dado inserido ainda.</p></div>
+        </div>
+        <div id="lados-lista">
+          <h3>Lados de quadra marcados</h3>
+        </div>
+        <div id="total-geral">
+          <span>Total geral de pessoas</span>
+          <span class="num" id="total-num">0</span>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
+// ─────────────────────────────────────────
+//  PAINEL TOGGLE
+// ─────────────────────────────────────────
+let painelRecolhido = false;
+
+function togglePainel() {
+  painelRecolhido = !painelRecolhido;
+  document.getElementById('painel-outer').classList.toggle('recolhido', painelRecolhido);
+  // Força o Leaflet a recalcular o tamanho do mapa após a animação CSS
+  setTimeout(() => map.invalidateSize(), 350);
+}
+
 // ─────────────────────────────────────────
 //  ESTADO GLOBAL
 // ─────────────────────────────────────────
@@ -530,7 +647,7 @@ function calcAngLabel(anguloRua, rotacaoManual, fixado) {
 }
 
 // ─────────────────────────────────────────
-//  HTML DO MARCADOR — formato: ACS | N*
+//  HTML DO MARCADOR — ACS | N*
 // ─────────────────────────────────────────
 function buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual, fixado) {
   const acsLbl = acs || `#${id}`;
@@ -671,7 +788,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 map.on('zoomend', atualizarEscalaZoom);
 
 // ─────────────────────────────────────────
-//  ROTAÇÃO DO MAPA — estilo card
+//  ROTAÇÃO DO MAPA
 // ─────────────────────────────────────────
 const rotSlider = document.getElementById('rot-slider');
 const rotValTxt = document.getElementById('rot-val-txt');
@@ -817,11 +934,9 @@ function renderCards() {
     const body = document.createElement('div');
     body.className = 'lado-card-body';
 
-    // Campo Rua
     const campoRua = criarCampo('🏘️ Nome da Rua / Localização', 'text', lado.rua||'', 'Ex.: Rua das Flores');
     campoRua.querySelector('input').addEventListener('input', function() { atualizarLado(lado.id, 'rua', this.value); });
 
-    // Campo ACS
     const campoAcs = criarCampo('👤 Nome da ACS', 'text', lado.acs||'', 'Ex.: Maria da Silva');
     campoAcs.querySelector('input').addEventListener('input', function() {
       atualizarLado(lado.id, 'acs', this.value);
@@ -829,8 +944,7 @@ function renderCards() {
       if (prev) { prev.textContent = this.value||`#${lado.id}`; prev.className = 'prev-acs'+(this.value?'':' vazio'); }
     });
 
-    // Campo Pessoas
-    const campoPessoas = criarCampo('👥 Total de pessoas neste lado', 'number', lado.pessoas>0?String(lado.pessoas):'', '0');
+    const campoPessoas = criarCampo('👥 Total de pessoas neste lado*', 'number', lado.pessoas>0?String(lado.pessoas):'', '0');
     campoPessoas.querySelector('input').min = '0';
     campoPessoas.querySelector('input').addEventListener('input', function() {
       atualizarLado(lado.id, 'pessoas', this.value);
@@ -838,14 +952,13 @@ function renderCards() {
       if (prev) prev.textContent = parseInt(this.value,10)>0 ? String(parseInt(this.value,10)) : '–';
     });
 
-    // ─── BLOCO DE ROTAÇÃO DO LABEL ───────────────────────────────────────────
+    // ─── BLOCO DE ROTAÇÃO DO LABEL ─────────────────────────────────────────
     const rotBloco = document.createElement('div');
     rotBloco.className = 'rot-bloco';
     const rotLbl = document.createElement('label');
     rotLbl.textContent = '🔄 Rotação do nome no mapa';
     rotBloco.appendChild(rotLbl);
 
-    // Preview
     const preview = document.createElement('div');
     preview.className = 'rot-preview';
     const previewLabel = document.createElement('div');
@@ -858,7 +971,6 @@ function renderCards() {
     preview.appendChild(previewLabel);
     rotBloco.appendChild(preview);
 
-    // Controles
     const controles = document.createElement('div');
     controles.className = 'rot-controles';
 
@@ -887,7 +999,6 @@ function renderCards() {
     controles.appendChild(bP1);  controles.appendChild(bP10); controles.appendChild(bRes);
     rotBloco.appendChild(controles);
 
-    // Toggle Fixar
     const fixarRow = document.createElement('div');
     fixarRow.className = 'fixar-row'+(lado.fixado?' ativo':'');
     fixarRow.title = 'Quando fixado, o nome não gira com o mapa';
@@ -932,7 +1043,12 @@ function mkBtn(txt, title, fontSize, fontWeight, isSnap) {
 }
 
 function toggleCard(id) { const c=document.getElementById(`card-${id}`); if(c) c.classList.toggle('aberto'); }
-function abrirCard(id)  { const c=document.getElementById(`card-${id}`); if(c){ c.classList.add('aberto'); setTimeout(()=>c.scrollIntoView({behavior:'smooth',block:'nearest'}),50); } }
+function abrirCard(id)  {
+  // Se o painel estiver recolhido, abrir automaticamente
+  if (painelRecolhido) togglePainel();
+  const c=document.getElementById(`card-${id}`);
+  if(c){ c.classList.add('aberto'); setTimeout(()=>c.scrollIntoView({behavior:'smooth',block:'nearest'}),50); }
+}
 function atualizarCardHeader(id) {
   const lado=lados.find(x=>x.id===id); if(!lado) return;
   const c=document.getElementById(`card-${id}`); if(!c) return;
