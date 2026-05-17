@@ -1190,17 +1190,21 @@ const tileOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 const tileEsriSat = L.tileLayer(
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
   attribution: 'Tiles © Esri — Source: Esri, DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community',
-  maxNativeZoom: 17,   // Esri só tem tiles até zoom 17 para esta região
-  maxZoom: 22          // Leaflet escala o tile do zoom 17 nos níveis acima
+  maxNativeZoom: 17,
+  maxZoom: 22
 });
 
-// Camada de rótulos sobre o satélite (nomes de ruas, bairros etc.)
+// ── CORREÇÃO: CartoDB labels-only sobre o satélite ──────────────────────────
+// Entrega apenas textos (nomes de ruas, bairros, municípios) sem fundo de mapa,
+// deixando a imagem aérea visível por baixo. Cobertura boa até zoom 18-19.
 const tileEsriLabels = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-  maxNativeZoom: 17,
+  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
+  attribution: '© <a href="https://carto.com/">CARTO</a>',
+  subdomains: 'abcd',
+  maxNativeZoom: 19,
   maxZoom: 22,
   pane: 'overlayPane',
-  opacity: 0.9
+  opacity: 1.0
 });
 
 let sateliteAtivo = false;
@@ -1670,7 +1674,7 @@ function atualizarBadge() {
 }
 
 // ─────────────────────────────────────────
-//  CAMADA DE RUAS (Overpass OSM) — CORRIGIDO
+//  CAMADA DE RUAS (Overpass OSM)
 // ─────────────────────────────────────────
 let ruasLayer      = null;
 let ruasVisiveis   = false;
@@ -1685,7 +1689,6 @@ async function carregarRuas() {
 (way[highway~"^(residential|unclassified|tertiary|secondary|primary|trunk|living_street|service|footway|path|track)$"](around:3500,-4.1928215,-40.4677377););
 out geom;`;
 
-    // ── FIX: Content-Type correto + body URL-encoded ──
     const res = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -1834,7 +1837,6 @@ document.getElementById('btn-capturar').addEventListener('click', async () => {
   btn.classList.add('capturando');
   btn.textContent = '⏳ Processando…';
 
-  // Esconde elementos de UI antes de capturar
   const toolbar       = document.getElementById('toolbar');
   const statusNuvem   = document.getElementById('status-nuvem');
   const dicaEl        = document.getElementById('dica');
@@ -1874,19 +1876,16 @@ document.getElementById('btn-capturar').addEventListener('click', async () => {
 
     _canvasCapturado = finalCanvas;
 
-    // Mostra preview no modal
     const wrap = document.getElementById('preview-canvas-wrap');
     wrap.innerHTML = '';
     const img = document.createElement('img');
     img.src = finalCanvas.toDataURL('image/png');
     wrap.appendChild(img);
 
-    // Preenche nome sugerido
     const nomeSugerido = `mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;
     const inputNome = document.getElementById('input-nome-arquivo');
     inputNome.value = nomeSugerido;
 
-    // Abre modal
     document.getElementById('modal-salvar').classList.remove('oculto');
     setTimeout(() => { inputNome.focus(); inputNome.select(); }, 100);
 
@@ -1906,7 +1905,6 @@ document.getElementById('btn-capturar').addEventListener('click', async () => {
 document.getElementById('btn-confirmar-salvar').addEventListener('click', () => {
   if (!_canvasCapturado) return;
   let nome = (document.getElementById('input-nome-arquivo').value || 'mapa_acs_varjota').trim();
-  // Remove extensão se o usuário já digitou
   nome = nome.replace(/\.png$/i, '');
   const link = document.createElement('a');
   link.download = `${nome}.png`;
@@ -1922,7 +1920,6 @@ document.getElementById('btn-cancelar-salvar').addEventListener('click', () => {
   _canvasCapturado = null;
 });
 
-// Fechar modal ao pressionar Enter no campo de nome
 document.getElementById('input-nome-arquivo').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') document.getElementById('btn-confirmar-salvar').click();
   if (e.key === 'Escape') document.getElementById('btn-cancelar-salvar').click();
