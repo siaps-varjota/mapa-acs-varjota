@@ -61,7 +61,7 @@
 
   #map { flex: 1; position: relative; overflow: hidden; }
 
-  /* ─── PAINEL LATERAL — RECOLHÍVEL PARA A DIREITA ───────────────────────── */
+  /* ─── PAINEL LATERAL ───────────────────────────────────────────────────── */
   #painel {
     width: 380px;
     min-width: 380px;
@@ -73,7 +73,6 @@
     box-shadow: -3px 0 12px rgba(0,0,0,.07);
     min-height: 0;
     flex-shrink: 0;
-    /* A transição anima a largura, não transform, para que o mapa expanda */
     transition: min-width 0.32s cubic-bezier(.4,0,.2,1), width 0.32s cubic-bezier(.4,0,.2,1), box-shadow 0.32s;
   }
   #painel.recolhido {
@@ -83,7 +82,7 @@
     border-left: none;
   }
 
-  /* ─── BOTÃO TOGGLE — fica no #map, sempre visível na borda direita ──────── */
+  /* ─── BOTÃO TOGGLE ──────────────────────────────────────────────────────── */
   #painel-toggle {
     position: absolute;
     right: 0;
@@ -107,10 +106,7 @@
     padding: 0;
   }
   #painel-toggle:hover { background: var(--verde2); width: 32px; }
-  #painel-toggle #toggle-icon-el {
-    font-size: 11px;
-    line-height: 1;
-  }
+  #painel-toggle #toggle-icon-el { font-size: 11px; line-height: 1; }
   #painel-toggle .toggle-label {
     font-size: 8px;
     font-weight: 700;
@@ -229,7 +225,6 @@
   .campo input:focus { border-color: var(--verde2); }
   .campo input[type="number"] { font-family: 'JetBrains Mono', monospace; }
 
-  /* ─── CONTROLE DE ROTAÇÃO DO LABEL ───────────────────────────────────────── */
   .campo-rotacao { margin-bottom: 10px; flex-shrink: 0; }
   .campo-rotacao label { font-size: 11px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 5px; }
   .rotacao-controles {
@@ -309,7 +304,6 @@
   .rotacao-preview-label .prev-acs.vazio { color: var(--muted); font-style: italic; }
   .rotacao-preview-label .prev-qtd { display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; }
 
-  /* ─── TOGGLE FIXAR ──────────────────────────────────────────────────────── */
   .fixar-row {
     display: flex;
     align-items: center;
@@ -358,12 +352,14 @@
   }
   .btn-remover:hover { opacity: .7; }
 
-  /* ─── TOOLBAR ───────────────────────────────────────────────────────────── */
+  /* ─── TOOLBAR CENTRALIZADA ──────────────────────────────────────────────── */
   #toolbar {
     position: absolute;
     bottom: 12px;
-    left: 10px;
-    right: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100% - 20px);
     z-index: 900;
     display: flex;
     align-items: center;
@@ -446,7 +442,7 @@
   #btn-ruas:hover { background: var(--borda); }
   #btn-ruas.ativo { background: #e3f2fd; color: var(--azul); border-color: #90caf9; }
 
-  /* ─── CONTROLE DE ROTAÇÃO DO MAPA (toolbar) — estilo card ───────────────── */
+  /* ─── CONTROLE DE ROTAÇÃO DO MAPA ───────────────────────────────────────── */
   #rot-controls {
     display: flex;
     align-items: center;
@@ -482,11 +478,7 @@
     width: auto !important;
     padding: 0 6px !important;
   }
-  #rot-wrap-slider {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
+  #rot-wrap-slider { display: flex; align-items: center; gap: 4px; }
   #rot-range {
     width: 60px;
     height: 4px;
@@ -533,11 +525,11 @@
   }
   #dica.visivel { opacity: 1; }
 
-  /* ─── LEGENDA DO ASTERISCO ──────────────────────────────────────────────── */
   #legenda-asterisco {
     position: absolute;
     bottom: 58px;
-    left: 10px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 800;
     background: rgba(255,255,255,.92);
     padding: 4px 11px;
@@ -552,6 +544,7 @@
     display: flex;
     align-items: center;
     gap: 5px;
+    white-space: nowrap;
   }
   #legenda-asterisco strong {
     font-family: 'JetBrains Mono', monospace;
@@ -567,7 +560,6 @@
     transform-origin: 50% 50%;
     transition: transform 0.15s ease-out;
   }
-
   .marker-wrapper.mini .marker-label { display: none; }
   .marker-wrapper.medio .lbl-qtd { display: none; }
   .marker-wrapper.medio .lbl-sep { display: none; }
@@ -609,37 +601,11 @@
     position: relative;
     z-index: 3;
   }
-  .marker-label .lbl-acs {
-    display: inline;
-    color: var(--verde);
-    font-size: 11px;
-    font-weight: 700;
-  }
+  .marker-label .lbl-acs { display: inline; color: var(--verde); font-size: 11px; font-weight: 700; }
   .marker-label .lbl-acs.vazio { color: var(--muted); font-style: italic; }
-  .marker-label .lbl-sep {
-    display: inline;
-    color: var(--borda);
-    font-size: 10px;
-    margin: 0 4px;
-  }
-  .marker-label .lbl-qtd {
-    display: inline;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--texto);
-    letter-spacing: .3px;
-  }
-  /* asterisco em destaque no label do mapa */
-  .marker-label .lbl-ast {
-    display: inline;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--verde2);
-    vertical-align: super;
-    line-height: 0;
-  }
+  .marker-label .lbl-sep { display: inline; color: var(--borda); font-size: 10px; margin: 0 4px; }
+  .marker-label .lbl-qtd { display: inline; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--texto); letter-spacing: .3px; }
+  .marker-label .lbl-ast { display: inline; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: var(--verde2); vertical-align: super; line-height: 0; }
 
   #lados-lista::-webkit-scrollbar { width: 5px; }
   #lados-lista::-webkit-scrollbar-track { background: transparent; }
@@ -662,6 +628,7 @@
     color: var(--verde);
   }
 
+  /* ─── MODAIS ─────────────────────────────────────────────────────────────── */
   .modal-overlay {
     position: fixed; inset: 0; z-index: 9999;
     background: rgba(10,20,35,.7);
@@ -695,10 +662,11 @@
   .modal-field input {
     width: 100%; padding: 10px 12px;
     border: 1px solid var(--borda); border-radius: 8px;
-    font-size: 13px; font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; font-family: 'Sora', sans-serif;
     outline: none; transition: border-color .2s;
   }
   .modal-field input:focus { border-color: var(--verde2); }
+  .modal-field input.mono { font-family: 'JetBrains Mono', monospace; }
   .modal-erro { color: var(--vermelho); font-size: 12px; min-height: 18px; margin-bottom: 10px; text-align: center; }
   .modal-btns { display: flex; flex-direction: column; gap: 8px; }
   .modal-btns button {
@@ -713,6 +681,31 @@
     border: 1px solid var(--borda); font-weight: 400;
   }
   .modal-btns .btn-secundario:hover { background: var(--borda); }
+  .modal-btns .btn-azul { background: var(--azul); }
+  .modal-btns .btn-azul:hover { background: #1976d2; }
+
+  /* ─── PREVIEW DO MAPA NO MODAL DE SALVAR ────────────────────────────────── */
+  #preview-canvas-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--borda);
+    margin-bottom: 16px;
+    background: var(--cinza);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+  }
+  #preview-canvas-wrap canvas, #preview-canvas-wrap img {
+    max-width: 100%;
+    max-height: 220px;
+    display: block;
+  }
+  #preview-spinner {
+    font-size: 28px;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   #status-nuvem {
     position: absolute; top: 10px; right: 10px; z-index: 800;
@@ -771,12 +764,10 @@
       </div>
       <div id="dica">🖱️ Clique no mapa para marcar um lado de quadra</div>
 
-      <!-- Legenda do asterisco -->
       <div id="legenda-asterisco">
         <strong>*</strong> = número de pessoas cadastradas
       </div>
 
-      <!-- Botão toggle do painel — sempre visível na borda direita do mapa -->
       <button id="painel-toggle" onclick="togglePainel()" title="Recolher/expandir painel">
         <span id="toggle-icon-el">▶</span>
         <span class="toggle-label">Painel</span>
@@ -788,7 +779,6 @@
           <span class="drag-label">Arraste para o mapa</span>
         </div>
 
-        <!-- Controle de rotação estilo card -->
         <div id="rot-controls">
           <button id="btn-rot-esq" title="Girar -10°">↺</button>
           <button id="btn-rot-menos1" title="Girar -1°" style="font-size:15px">−</button>
@@ -809,56 +799,68 @@
       <div id="drag-ghost">📍</div>
     </div>
 
-  <div id="modal-config" class="modal-overlay oculto">
-    <div class="modal-box">
-      <div class="modal-icon">☁️</div>
-      <h2>Configurar armazenamento na nuvem</h2>
-      <p>Para salvar e compartilhar os dados com outras pessoas, informe sua chave do <strong>JSONBin.io</strong> (gratuito).</p>
-
-      <div class="modal-steps">
-        <div class="step"><span>1</span> Acesse <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> e crie uma conta gratuita</div>
-        <div class="step"><span>2</span> No painel, vá em <strong>API Keys</strong> e copie sua <strong>Master Key</strong></div>
-        <div class="step"><span>3</span> Cole abaixo e clique em Conectar</div>
-      </div>
-
-      <div class="modal-field">
-        <label>🔑 Master Key do JSONBin</label>
-        <input type="password" id="input-apikey" placeholder="$2a$10$..." autocomplete="off" />
-      </div>
-
-      <div class="modal-field" id="field-binid" style="display:none">
-        <label>📦 Bin ID (deixe em branco para criar novo)</label>
-        <input type="text" id="input-binid" placeholder="Será criado automaticamente" autocomplete="off" />
-      </div>
-
-      <div id="modal-erro" class="modal-erro"></div>
-
-      <div class="modal-btns">
-        <button id="btn-modal-avancar">Continuar →</button>
-        <button id="btn-modal-pular" class="btn-secundario">Usar sem nuvem</button>
+    <!-- ─── MODAL CONFIG NUVEM ─────────────────────────────────────── -->
+    <div id="modal-config" class="modal-overlay oculto">
+      <div class="modal-box">
+        <div class="modal-icon">☁️</div>
+        <h2>Configurar armazenamento na nuvem</h2>
+        <p>Para salvar e compartilhar os dados com outras pessoas, informe sua chave do <strong>JSONBin.io</strong> (gratuito).</p>
+        <div class="modal-steps">
+          <div class="step"><span>1</span> Acesse <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> e crie uma conta gratuita</div>
+          <div class="step"><span>2</span> No painel, vá em <strong>API Keys</strong> e copie sua <strong>Master Key</strong></div>
+          <div class="step"><span>3</span> Cole abaixo e clique em Conectar</div>
+        </div>
+        <div class="modal-field">
+          <label>🔑 Master Key do JSONBin</label>
+          <input type="password" id="input-apikey" class="mono" placeholder="$2a$10$..." autocomplete="off" />
+        </div>
+        <div class="modal-field" id="field-binid" style="display:none">
+          <label>📦 Bin ID (deixe em branco para criar novo)</label>
+          <input type="text" id="input-binid" class="mono" placeholder="Será criado automaticamente" autocomplete="off" />
+        </div>
+        <div id="modal-erro" class="modal-erro"></div>
+        <div class="modal-btns">
+          <button id="btn-modal-avancar">Continuar →</button>
+          <button id="btn-modal-pular" class="btn-secundario">Usar sem nuvem</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div id="toast"></div>
+    <!-- ─── MODAL SALVAR IMAGEM ────────────────────────────────────── -->
+    <div id="modal-salvar" class="modal-overlay oculto">
+      <div class="modal-box">
+        <div class="modal-icon">🖼️</div>
+        <h2>Salvar imagem do mapa</h2>
+        <div id="preview-canvas-wrap">
+          <span id="preview-spinner">⏳</span>
+        </div>
+        <div class="modal-field">
+          <label>📝 Nome do arquivo</label>
+          <input type="text" id="input-nome-arquivo" placeholder="mapa_acs_varjota" />
+        </div>
+        <div class="modal-btns">
+          <button id="btn-confirmar-salvar" class="btn-azul">⬇️ Baixar imagem</button>
+          <button id="btn-cancelar-salvar" class="btn-secundario">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast"></div>
 
     <div id="painel">
       <div id="painel-header">
         <h2>📊 Totais por ACS</h2>
         <p>Atualizado em tempo real conforme preenchimento</p>
       </div>
-
       <div id="resumo">
         <h3>ACS cadastradas</h3>
         <div id="lista-acs">
           <p id="sem-dados">Nenhum dado inserido ainda.</p>
         </div>
       </div>
-
       <div id="lados-lista">
         <h3>Lados de quadra marcados</h3>
       </div>
-
       <div id="total-geral">
         <span>Total geral de pessoas</span>
         <span class="num" id="total-num">0</span>
@@ -885,14 +887,12 @@ function togglePainel() {
   const icon   = document.getElementById('toggle-icon-el');
   painelAberto = !painelAberto;
   painel.classList.toggle('recolhido', !painelAberto);
-  // Seta aponta para esquerda quando painel está aberto (clique fecha)
-  // Seta aponta para direita quando painel está fechado (clique abre)
   icon.textContent = painelAberto ? '▶' : '◀';
   setTimeout(() => map.invalidateSize(), 340);
 }
 
 // ─────────────────────────────────────────
-//  JSONBIN — CONFIGURAÇÃO
+//  JSONBIN
 // ─────────────────────────────────────────
 const LS_KEY   = 'acs_varjota_cfg';
 let jbApiKey   = '';
@@ -958,9 +958,7 @@ async function carregarDados(dados) {
 //  CÁLCULO DE ÂNGULO DO LABEL
 // ─────────────────────────────────────────
 function calcAngLabel(anguloRua, rotacaoManual, fixado) {
-  if (fixado) {
-    return rotacaoManual || 0;
-  }
+  if (fixado) return rotacaoManual || 0;
   let a = (anguloRua - mapBearing + (rotacaoManual || 0) + 360) % 360;
   if (a >  90 && a <= 270) a -= 180;
   if (a > 270)              a -= 360;
@@ -968,12 +966,11 @@ function calcAngLabel(anguloRua, rotacaoManual, fixado) {
 }
 
 // ─────────────────────────────────────────
-//  GERAR HTML DO MARCADOR  (label: ACS | X*)
+//  GERAR HTML DO MARCADOR
 // ─────────────────────────────────────────
 function buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual, fixado) {
   const acsLbl = acs || `#${id}`;
   const acsCls = acs ? 'lbl-acs' : 'lbl-acs vazio';
-  // ★ formato: número + asterisco (sem "pessoas")
   const qtdLbl = pessoas > 0 ? `${pessoas}` : '–';
   const pre    = !!(acs || pessoas);
   const ang    = calcAngLabel(anguloRua, rotacaoManual || 0, fixado);
@@ -994,16 +991,10 @@ function buildIcon(id, acs, pessoas, anguloRua, rotacaoManual, fixado) {
   });
 }
 
-// ─────────────────────────────────────────
-//  ATUALIZAR TODOS OS ÍCONES
-// ─────────────────────────────────────────
 function atualizarTodosOsIcones() {
   lados.forEach(l => atualizarIconeMarcador(l.id));
 }
 
-// ─────────────────────────────────────────
-//  ESCALA POR ZOOM
-// ─────────────────────────────────────────
 function calcZoomScale(zoom) {
   const scale = Math.pow(2, (zoom - 16) * 0.6);
   return Math.min(3.0, Math.max(0.15, scale)) * 0.5;
@@ -1165,7 +1156,16 @@ document.getElementById('btn-modal-pular').addEventListener('click', () => {
 // ─────────────────────────────────────────
 //  MAPA
 // ─────────────────────────────────────────
-const map = L.map('map', { zoomControl: true, rotate: true, rotateControl: false, bearing: 0, zoomDelta: 0.5, zoomSnap: 0.5, wheelPxPerZoomLevel: 120 }).setView([-4.1928215, -40.4677377], 16);
+const map = L.map('map', {
+  zoomControl: true,
+  rotate: true,
+  rotateControl: false,
+  bearing: 0,
+  zoomDelta: 0.5,
+  zoomSnap: 0.5,
+  wheelPxPerZoomLevel: 120
+}).setView([-4.1928215, -40.4677377], 16);
+
 let mapBearing = 0;
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -1256,6 +1256,7 @@ async function finalizarDrag(cx, cy) {
 async function buscarRuaEAngulo(lat, lng) {
   let rua = 'Localização marcada';
   let angulo = 0;
+
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
     const r = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
@@ -1268,13 +1269,14 @@ async function buscarRuaEAngulo(lat, lng) {
     const bbox = `${lat-delta},${lng-delta},${lat+delta},${lng+delta}`;
     const query = `[out:json][timeout:5];way[highway](${bbox});out geom;`;
     const ov = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST', body: query
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `data=${encodeURIComponent(query)}`
     });
     const od = await ov.json();
 
     let melhorDist = Infinity;
     let melhorAng  = 0;
-
     for (const way of (od.elements || [])) {
       if (!way.geometry || way.geometry.length < 2) continue;
       for (let i = 0; i < way.geometry.length - 1; i++) {
@@ -1316,23 +1318,14 @@ function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
     if (l) { l.lat = e.target.getLatLng().lat; l.lng = e.target.getLatLng().lng; }
     buscarRuaEAngulo(e.target.getLatLng().lat, e.target.getLatLng().lng).then(({ rua: nome, angulo: ang }) => {
       const l2 = lados.find(x => x.id === id);
-      if (l2) {
-        l2.rua    = nome;
-        l2.angulo = ang;
-        atualizarCardHeader(id);
-        atualizarIconeMarcador(id);
-        agendarSave();
-      }
+      if (l2) { l2.rua = nome; l2.angulo = ang; atualizarCardHeader(id); atualizarIconeMarcador(id); agendarSave(); }
     });
   });
 
   const lado = { id, lat, lng, rua, angulo, rotacaoManual: 0, fixado: false, acs: '', pessoas: 0, marker };
   lados.push(lado);
 
-  // Abrir painel se estiver recolhido
-  if (!painelAberto) {
-    togglePainel();
-  }
+  if (!painelAberto) togglePainel();
 
   renderCards();
   atualizarResumo();
@@ -1378,7 +1371,6 @@ function renderCards() {
     const body = document.createElement('div');
     body.className = 'lado-card-body';
 
-    // Campo Rua
     const campoRua = document.createElement('div');
     campoRua.className = 'campo';
     campoRua.innerHTML = '<label>🏘️ Nome da Rua / Localização</label>';
@@ -1386,12 +1378,9 @@ function renderCards() {
     inputRua.type = 'text';
     inputRua.placeholder = 'Ex.: Rua das Flores';
     inputRua.value = lado.rua || '';
-    inputRua.addEventListener('input', function() {
-      atualizarLado(lado.id, 'rua', this.value);
-    });
+    inputRua.addEventListener('input', function() { atualizarLado(lado.id, 'rua', this.value); });
     campoRua.appendChild(inputRua);
 
-    // Campo ACS
     const campoAcs = document.createElement('div');
     campoAcs.className = 'campo';
     campoAcs.innerHTML = '<label>👤 Nome da ACS</label>';
@@ -1402,14 +1391,10 @@ function renderCards() {
     inputAcs.addEventListener('input', function() {
       atualizarLado(lado.id, 'acs', this.value);
       const prev = body.querySelector('.rotacao-preview-label .prev-acs');
-      if (prev) {
-        prev.textContent = this.value || `#${lado.id}`;
-        prev.className = 'prev-acs' + (this.value ? '' : ' vazio');
-      }
+      if (prev) { prev.textContent = this.value || `#${lado.id}`; prev.className = 'prev-acs' + (this.value ? '' : ' vazio'); }
     });
     campoAcs.appendChild(inputAcs);
 
-    // Campo Pessoas
     const campoPessoas = document.createElement('div');
     campoPessoas.className = 'campo';
     campoPessoas.innerHTML = '<label>👥 Total de pessoas neste lado</label>';
@@ -1421,23 +1406,16 @@ function renderCards() {
     inputPessoas.addEventListener('input', function() {
       atualizarLado(lado.id, 'pessoas', this.value);
       const prev = body.querySelector('.rotacao-preview-label .prev-qtd');
-      if (prev) {
-        const v = parseInt(this.value, 10) || 0;
-        // Preview do label usa o mesmo formato X*
-        prev.textContent = v > 0 ? `${v}*` : '–*';
-      }
+      if (prev) { const v = parseInt(this.value, 10) || 0; prev.textContent = v > 0 ? `${v}*` : '–*'; }
     });
     campoPessoas.appendChild(inputPessoas);
 
-    // ─── CAMPO DE ROTAÇÃO DO LABEL ───────────────────────────
     const campoRot = document.createElement('div');
     campoRot.className = 'campo-rotacao';
-
     const labelRot = document.createElement('label');
     labelRot.innerHTML = '🔄 Rotação do nome no mapa';
     campoRot.appendChild(labelRot);
 
-    // Preview — mostra o label no formato atual ACS | X*
     const preview = document.createElement('div');
     preview.className = 'rotacao-preview';
     const previewLabel = document.createElement('div');
@@ -1451,48 +1429,18 @@ function renderCards() {
     preview.appendChild(previewLabel);
     campoRot.appendChild(preview);
 
-    // Controles
     const controles = document.createElement('div');
     controles.className = 'rotacao-controles';
 
-    const btnMenos10 = document.createElement('button');
-    btnMenos10.textContent = '↺';
-    btnMenos10.title = 'Girar -10°';
-
-    const btnMenos1 = document.createElement('button');
-    btnMenos1.textContent = '−';
-    btnMenos1.title = 'Girar -1°';
-    btnMenos1.style.fontSize = '16px';
-    btnMenos1.style.fontWeight = '700';
-
-    const wrapSlider = document.createElement('div');
-    wrapSlider.className = 'rot-input-wrap';
-    const slider = document.createElement('input');
-    slider.type = 'range';
-    slider.min = '-180';
-    slider.max = '180';
-    slider.step = '1';
-    slider.value = String(rotManual);
-    const valDisplay = document.createElement('span');
-    valDisplay.className = 'rot-val';
-    valDisplay.textContent = `${rotManual}°`;
-    wrapSlider.appendChild(slider);
-    wrapSlider.appendChild(valDisplay);
-
-    const btnMais1 = document.createElement('button');
-    btnMais1.textContent = '+';
-    btnMais1.title = 'Girar +1°';
-    btnMais1.style.fontSize = '16px';
-    btnMais1.style.fontWeight = '700';
-
-    const btnMais10 = document.createElement('button');
-    btnMais10.textContent = '↻';
-    btnMais10.title = 'Girar +10°';
-
-    const btnReset = document.createElement('button');
-    btnReset.textContent = '0°';
-    btnReset.className = 'btn-rot-snap';
-    btnReset.title = 'Resetar rotação';
+    const btnMenos10 = document.createElement('button'); btnMenos10.textContent = '↺'; btnMenos10.title = 'Girar -10°';
+    const btnMenos1  = document.createElement('button'); btnMenos1.textContent = '−'; btnMenos1.title = 'Girar -1°'; btnMenos1.style.fontSize = '16px'; btnMenos1.style.fontWeight = '700';
+    const wrapSlider = document.createElement('div'); wrapSlider.className = 'rot-input-wrap';
+    const slider     = document.createElement('input'); slider.type = 'range'; slider.min = '-180'; slider.max = '180'; slider.step = '1'; slider.value = String(rotManual);
+    const valDisplay = document.createElement('span'); valDisplay.className = 'rot-val'; valDisplay.textContent = `${rotManual}°`;
+    wrapSlider.appendChild(slider); wrapSlider.appendChild(valDisplay);
+    const btnMais1  = document.createElement('button'); btnMais1.textContent = '+'; btnMais1.title = 'Girar +1°'; btnMais1.style.fontSize = '16px'; btnMais1.style.fontWeight = '700';
+    const btnMais10 = document.createElement('button'); btnMais10.textContent = '↻'; btnMais10.title = 'Girar +10°';
+    const btnReset  = document.createElement('button'); btnReset.textContent = '0°'; btnReset.className = 'btn-rot-snap'; btnReset.title = 'Resetar rotação';
 
     function aplicarRotacaoLabel(val) {
       let v = Math.round(val);
@@ -1519,7 +1467,6 @@ function renderCards() {
     controles.appendChild(btnReset);
     campoRot.appendChild(controles);
 
-    // Toggle Fixar
     const fixarRow = document.createElement('div');
     fixarRow.className = 'fixar-row' + (lado.fixado ? ' ativo' : '');
     fixarRow.title = 'Quando fixado, o nome não gira com o mapa';
@@ -1560,7 +1507,6 @@ function renderCards() {
     body.appendChild(campoPessoas);
     body.appendChild(campoRot);
     body.appendChild(btnRem);
-
     card.appendChild(header);
     card.appendChild(body);
     lista.appendChild(card);
@@ -1593,22 +1539,13 @@ function atualizarCardHeader(id) {
   atualizarResumo();
 }
 
-// ─────────────────────────────────────────
-//  ATUALIZAR DADOS DE UM LADO
-// ─────────────────────────────────────────
 function atualizarLado(id, campo, valor) {
   const lado = lados.find(x => x.id === id);
   if (!lado) return;
-
-  if (campo === 'pessoas') {
-    lado.pessoas = parseInt(valor, 10) || 0;
-  } else if (campo === 'rotacaoManual') {
-    lado.rotacaoManual = Number(valor) || 0;
-  } else if (campo === 'fixado') {
-    lado.fixado = !!valor;
-  } else {
-    lado[campo] = valor;
-  }
+  if (campo === 'pessoas') { lado.pessoas = parseInt(valor, 10) || 0; }
+  else if (campo === 'rotacaoManual') { lado.rotacaoManual = Number(valor) || 0; }
+  else if (campo === 'fixado') { lado.fixado = !!valor; }
+  else { lado[campo] = valor; }
 
   const cardEl = document.getElementById(`card-${id}`);
   if (cardEl) {
@@ -1624,9 +1561,6 @@ function atualizarLado(id, campo, valor) {
   agendarSave();
 }
 
-// ─────────────────────────────────────────
-//  REMOVER LADO
-// ─────────────────────────────────────────
 function removerLado(id) {
   const idx = lados.findIndex(x => x.id === id);
   if (idx === -1) return;
@@ -1637,9 +1571,6 @@ function removerLado(id) {
   atualizarBadge();
 }
 
-// ─────────────────────────────────────────
-//  ATUALIZAR ÍCONE DO MARCADOR
-// ─────────────────────────────────────────
 function atualizarIconeMarcador(id) {
   const lado = lados.find(x => x.id === id);
   if (!lado) return;
@@ -1652,7 +1583,6 @@ function atualizarIconeMarcador(id) {
 function atualizarResumo() {
   const listaEl = document.getElementById('lista-acs');
   const totalEl = document.getElementById('total-num');
-
   const mapa = {};
   let total = 0;
   lados.forEach(l => {
@@ -1663,15 +1593,12 @@ function atualizarResumo() {
     if (!mapa[nome]) mapa[nome] = 0;
     mapa[nome] += qtd;
   });
-
   totalEl.textContent = total.toLocaleString('pt-BR');
-
   const nomes = Object.keys(mapa);
   if (nomes.length === 0) {
     listaEl.innerHTML = '<p id="sem-dados" style="font-size:12px;color:var(--muted);font-style:italic">Nenhum dado inserido ainda.</p>';
     return;
   }
-
   nomes.sort((a, b) => mapa[b] - mapa[a]);
   listaEl.innerHTML = nomes.map(nome => `
     <div class="acs-total-row">
@@ -1680,18 +1607,15 @@ function atualizarResumo() {
     </div>`).join('');
 }
 
-// ─────────────────────────────────────────
-//  BADGE
-// ─────────────────────────────────────────
 function atualizarBadge() {
   document.getElementById('badge-lados').textContent = `${lados.length} lado${lados.length !== 1 ? 's' : ''}`;
 }
 
 // ─────────────────────────────────────────
-//  CAMADA DE RUAS (Overpass OSM)
+//  CAMADA DE RUAS (Overpass OSM) — CORRIGIDO
 // ─────────────────────────────────────────
-let ruasLayer    = null;
-let ruasVisiveis = false;
+let ruasLayer      = null;
+let ruasVisiveis   = false;
 let ruasCarregadas = false;
 
 async function carregarRuas() {
@@ -1700,12 +1624,17 @@ async function carregarRuas() {
   btn.disabled = true;
   try {
     const query = `[out:json][timeout:30];
-      (way[highway~"^(residential|unclassified|tertiary|secondary|primary|trunk|living_street|service|footway|path|track)$"](around:3500,-4.1928215,-40.4677377););
-      out geom;`;
+(way[highway~"^(residential|unclassified|tertiary|secondary|primary|trunk|living_street|service|footway|path|track)$"](around:3500,-4.1928215,-40.4677377););
+out geom;`;
+
+    // ── FIX: Content-Type correto + body URL-encoded ──
     const res = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
-      body: query
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `data=${encodeURIComponent(query)}`
     });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
     ruasLayer = L.layerGroup();
@@ -1729,7 +1658,7 @@ async function carregarRuas() {
     ruasCarregadas = true;
     mostrarToast(`✅ ${data.elements?.length || 0} ruas carregadas!`);
   } catch(e) {
-    console.error(e);
+    console.error('Erro ao carregar ruas:', e);
     mostrarToast('❌ Erro ao carregar ruas. Tente novamente.');
     btn.textContent = '🛣️ Ruas';
     btn.disabled = false;
@@ -1741,7 +1670,7 @@ async function carregarRuas() {
 
 function ativarRuas() {
   const btn = document.getElementById('btn-ruas');
-  if (ruasLayer) { ruasLayer.addTo(map); }
+  if (ruasLayer) ruasLayer.addTo(map);
   ruasVisiveis = true;
   btn.textContent = '🛣️ Ruas ✓';
   btn.classList.add('ativo');
@@ -1749,7 +1678,7 @@ function ativarRuas() {
 
 function desativarRuas() {
   const btn = document.getElementById('btn-ruas');
-  if (ruasLayer) { map.removeLayer(ruasLayer); }
+  if (ruasLayer) map.removeLayer(ruasLayer);
   ruasVisiveis = false;
   btn.textContent = '🛣️ Ruas';
   btn.classList.remove('ativo');
@@ -1766,7 +1695,7 @@ styleRua.textContent = `.tooltip-rua { background:#fff; border:1px solid #ccc; b
 document.head.appendChild(styleRua);
 
 // ─────────────────────────────────────────
-//  ROTAÇÃO DO MAPA — com slider estilo card
+//  ROTAÇÃO DO MAPA
 // ─────────────────────────────────────────
 const rotInput = document.getElementById('rot-input');
 const rotRange = document.getElementById('rot-range');
@@ -1793,11 +1722,7 @@ document.getElementById('btn-rot-esq').addEventListener('click',    () => girarM
 document.getElementById('btn-rot-dir').addEventListener('click',    () => girarMapa(10));
 document.getElementById('btn-rot-menos1').addEventListener('click', () => girarMapa(-1));
 document.getElementById('btn-rot-mais1').addEventListener('click',  () => girarMapa(1));
-
-document.getElementById('btn-rot-reset').addEventListener('click', () => {
-  mapBearing = 0;
-  aplicarRotacao();
-});
+document.getElementById('btn-rot-reset').addEventListener('click', () => { mapBearing = 0; aplicarRotacao(); });
 
 rotRange.addEventListener('input', () => {
   const val = parseFloat(rotRange.value);
@@ -1829,14 +1754,9 @@ rotInput.addEventListener('keydown', (e) => {
 // ─────────────────────────────────────────
 document.getElementById('btn-exportar').addEventListener('click', () => {
   const dados = lados.map(l => ({
-    id: l.id,
-    rua: l.rua,
-    lat: l.lat,
-    lng: l.lng,
-    acs: l.acs,
-    pessoas: l.pessoas,
-    rotacaoManual: l.rotacaoManual || 0,
-    fixado: !!l.fixado
+    id: l.id, rua: l.rua, lat: l.lat, lng: l.lng,
+    acs: l.acs, pessoas: l.pessoas,
+    rotacaoManual: l.rotacaoManual || 0, fixado: !!l.fixado
   }));
   const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -1846,32 +1766,33 @@ document.getElementById('btn-exportar').addEventListener('click', () => {
 });
 
 // ─────────────────────────────────────────
-//  CAPTURAR MAPA COMO PNG
+//  CAPTURAR MAPA — COM MODAL PARA RENOMEAR
 // ─────────────────────────────────────────
+let _canvasCapturado = null;
+
 document.getElementById('btn-capturar').addEventListener('click', async () => {
   const btn = document.getElementById('btn-capturar');
   if (btn.classList.contains('capturando')) return;
   btn.classList.add('capturando');
-  btn.textContent = '⏳ Capturando…';
+  btn.textContent = '⏳ Processando…';
 
+  // Esconde elementos de UI antes de capturar
   const toolbar       = document.getElementById('toolbar');
   const statusNuvem   = document.getElementById('status-nuvem');
-  const dica          = document.getElementById('dica');
+  const dicaEl        = document.getElementById('dica');
   const legendaAst    = document.getElementById('legenda-asterisco');
+  const painelToggle  = document.getElementById('painel-toggle');
   toolbar.style.display      = 'none';
   statusNuvem.style.display  = 'none';
-  dica.style.display         = 'none';
+  dicaEl.style.display       = 'none';
   legendaAst.style.display   = 'none';
-  document.getElementById('painel-toggle').style.visibility = 'hidden';
+  painelToggle.style.visibility = 'hidden';
 
   try {
     const mapEl = document.getElementById('map');
     const canvas = await html2canvas(mapEl, {
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-      scale: 2,
-      backgroundColor: '#f4f6f9'
+      useCORS: true, allowTaint: true, logging: false,
+      scale: 2, backgroundColor: '#f4f6f9'
     });
 
     const totalPessoas = document.getElementById('total-num').textContent;
@@ -1885,21 +1806,32 @@ document.getElementById('btn-capturar').addEventListener('click', async () => {
     ctx.fillStyle = '#1a7f4b';
     ctx.fillRect(0, canvas.height, finalCanvas.width, rodapeAltura * 2);
     ctx.drawImage(canvas, 0, 0);
-
     ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${28}px Sora, sans-serif`;
+    ctx.font = `bold 28px Sora, sans-serif`;
     ctx.textBaseline = 'middle';
     ctx.fillText('Mapa ACS — Varjota/CE', 30, canvas.height + rodapeAltura * 0.7);
-
-    ctx.font = `${24}px Sora, sans-serif`;
+    ctx.font = `24px Sora, sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.8)';
     ctx.fillText(`Total: ${totalPessoas} pessoas  ·  Gerado em ${dataAtual}  ·  * = nº de pessoas`, 30, canvas.height + rodapeAltura * 1.5);
 
-    const link = document.createElement('a');
-    link.download = `mapa_acs_varjota_${new Date().toISOString().slice(0,10)}.png`;
-    link.href = finalCanvas.toDataURL('image/png');
-    link.click();
-    mostrarToast('✅ Imagem salva com sucesso!');
+    _canvasCapturado = finalCanvas;
+
+    // Mostra preview no modal
+    const wrap = document.getElementById('preview-canvas-wrap');
+    wrap.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = finalCanvas.toDataURL('image/png');
+    wrap.appendChild(img);
+
+    // Preenche nome sugerido
+    const nomeSugerido = `mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;
+    const inputNome = document.getElementById('input-nome-arquivo');
+    inputNome.value = nomeSugerido;
+
+    // Abre modal
+    document.getElementById('modal-salvar').classList.remove('oculto');
+    setTimeout(() => { inputNome.focus(); inputNome.select(); }, 100);
+
   } catch (e) {
     console.error(e);
     mostrarToast('❌ Erro ao capturar o mapa. Tente novamente.');
@@ -1907,10 +1839,35 @@ document.getElementById('btn-capturar').addEventListener('click', async () => {
     toolbar.style.display      = '';
     statusNuvem.style.display  = '';
     legendaAst.style.display   = '';
-    document.getElementById('painel-toggle').style.visibility = '';
+    painelToggle.style.visibility = '';
     btn.classList.remove('capturando');
     btn.textContent = '🖼️ Salvar Mapa';
   }
+});
+
+document.getElementById('btn-confirmar-salvar').addEventListener('click', () => {
+  if (!_canvasCapturado) return;
+  let nome = (document.getElementById('input-nome-arquivo').value || 'mapa_acs_varjota').trim();
+  // Remove extensão se o usuário já digitou
+  nome = nome.replace(/\.png$/i, '');
+  const link = document.createElement('a');
+  link.download = `${nome}.png`;
+  link.href = _canvasCapturado.toDataURL('image/png');
+  link.click();
+  document.getElementById('modal-salvar').classList.add('oculto');
+  _canvasCapturado = null;
+  mostrarToast('✅ Imagem salva com sucesso!');
+});
+
+document.getElementById('btn-cancelar-salvar').addEventListener('click', () => {
+  document.getElementById('modal-salvar').classList.add('oculto');
+  _canvasCapturado = null;
+});
+
+// Fechar modal ao pressionar Enter no campo de nome
+document.getElementById('input-nome-arquivo').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('btn-confirmar-salvar').click();
+  if (e.key === 'Escape') document.getElementById('btn-cancelar-salvar').click();
 });
 
 // ─────────────────────────────────────────
