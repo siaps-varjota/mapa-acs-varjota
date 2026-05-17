@@ -27,152 +27,219 @@
     --vermelho: #d32f2f;
     --laranja:  #e65100;
     --borda:    #dde3ec;
-    --painel-w: 380px;
-    --aba-w: 26px;
   }
 
   html, body { height: 100%; font-family: 'Sora', sans-serif; background: var(--cinza); color: var(--texto); }
+
   #app { display: flex; flex-direction: column; height: 100vh; }
 
   header {
-    background: var(--verde); color: #fff;
-    padding: 10px 20px; display: flex; align-items: center; gap: 14px;
-    box-shadow: 0 2px 8px var(--sombra); z-index: 1000; flex-shrink: 0;
+    background: var(--verde);
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 8px var(--sombra);
+    z-index: 1000;
+    flex-shrink: 0;
   }
   header .logo { font-size: 28px; }
   header h1 { font-size: 17px; font-weight: 700; line-height: 1.2; }
   header h1 span { font-weight: 300; font-size: 12px; display: block; opacity: .85; }
   header .badge {
-    margin-left: auto; background: rgba(255,255,255,.2);
-    border-radius: 8px; padding: 4px 12px; font-size: 11px; font-weight: 600; letter-spacing: .5px;
+    margin-left: auto;
+    background: rgba(255,255,255,.2);
+    border-radius: 8px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .5px;
   }
 
   #main { display: flex; flex: 1; overflow: hidden; }
-  #map  { flex: 1; position: relative; }
 
-  /* ──────────────────────────────────────────────────────────────────────────
-     PAINEL LATERAL RECOLHÍVEL
-     Estrutura: #painel-outer [ #painel-aba | #painel ]
-     A aba fica SEMPRE visível à esquerda do painel.
-     Quando recolhido, #painel-outer encolhe para só mostrar a aba.
-  ────────────────────────────────────────────────────────────────────────── */
-  #painel-outer {
-    display: flex;
-    flex-direction: row;
-    flex-shrink: 0;
-    width: calc(var(--painel-w) + var(--aba-w));
-    transition: width 0.32s cubic-bezier(.4,0,.2,1);
-    overflow: hidden;
-    box-shadow: -3px 0 12px rgba(0,0,0,.07);
-    z-index: 800;
-  }
-  #painel-outer.recolhido {
-    width: var(--aba-w);
-  }
+  #map { flex: 1; position: relative; overflow: hidden; }
 
-  /* Aba vertical — faixa fina sempre visível */
-  #painel-aba {
-    width: var(--aba-w);
-    min-width: var(--aba-w);
-    flex-shrink: 0;
-    background: var(--verde);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    user-select: none;
-    gap: 8px;
-    transition: background 0.2s;
-    position: relative;
-    z-index: 2;
-  }
-  #painel-aba:hover { background: var(--verde2); }
-
-  .aba-seta {
-    color: #fff;
-    font-size: 12px;
-    line-height: 1;
-    transition: transform 0.32s cubic-bezier(.4,0,.2,1);
-    /* aponta para DIREITA (recolher) */
-    display: inline-block;
-    transform: rotate(0deg);
-  }
-  #painel-outer.recolhido .aba-seta {
-    /* aponta para ESQUERDA (expandir) */
-    transform: rotate(180deg);
-  }
-
-  .aba-txt {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    transform: rotate(180deg);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.8);
-    font-family: 'Sora', sans-serif;
-    white-space: nowrap;
-  }
-
-  /* Painel de conteúdo */
+  /* ─── PAINEL LATERAL — RECOLHÍVEL PARA A DIREITA ───────────────────────── */
   #painel {
-    width: var(--painel-w);
-    flex-shrink: 0;
+    width: 380px;
+    min-width: 380px;
     background: #fff;
     border-left: 1px solid var(--borda);
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    box-shadow: -3px 0 12px rgba(0,0,0,.07);
     min-height: 0;
-    transition: opacity 0.2s;
+    position: relative;
+    flex-shrink: 0;
+    transition: transform 0.32s cubic-bezier(.4,0,.2,1), min-width 0.32s cubic-bezier(.4,0,.2,1), width 0.32s cubic-bezier(.4,0,.2,1);
   }
-  #painel-outer.recolhido #painel {
-    opacity: 0;
-    pointer-events: none;
+  #painel.recolhido {
+    transform: translateX(100%);
+    min-width: 0;
+    width: 0;
   }
 
-  #painel-header { padding: 16px 18px 12px; border-bottom: 1px solid var(--borda); background: var(--cinza); flex-shrink: 0; }
+  /* ─── BOTÃO TOGGLE DO PAINEL ────────────────────────────────────────────── */
+  #painel-toggle {
+    position: absolute;
+    left: -34px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 70px;
+    background: var(--verde);
+    color: #fff;
+    border: none;
+    border-radius: 10px 0 0 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    z-index: 850;
+    box-shadow: -4px 0 14px rgba(0,0,0,.18);
+    transition: background .2s, left .32s cubic-bezier(.4,0,.2,1);
+    padding: 0;
+  }
+  #painel-toggle:hover { background: var(--verde2); }
+  #painel.recolhido #painel-toggle {
+    left: -34px; /* stays at left edge of painel, but painel is off-screen */
+    border-radius: 10px;
+    box-shadow: -4px 0 18px rgba(0,0,0,.22);
+  }
+  #painel-toggle .toggle-icon {
+    font-size: 13px;
+    transition: transform .32s;
+    line-height: 1;
+  }
+  #painel.recolhido #painel-toggle .toggle-icon { transform: scaleX(-1); }
+  #painel-toggle .toggle-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    opacity: .75;
+    line-height: 1;
+  }
+
+  /* Quando recolhido, o toggle fica fixo à direita do mapa */
+  #painel-tab-fixo {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 70px;
+    background: var(--verde);
+    color: #fff;
+    border: none;
+    border-radius: 10px 0 0 10px;
+    cursor: pointer;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    z-index: 850;
+    box-shadow: -4px 0 14px rgba(0,0,0,.2);
+    transition: background .2s;
+    padding: 0;
+  }
+  #painel-tab-fixo:hover { background: var(--verde2); }
+  #painel-tab-fixo.visivel { display: flex; }
+  #painel-tab-fixo .toggle-icon { font-size: 13px; }
+  #painel-tab-fixo .toggle-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    opacity: .75;
+  }
+
+  #painel-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--borda);
+    background: var(--cinza);
+    flex-shrink: 0;
+  }
   #painel-header h2 { font-size: 14px; font-weight: 700; color: var(--verde); }
   #painel-header p  { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-  #resumo { padding: 14px 18px; border-bottom: 1px solid var(--borda); flex-shrink: 0; }
+  #resumo {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--borda);
+    flex-shrink: 0;
+  }
   #resumo h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 10px; }
   #lista-acs { display: flex; flex-direction: column; gap: 6px; }
   .acs-total-row {
-    display: flex; justify-content: space-between; align-items: center;
-    background: var(--verde-bg); border-left: 3px solid var(--verde2);
-    padding: 7px 10px; border-radius: 0 6px 6px 0; transition: all .2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--verde-bg);
+    border-left: 3px solid var(--verde2);
+    padding: 7px 10px;
+    border-radius: 0 6px 6px 0;
+    transition: all .2s;
   }
   .acs-total-row .nome { font-size: 13px; font-weight: 600; }
   .acs-total-row .qtd  {
-    font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 600;
-    color: var(--verde); background: #fff; padding: 2px 10px;
-    border-radius: 20px; border: 1px solid var(--verde2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--verde);
+    background: #fff;
+    padding: 2px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--verde2);
   }
   #sem-dados { font-size: 12px; color: var(--muted); font-style: italic; }
 
   #lados-lista {
-    flex: 1; overflow-y: auto; overflow-x: visible;
-    padding: 12px 18px 24px; display: flex; flex-direction: column; gap: 8px; min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: visible;
+    padding: 12px 18px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
   }
   #lados-lista h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 4px; }
 
   .lado-card {
-    background: var(--cinza); border: 1px solid var(--borda);
-    border-radius: 10px; transition: box-shadow .2s; flex-shrink: 0;
+    background: var(--cinza);
+    border: 1px solid var(--borda);
+    border-radius: 10px;
+    transition: box-shadow .2s;
+    flex-shrink: 0;
   }
   .lado-card:hover { box-shadow: 0 2px 10px var(--sombra); }
   .lado-card.preenchido { border-color: var(--verde2); }
 
   .lado-card-header {
-    display: flex; align-items: center; padding: 9px 12px;
-    background: #fff; gap: 8px; cursor: pointer; user-select: none;
+    display: flex;
+    align-items: center;
+    padding: 9px 12px;
+    background: #fff;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
   }
   .lado-card-header .icone {
-    width: 28px; height: 28px; background: var(--verde-bg); border-radius: 6px;
-    display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
+    width: 28px; height: 28px;
+    background: var(--verde-bg);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
   }
   .lado-card-header .info { flex: 1; min-width: 0; }
   .lado-card-header .rua  { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -186,222 +253,480 @@
   .campo { margin-bottom: 10px; flex-shrink: 0; }
   .campo label { font-size: 11px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 3px; }
   .campo input {
-    width: 100%; padding: 8px 10px; border: 1px solid var(--borda); border-radius: 7px;
-    font-family: 'Sora', sans-serif; font-size: 13px; color: var(--texto); background: #fff;
-    outline: none; transition: border-color .2s; box-sizing: border-box; display: block; flex-shrink: 0;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--borda);
+    border-radius: 7px;
+    font-family: 'Sora', sans-serif;
+    font-size: 13px;
+    color: var(--texto);
+    background: #fff;
+    outline: none;
+    transition: border-color .2s;
+    box-sizing: border-box;
+    display: block;
+    flex-shrink: 0;
   }
   .campo input:focus { border-color: var(--verde2); }
   .campo input[type="number"] { font-family: 'JetBrains Mono', monospace; }
 
-  /* ─── BLOCO DE ROTAÇÃO ─────────────────────────────────────────────────── */
-  .rot-bloco { margin-bottom: 10px; flex-shrink: 0; }
-  .rot-bloco > label { font-size: 11px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 5px; }
-
-  .rot-controles {
-    display: flex; align-items: center; gap: 5px;
-    background: #fff; border: 1px solid var(--borda); border-radius: 8px; padding: 5px 7px;
+  /* ─── CONTROLE DE ROTAÇÃO DO LABEL ───────────────────────────────────────── */
+  .campo-rotacao { margin-bottom: 10px; flex-shrink: 0; }
+  .campo-rotacao label { font-size: 11px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 5px; }
+  .rotacao-controles {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    padding: 5px 8px;
   }
-  .rot-controles.toolbar-mode {
-    background: transparent; border: none; padding: 2px 4px; gap: 3px;
-  }
-
-  .rot-btn {
-    width: 28px; height: 28px; flex-shrink: 0;
-    border: 1px solid var(--borda); border-radius: 6px;
-    background: var(--cinza); cursor: pointer;
+  .rotacao-controles button {
+    width: 28px; height: 28px;
+    border: 1px solid var(--borda);
+    border-radius: 6px;
+    background: var(--cinza);
+    cursor: pointer;
+    font-size: 14px;
     display: flex; align-items: center; justify-content: center;
     transition: background .15s, border-color .15s;
-    padding: 0; line-height: 1; font-family: inherit; font-size: 14px;
+    flex-shrink: 0;
+    padding: 0;
+    line-height: 1;
   }
-  .rot-controles.toolbar-mode .rot-btn {
-    background: transparent; width: 24px; height: 24px; font-size: 13px;
+  .rotacao-controles button:hover { background: var(--borda); border-color: var(--verde2); }
+  .rotacao-controles button.btn-rot-snap {
+    font-size: 10px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    color: var(--azul);
+    width: auto;
+    padding: 0 8px;
   }
-  .rot-btn:hover { background: var(--borda); border-color: var(--verde2); }
-  .rot-btn.snap {
-    font-size: 10px; font-family: 'Sora', sans-serif; font-weight: 700;
-    color: var(--azul); width: auto; padding: 0 8px;
+  .rotacao-controles .rot-input-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
-  .rot-controles.toolbar-mode .rot-btn.snap { padding: 0 6px; font-size: 9px; }
-
-  .rot-slider-wrap { flex: 1; display: flex; align-items: center; gap: 4px; min-width: 80px; }
-  .rot-controles.toolbar-mode .rot-slider-wrap { min-width: 70px; }
-  .rot-slider-wrap input[type="range"] {
-    flex: 1; height: 4px; accent-color: var(--verde2); cursor: pointer;
+  .rotacao-controles input[type="range"] {
+    flex: 1;
+    height: 4px;
+    accent-color: var(--verde2);
+    cursor: pointer;
   }
-  .rot-val {
-    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
-    color: var(--texto); min-width: 34px; text-align: right;
+  .rotacao-controles .rot-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--texto);
+    min-width: 32px;
+    text-align: right;
   }
-  .rot-controles.toolbar-mode .rot-val { font-size: 10px; min-width: 28px; }
-
-  .rot-preview { display: flex; justify-content: center; align-items: center; padding: 8px 0 2px; }
-  .rot-preview-label {
-    background: rgba(255,255,255,0.92); color: var(--texto); border-radius: 5px;
-    padding: 3px 10px; font-size: 11px; font-weight: 600; font-family: 'Sora', sans-serif;
-    white-space: nowrap; box-shadow: 0 1px 6px rgba(0,0,0,.18);
-    border: 1px solid rgba(0,0,0,.08); line-height: 1.5; text-align: center;
-    pointer-events: none; transition: transform .1s;
+  .rotacao-preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0 2px;
   }
-  .rot-preview-label .prev-acs { display: inline; color: var(--verde); font-size: 11px; }
-  .rot-preview-label .prev-acs.vazio { color: var(--muted); font-style: italic; }
-  .rot-preview-label .prev-sep { display: inline; color: var(--borda); font-size: 10px; margin: 0 3px; }
-  .rot-preview-label .prev-qtd { display: inline; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; }
-  .rot-preview-label .prev-ast { display: inline; color: var(--verde); font-size: 9px; font-weight: 700; vertical-align: super; line-height: 0; }
+  .rotacao-preview-label {
+    background: rgba(255,255,255,0.92);
+    color: var(--texto);
+    border-radius: 5px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'Sora', sans-serif;
+    white-space: nowrap;
+    box-shadow: 0 1px 6px rgba(0,0,0,.18);
+    border: 1px solid rgba(0,0,0,.08);
+    line-height: 1.5;
+    text-align: center;
+    pointer-events: none;
+    transition: transform .1s;
+  }
+  .rotacao-preview-label .prev-acs { display: block; color: var(--verde); font-size: 11px; }
+  .rotacao-preview-label .prev-acs.vazio { color: var(--muted); font-style: italic; }
+  .rotacao-preview-label .prev-qtd { display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; }
 
   /* ─── TOGGLE FIXAR ──────────────────────────────────────────────────────── */
   .fixar-row {
-    display: flex; align-items: center; gap: 8px; margin-top: 6px;
-    padding: 6px 8px; background: var(--cinza); border: 1px solid var(--borda);
-    border-radius: 8px; cursor: pointer; user-select: none; transition: background .15s, border-color .15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 6px 8px;
+    background: var(--cinza);
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s, border-color .15s;
   }
   .fixar-row:hover { background: var(--verde-bg); border-color: var(--verde2); }
-  .fixar-row.ativo  { background: var(--verde-bg); border-color: var(--verde2); }
+  .fixar-row.ativo { background: var(--verde-bg); border-color: var(--verde2); }
   .fixar-toggle {
-    width: 36px; height: 20px; background: var(--borda); border-radius: 20px;
-    position: relative; flex-shrink: 0; transition: background .2s;
+    width: 36px; height: 20px;
+    background: var(--borda);
+    border-radius: 20px;
+    position: relative;
+    flex-shrink: 0;
+    transition: background .2s;
   }
   .fixar-toggle::after {
-    content: ''; position: absolute; width: 14px; height: 14px; background: #fff;
-    border-radius: 50%; top: 3px; left: 3px; transition: transform .2s;
+    content: '';
+    position: absolute;
+    width: 14px; height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: transform .2s;
     box-shadow: 0 1px 3px rgba(0,0,0,.25);
   }
   .fixar-row.ativo .fixar-toggle { background: var(--verde2); }
   .fixar-row.ativo .fixar-toggle::after { transform: translateX(16px); }
   .fixar-txt { font-size: 11px; font-weight: 600; color: var(--muted); flex: 1; }
   .fixar-row.ativo .fixar-txt { color: var(--verde); }
+  .fixar-icon { font-size: 13px; }
 
   .btn-remover {
-    display: flex; align-items: center; gap: 5px; background: none; border: none;
-    cursor: pointer; color: var(--vermelho); font-size: 11px; font-weight: 600;
-    padding: 4px 0; margin-top: 2px; transition: opacity .2s;
+    display: flex; align-items: center; gap: 5px;
+    background: none; border: none; cursor: pointer;
+    color: var(--vermelho); font-size: 11px; font-weight: 600;
+    padding: 4px 0; margin-top: 2px;
+    transition: opacity .2s;
   }
   .btn-remover:hover { opacity: .7; }
 
-  /* ─── TOOLBAR ─────────────────────────────────────────────────────────── */
+  /* ─── TOOLBAR ───────────────────────────────────────────────────────────── */
   #toolbar {
-    position: absolute; bottom: 12px; left: 10px; right: 10px; z-index: 900;
-    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-    background: #ffffffee; padding: 6px 10px; border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,.18); backdrop-filter: blur(6px);
+    position: absolute;
+    bottom: 12px;
+    left: 10px;
+    right: 10px;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #ffffffee;
+    padding: 5px 10px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.18);
+    backdrop-filter: blur(6px);
   }
-  #toolbar > button {
-    padding: 5px 12px; border-radius: 8px; border: none; cursor: pointer;
-    font-family: 'Sora', sans-serif; font-size: 11px; font-weight: 600;
-    transition: all .2s; white-space: nowrap; height: 32px;
-    display: flex; align-items: center; gap: 4px;
+  #toolbar button {
+    padding: 5px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    transition: all .2s;
+    white-space: nowrap;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
   #drag-handle {
-    display: flex; align-items: center; gap: 6px;
-    background: var(--verde); color: #fff; padding: 5px 14px; border-radius: 8px;
-    cursor: grab; font-family: 'Sora', sans-serif; font-size: 11px; font-weight: 600;
-    user-select: none; white-space: nowrap; height: 32px; transition: background .2s, transform .1s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--verde);
+    color: #fff;
+    padding: 5px 14px;
+    border-radius: 8px;
+    cursor: grab;
+    font-family: 'Sora', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    user-select: none;
+    white-space: nowrap;
+    height: 32px;
+    transition: background .2s, transform .1s;
   }
   #drag-handle:hover { background: var(--verde2); }
   #drag-handle:active { cursor: grabbing; transform: scale(.96); }
   #drag-handle.dragging { background: var(--laranja); opacity: .7; }
-
-  #rot-mapa-wrap {
-    display: flex; align-items: center; gap: 5px;
-    background: var(--cinza); border: 1px solid var(--borda); border-radius: 8px;
-    padding: 3px 8px; height: 32px; flex-shrink: 0;
-  }
-  #rot-mapa-wrap .rot-lbl {
-    font-size: 9px; font-weight: 700; color: var(--muted);
-    text-transform: uppercase; letter-spacing: .8px; white-space: nowrap; user-select: none;
-  }
-
+  .drag-icon { font-size: 13px; }
   #drag-ghost {
-    position: fixed; pointer-events: none; z-index: 9999; font-size: 28px; display: none;
-    transform: translate(-50%, -100%); filter: drop-shadow(0 3px 6px rgba(0,0,0,.4));
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    font-size: 28px;
+    display: none;
+    transform: translate(-50%, -100%);
+    filter: drop-shadow(0 3px 6px rgba(0,0,0,.4));
   }
-  #btn-exportar { background: var(--cinza); color: var(--texto); border: 1px solid var(--borda); }
+  #btn-exportar {
+    background: var(--cinza);
+    color: var(--texto);
+    border: 1px solid var(--borda);
+  }
   #btn-exportar:hover { background: var(--borda); }
-  #btn-limpar   { background: var(--cinza); color: var(--vermelho); border: 1px solid #ffcdd2; }
+  #btn-limpar {
+    background: var(--cinza);
+    color: var(--vermelho);
+    border: 1px solid #ffcdd2;
+  }
   #btn-limpar:hover { background: #ffebee; }
-  #btn-capturar { background: var(--cinza); color: var(--azul); border: 1px solid #90caf9; }
+  #btn-capturar {
+    background: var(--cinza);
+    color: var(--azul);
+    border: 1px solid #90caf9;
+  }
   #btn-capturar:hover { background: #e3f2fd; }
   #btn-capturar.capturando { opacity: .6; cursor: wait; }
-  #btn-ruas { background: var(--cinza); color: var(--texto); border: 1px solid var(--borda); }
+  #btn-ruas {
+    background: var(--cinza);
+    color: var(--texto);
+    border: 1px solid var(--borda);
+  }
   #btn-ruas:hover { background: var(--borda); }
   #btn-ruas.ativo { background: #e3f2fd; color: var(--azul); border-color: #90caf9; }
 
-  #legenda-asterisco {
-    position: absolute; bottom: 60px; left: 10px; z-index: 800;
-    background: rgba(255,255,255,0.93); border: 1px solid var(--borda); border-radius: 8px;
-    padding: 5px 10px; font-size: 10px; font-family: 'Sora', sans-serif; color: var(--muted);
-    box-shadow: 0 2px 8px rgba(0,0,0,.10); pointer-events: none; backdrop-filter: blur(4px);
+  /* ─── CONTROLE DE ROTAÇÃO DO MAPA (toolbar) — estilo card ───────────────── */
+  #rot-controls {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: #fff;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    padding: 4px 7px;
+    height: 32px;
+    flex-shrink: 0;
   }
-  #legenda-asterisco strong { color: var(--verde); font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+  #rot-controls button {
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--borda);
+    border-radius: 5px;
+    background: var(--cinza);
+    cursor: pointer;
+    font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, border-color .15s;
+    flex-shrink: 0;
+    padding: 0;
+    line-height: 1;
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+    color: var(--texto);
+  }
+  #rot-controls button:hover { background: var(--borda); border-color: var(--verde2); }
+  #btn-rot-reset {
+    font-size: 9px !important;
+    color: var(--azul) !important;
+    width: auto !important;
+    padding: 0 6px !important;
+  }
+  #rot-wrap-slider {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #rot-range {
+    width: 60px;
+    height: 4px;
+    accent-color: var(--verde2);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 0;
+  }
+  #rot-input {
+    width: 38px;
+    padding: 1px 3px;
+    border: 1px solid var(--borda);
+    border-radius: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--texto);
+    background: var(--cinza);
+    text-align: center;
+    outline: none;
+    height: 22px;
+    -moz-appearance: textfield;
+  }
+  #rot-input::-webkit-inner-spin-button,
+  #rot-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  #rot-input:focus { border-color: var(--verde2); background: #fff; }
 
   #dica {
-    position: absolute; top: 70px; left: 50%; transform: translateX(-50%); z-index: 900;
-    background: var(--azul); color: #fff; padding: 8px 18px; border-radius: 50px;
-    font-size: 12px; font-weight: 600; pointer-events: none; opacity: 0; transition: opacity .3s;
+    position: absolute;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 900;
+    background: var(--azul);
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 600;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .3s;
   }
   #dica.visivel { opacity: 1; }
 
-  /* ─── MARCADORES ─────────────────────────────────────────────────────────── */
-  .marker-wrapper {
-    position: relative; cursor: pointer; display: inline-block;
-    transform: translate(-50%, -50%) scale(var(--zoom-scale, 0.5));
-    transform-origin: 50% 50%; transition: transform 0.15s ease-out;
+  /* ─── LEGENDA DO ASTERISCO ──────────────────────────────────────────────── */
+  #legenda-asterisco {
+    position: absolute;
+    bottom: 58px;
+    left: 10px;
+    z-index: 800;
+    background: rgba(255,255,255,.92);
+    padding: 4px 11px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--borda);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
   }
-  .marker-wrapper.mini  .marker-label { display: none; }
-  .marker-wrapper.medio .lbl-qtd  { display: none; }
-  .marker-wrapper.medio .lbl-sep  { display: none; }
-  .marker-wrapper.medio .lbl-ast  { display: none; }
+  #legenda-asterisco strong {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--verde);
+    font-size: 11px;
+  }
+
+  .marker-wrapper {
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+    transform: translate(-50%, -50%) scale(var(--zoom-scale, 0.5));
+    transform-origin: 50% 50%;
+    transition: transform 0.15s ease-out;
+  }
+
+  .marker-wrapper.mini .marker-label { display: none; }
+  .marker-wrapper.medio .lbl-qtd { display: none; }
+  .marker-wrapper.medio .lbl-sep { display: none; }
 
   .marker-pin {
-    position: absolute; width: 10px; height: 10px;
-    background: var(--verde); border: 2px solid #fff; border-radius: 50%;
-    box-shadow: 0 1px 5px rgba(0,0,0,.4); transition: background .2s;
-    top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2;
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--verde);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 5px rgba(0,0,0,.4);
+    transition: background .2s;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
   }
   .marker-wrapper:hover .marker-pin { background: var(--laranja); }
   .marker-wrapper.preenchido .marker-pin { background: var(--azul); }
 
   .marker-label {
-    display: block; background: rgba(255,255,255,0.92); color: var(--texto);
-    border-radius: 5px; padding: 2px 8px; font-size: 11px; font-weight: 600;
-    font-family: 'Sora', sans-serif; white-space: nowrap;
-    box-shadow: 0 1px 6px rgba(0,0,0,.18); border: 1px solid rgba(0,0,0,.08);
-    line-height: 1.6; text-align: center; pointer-events: none;
-    transform: rotate(var(--ang, 0deg)); transform-origin: center center;
-    position: relative; z-index: 3;
+    display: block;
+    background: rgba(255,255,255,0.92);
+    color: var(--texto);
+    border-radius: 5px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'Sora', sans-serif;
+    white-space: nowrap;
+    box-shadow: 0 1px 6px rgba(0,0,0,.18);
+    border: 1px solid rgba(0,0,0,.08);
+    line-height: 1.6;
+    text-align: center;
+    pointer-events: none;
+    transform: rotate(var(--ang, 0deg));
+    transform-origin: center center;
+    position: relative;
+    z-index: 3;
   }
-  .marker-label .lbl-acs { display: inline; color: var(--verde); font-size: 11px; font-weight: 700; }
+  .marker-label .lbl-acs {
+    display: inline;
+    color: var(--verde);
+    font-size: 11px;
+    font-weight: 700;
+  }
   .marker-label .lbl-acs.vazio { color: var(--muted); font-style: italic; }
-  .marker-label .lbl-sep { display: inline; color: var(--borda); font-size: 10px; margin: 0 3px; }
-  .marker-label .lbl-qtd { display: inline; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: var(--texto); }
-  .marker-label .lbl-ast { display: inline; color: var(--verde); font-size: 9px; font-weight: 700; vertical-align: super; line-height: 0; }
+  .marker-label .lbl-sep {
+    display: inline;
+    color: var(--borda);
+    font-size: 10px;
+    margin: 0 4px;
+  }
+  .marker-label .lbl-qtd {
+    display: inline;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--texto);
+    letter-spacing: .3px;
+  }
+  /* asterisco em destaque no label do mapa */
+  .marker-label .lbl-ast {
+    display: inline;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--verde2);
+    vertical-align: super;
+    line-height: 0;
+  }
 
   #lados-lista::-webkit-scrollbar { width: 5px; }
   #lados-lista::-webkit-scrollbar-track { background: transparent; }
   #lados-lista::-webkit-scrollbar-thumb { background: var(--borda); border-radius: 5px; }
 
   #total-geral {
-    padding: 12px 18px; border-top: 1px solid var(--borda); background: var(--cinza);
-    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    padding: 12px 18px;
+    border-top: 1px solid var(--borda);
+    background: var(--cinza);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
   }
   #total-geral span { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
-  #total-geral .num { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--verde); }
+  #total-geral .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--verde);
+  }
 
   .modal-overlay {
-    position: fixed; inset: 0; z-index: 9999; background: rgba(10,20,35,.7);
-    backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px;
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(10,20,35,.7);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
   }
   .modal-overlay.oculto { display: none; }
   .modal-box {
-    background: #fff; border-radius: 16px; padding: 32px 28px 24px;
-    max-width: 460px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px 28px 24px;
+    max-width: 460px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
   }
   .modal-icon { font-size: 40px; text-align: center; margin-bottom: 10px; }
   .modal-box h2 { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 8px; }
   .modal-box p  { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 18px; line-height: 1.6; }
-  .modal-steps  { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+  .modal-steps { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
   .step { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--texto); }
   .step span {
-    background: var(--verde); color: #fff; border-radius: 50%; width: 22px; height: 22px;
+    background: var(--verde); color: #fff;
+    border-radius: 50%; width: 22px; height: 22px;
     display: flex; align-items: center; justify-content: center;
     font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
   }
@@ -409,65 +734,60 @@
   .modal-field { margin-bottom: 14px; }
   .modal-field label { font-size: 12px; font-weight: 700; color: var(--muted); display: block; margin-bottom: 5px; }
   .modal-field input {
-    width: 100%; padding: 10px 12px; border: 1px solid var(--borda); border-radius: 8px;
-    font-size: 13px; font-family: 'JetBrains Mono', monospace; outline: none; transition: border-color .2s;
+    width: 100%; padding: 10px 12px;
+    border: 1px solid var(--borda); border-radius: 8px;
+    font-size: 13px; font-family: 'JetBrains Mono', monospace;
+    outline: none; transition: border-color .2s;
   }
   .modal-field input:focus { border-color: var(--verde2); }
   .modal-erro { color: var(--vermelho); font-size: 12px; min-height: 18px; margin-bottom: 10px; text-align: center; }
   .modal-btns { display: flex; flex-direction: column; gap: 8px; }
   .modal-btns button {
-    width: 100%; padding: 12px; border: none; border-radius: 10px; cursor: pointer;
+    width: 100%; padding: 12px;
+    border: none; border-radius: 10px; cursor: pointer;
     font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700;
     background: var(--verde); color: #fff; transition: background .2s;
   }
   .modal-btns button:hover { background: var(--verde2); }
-  .modal-btns .btn-secundario { background: var(--cinza); color: var(--muted); border: 1px solid var(--borda); font-weight: 400; }
+  .modal-btns .btn-secundario {
+    background: var(--cinza); color: var(--muted);
+    border: 1px solid var(--borda); font-weight: 400;
+  }
   .modal-btns .btn-secundario:hover { background: var(--borda); }
 
   #status-nuvem {
     position: absolute; top: 10px; right: 10px; z-index: 800;
-    background: #ffffffee; border-radius: 20px; padding: 5px 12px;
-    font-size: 11px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    background: #ffffffee; border-radius: 20px;
+    padding: 5px 12px; font-size: 11px; font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
     display: flex; align-items: center; gap: 6px;
-    cursor: pointer; border: 1px solid var(--borda); transition: all .2s;
+    cursor: pointer; border: 1px solid var(--borda);
+    transition: all .2s;
   }
   #status-nuvem:hover { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.2); }
-  #status-nuvem .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  #status-nuvem .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted); flex-shrink: 0;
+  }
   #status-nuvem.conectado .dot { background: var(--verde2); }
-  #status-nuvem.salvando  .dot { background: var(--laranja); animation: pulse .6s infinite; }
-  #status-nuvem.erro      .dot { background: var(--vermelho); }
+  #status-nuvem.salvando .dot  { background: var(--laranja); animation: pulse .6s infinite; }
+  #status-nuvem.erro .dot      { background: var(--vermelho); }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
   #toast {
     position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-    background: #1e2a38; color: #fff; padding: 9px 20px; border-radius: 50px;
-    font-size: 12px; font-weight: 600; z-index: 9998; opacity: 0;
-    pointer-events: none; transition: opacity .3s; white-space: nowrap;
+    background: #1e2a38; color: #fff;
+    padding: 9px 20px; border-radius: 50px;
+    font-size: 12px; font-weight: 600;
+    z-index: 9998; opacity: 0; pointer-events: none;
+    transition: opacity .3s;
+    white-space: nowrap;
   }
   #toast.visivel { opacity: 1; }
 
-  /* ─── MOBILE ─────────────────────────────────────────────────────────────── */
   @media (max-width: 700px) {
-    #painel-outer {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      width: 100% !important;
-      height: calc(45% + var(--aba-w));
-      flex-direction: column-reverse;
-      border-top: 1px solid var(--borda);
-      box-shadow: 0 -3px 12px rgba(0,0,0,.07);
-    }
-    #painel-outer.recolhido { height: var(--aba-w) !important; }
-    #painel-aba {
-      width: 100%; min-width: unset;
-      height: var(--aba-w);
-      flex-direction: row;
-      justify-content: center;
-      gap: 8px;
-    }
-    .aba-seta { transform: rotate(-90deg) !important; }
-    #painel-outer.recolhido .aba-seta { transform: rotate(90deg) !important; }
-    .aba-txt { writing-mode: horizontal-tb; transform: none; }
-    #painel { width: 100%; flex: 1; }
+    #painel { width: 100%; min-width: 100%; position: absolute; bottom: 0; left: 0; right: 0; height: 45%; z-index: 800; border-left: none; border-top: 1px solid var(--borda); }
+    #painel.recolhido { transform: translateY(100%); min-width: unset; }
     #map { height: 55%; }
     #main { flex-direction: column; }
   }
@@ -490,28 +810,36 @@
         <div class="dot"></div>
         <span id="status-txt">Sem nuvem</span>
       </div>
-
       <div id="dica">🖱️ Clique no mapa para marcar um lado de quadra</div>
-      <div id="legenda-asterisco"><strong>*</strong> número de pessoas cadastradas no lado</div>
+
+      <!-- Legenda do asterisco -->
+      <div id="legenda-asterisco">
+        <strong>*</strong> = número de pessoas cadastradas
+      </div>
+
+      <!-- Tab fixo que aparece quando painel está recolhido -->
+      <button id="painel-tab-fixo" onclick="expandirPainel()" title="Abrir painel">
+        <span class="toggle-icon">◀</span>
+        <span class="toggle-label">Painel</span>
+      </button>
 
       <div id="toolbar">
         <div id="drag-handle" title="Arraste para o mapa para adicionar um lado">
-          <span>📍</span><span>Arraste para o mapa</span>
+          <span class="drag-icon">📍</span>
+          <span class="drag-label">Arraste para o mapa</span>
         </div>
 
-        <div id="rot-mapa-wrap">
-          <span class="rot-lbl">🧭 Mapa</span>
-          <div class="rot-controles toolbar-mode">
-            <button class="rot-btn" id="btn-rot-esq"   title="Girar −10°">↺</button>
-            <button class="rot-btn" id="btn-rot-m1"    title="Girar −1°" style="font-size:15px;font-weight:700;">−</button>
-            <div class="rot-slider-wrap">
-              <input type="range" id="rot-slider" min="0" max="359" step="1" value="0" />
-              <span class="rot-val" id="rot-val-txt">0°</span>
-            </div>
-            <button class="rot-btn" id="btn-rot-p1"    title="Girar +1°" style="font-size:15px;font-weight:700;">+</button>
-            <button class="rot-btn" id="btn-rot-dir"   title="Girar +10°">↻</button>
-            <button class="rot-btn snap" id="btn-rot-reset" title="Resetar para Norte">N</button>
+        <!-- Controle de rotação estilo card -->
+        <div id="rot-controls">
+          <button id="btn-rot-esq" title="Girar -10°">↺</button>
+          <button id="btn-rot-menos1" title="Girar -1°" style="font-size:15px">−</button>
+          <div id="rot-wrap-slider">
+            <input id="rot-range" type="range" min="0" max="359" step="1" value="0" title="Ângulo do mapa" />
+            <input id="rot-input" type="number" min="0" max="359" value="0" title="Ângulo em graus" />
           </div>
+          <button id="btn-rot-mais1" title="Girar +1°" style="font-size:15px">+</button>
+          <button id="btn-rot-dir" title="Girar +10°">↻</button>
+          <button id="btn-rot-reset" title="Norte para cima">N</button>
         </div>
 
         <button id="btn-ruas">🛣️ Ruas</button>
@@ -519,68 +847,68 @@
         <button id="btn-exportar">📋 Exportar JSON</button>
         <button id="btn-limpar">🗑️ Limpar Tudo</button>
       </div>
-
       <div id="drag-ghost">📍</div>
     </div>
 
-    <!-- MODAL CONFIG -->
-    <div id="modal-config" class="modal-overlay oculto">
-      <div class="modal-box">
-        <div class="modal-icon">☁️</div>
-        <h2>Configurar armazenamento na nuvem</h2>
-        <p>Para salvar e compartilhar os dados com outras pessoas, informe sua chave do <strong>JSONBin.io</strong> (gratuito).</p>
-        <div class="modal-steps">
-          <div class="step"><span>1</span> Acesse <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> e crie uma conta gratuita</div>
-          <div class="step"><span>2</span> No painel, vá em <strong>API Keys</strong> e copie sua <strong>Master Key</strong></div>
-          <div class="step"><span>3</span> Cole abaixo e clique em Conectar</div>
-        </div>
-        <div class="modal-field">
-          <label>🔑 Master Key do JSONBin</label>
-          <input type="password" id="input-apikey" placeholder="$2a$10$..." autocomplete="off" />
-        </div>
-        <div class="modal-field" id="field-binid" style="display:none">
-          <label>📦 Bin ID (deixe em branco para criar novo)</label>
-          <input type="text" id="input-binid" placeholder="Será criado automaticamente" autocomplete="off" />
-        </div>
-        <div id="modal-erro" class="modal-erro"></div>
-        <div class="modal-btns">
-          <button id="btn-modal-avancar">Continuar →</button>
-          <button id="btn-modal-pular" class="btn-secundario">Usar sem nuvem</button>
-        </div>
+  <div id="modal-config" class="modal-overlay oculto">
+    <div class="modal-box">
+      <div class="modal-icon">☁️</div>
+      <h2>Configurar armazenamento na nuvem</h2>
+      <p>Para salvar e compartilhar os dados com outras pessoas, informe sua chave do <strong>JSONBin.io</strong> (gratuito).</p>
+
+      <div class="modal-steps">
+        <div class="step"><span>1</span> Acesse <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> e crie uma conta gratuita</div>
+        <div class="step"><span>2</span> No painel, vá em <strong>API Keys</strong> e copie sua <strong>Master Key</strong></div>
+        <div class="step"><span>3</span> Cole abaixo e clique em Conectar</div>
+      </div>
+
+      <div class="modal-field">
+        <label>🔑 Master Key do JSONBin</label>
+        <input type="password" id="input-apikey" placeholder="$2a$10$..." autocomplete="off" />
+      </div>
+
+      <div class="modal-field" id="field-binid" style="display:none">
+        <label>📦 Bin ID (deixe em branco para criar novo)</label>
+        <input type="text" id="input-binid" placeholder="Será criado automaticamente" autocomplete="off" />
+      </div>
+
+      <div id="modal-erro" class="modal-erro"></div>
+
+      <div class="modal-btns">
+        <button id="btn-modal-avancar">Continuar →</button>
+        <button id="btn-modal-pular" class="btn-secundario">Usar sem nuvem</button>
       </div>
     </div>
+  </div>
 
-    <div id="toast"></div>
+  <div id="toast"></div>
 
-    <!-- ═══════════════════════════════════════════════════════════════════════
-         PAINEL LATERAL RECOLHÍVEL
-         [ ABA-TOGGLE | CONTEÚDO DO PAINEL ]
-    ═══════════════════════════════════════════════════════════════════════ -->
-    <div id="painel-outer">
+    <div id="painel">
+      <!-- Botão toggle do painel (fica na borda esquerda) -->
+      <button id="painel-toggle" onclick="recolherPainel()" title="Recolher painel">
+        <span class="toggle-icon">▶</span>
+        <span class="toggle-label">Painel</span>
+      </button>
 
-      <!-- Aba clicável para recolher/expandir -->
-      <div id="painel-aba" onclick="togglePainel()" title="Recolher / expandir painel">
-        <span class="aba-seta">◀</span>
-        <span class="aba-txt">Painel ACS</span>
+      <div id="painel-header">
+        <h2>📊 Totais por ACS</h2>
+        <p>Atualizado em tempo real conforme preenchimento</p>
       </div>
 
-      <!-- Conteúdo do painel -->
-      <div id="painel">
-        <div id="painel-header">
-          <h2>📊 Totais por ACS</h2>
-          <p>Atualizado em tempo real conforme preenchimento</p>
+      <div id="resumo">
+        <h3>ACS cadastradas</h3>
+        <div id="lista-acs">
+          <p id="sem-dados">Nenhum dado inserido ainda.</p>
         </div>
-        <div id="resumo">
-          <h3>ACS cadastradas</h3>
-          <div id="lista-acs"><p id="sem-dados">Nenhum dado inserido ainda.</p></div>
-        </div>
-        <div id="lados-lista">
-          <h3>Lados de quadra marcados</h3>
-        </div>
-        <div id="total-geral">
-          <span>Total geral de pessoas</span>
-          <span class="num" id="total-num">0</span>
-        </div>
+      </div>
+
+      <div id="lados-lista">
+        <h3>Lados de quadra marcados</h3>
+      </div>
+
+      <div id="total-geral">
+        <span>Total geral de pessoas</span>
+        <span class="num" id="total-num">0</span>
       </div>
     </div>
   </div>
@@ -588,103 +916,171 @@
 
 <script>
 // ─────────────────────────────────────────
-//  PAINEL TOGGLE
-// ─────────────────────────────────────────
-let painelRecolhido = false;
-
-function togglePainel() {
-  painelRecolhido = !painelRecolhido;
-  document.getElementById('painel-outer').classList.toggle('recolhido', painelRecolhido);
-  // Força o Leaflet a recalcular o tamanho do mapa após a animação CSS
-  setTimeout(() => map.invalidateSize(), 350);
-}
-
-// ─────────────────────────────────────────
 //  ESTADO GLOBAL
 // ─────────────────────────────────────────
 let lados = [];
+let modoAdicionar = false;
 let proximoId = 1;
 
 // ─────────────────────────────────────────
-//  JSONBIN
+//  PAINEL RECOLHÍVEL
 // ─────────────────────────────────────────
-const LS_KEY  = 'acs_varjota_cfg';
-let jbApiKey  = '', jbBinId = '', saveTimer = null, pollTimer = null, lastSaveTs = 0;
+function recolherPainel() {
+  const painel = document.getElementById('painel');
+  const tab    = document.getElementById('painel-tab-fixo');
+  painel.classList.add('recolhido');
+  tab.classList.add('visivel');
+  setTimeout(() => map.invalidateSize(), 340);
+}
+
+function expandirPainel() {
+  const painel = document.getElementById('painel');
+  const tab    = document.getElementById('painel-tab-fixo');
+  painel.classList.remove('recolhido');
+  tab.classList.remove('visivel');
+  setTimeout(() => map.invalidateSize(), 340);
+}
+
+// ─────────────────────────────────────────
+//  JSONBIN — CONFIGURAÇÃO
+// ─────────────────────────────────────────
+const LS_KEY   = 'acs_varjota_cfg';
+let jbApiKey   = '';
+let jbBinId    = '';
+let saveTimer  = null;
+let pollTimer  = null;
+let lastSaveTs = 0;
 
 function carregarConfig() {
-  try { const c = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); jbApiKey = c.apiKey||''; jbBinId = c.binId||''; } catch {}
+  try {
+    const c = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    jbApiKey = c.apiKey || '';
+    jbBinId  = c.binId  || '';
+  } catch {}
 }
-function salvarConfig() { localStorage.setItem(LS_KEY, JSON.stringify({ apiKey: jbApiKey, binId: jbBinId })); }
+
+function salvarConfig() {
+  localStorage.setItem(LS_KEY, JSON.stringify({ apiKey: jbApiKey, binId: jbBinId }));
+}
+
 function setStatus(estado, txt) {
-  const el = document.getElementById('status-nuvem'); el.className = estado;
-  document.getElementById('status-txt').textContent = txt;
+  const el = document.getElementById('status-nuvem');
+  const tx = document.getElementById('status-txt');
+  el.className = '';
+  el.classList.add(estado);
+  tx.textContent = txt;
 }
+
 function mostrarToast(msg, dur = 2500) {
-  const t = document.getElementById('toast'); t.textContent = msg;
-  t.classList.add('visivel'); setTimeout(() => t.classList.remove('visivel'), dur);
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('visivel');
+  setTimeout(() => t.classList.remove('visivel'), dur);
 }
+
 function serializarLados() {
-  return lados.map(l => ({ id: l.id, lat: l.lat, lng: l.lng, rua: l.rua,
-    angulo: l.angulo||0, rotacaoManual: l.rotacaoManual||0, fixado: !!l.fixado, acs: l.acs, pessoas: l.pessoas }));
+  return lados.map(l => ({
+    id: l.id, lat: l.lat, lng: l.lng,
+    rua: l.rua, angulo: l.angulo || 0,
+    rotacaoManual: l.rotacaoManual || 0,
+    fixado: !!l.fixado,
+    acs: l.acs, pessoas: l.pessoas
+  }));
 }
+
 async function carregarDados(dados) {
   if (!Array.isArray(dados)) return;
   lados.forEach(l => { try { map.removeLayer(l.marker); } catch {} });
-  lados = []; proximoId = 1;
-  for (const d of dados) { if (d.id >= proximoId) proximoId = d.id + 1; await adicionarLadoSilencioso(d); }
-  renderCards(); atualizarResumo(); atualizarBadge(); setTimeout(atualizarEscalaZoom, 50);
+  lados = [];
+  proximoId = 1;
+  for (const d of dados) {
+    if (d.id >= proximoId) proximoId = d.id + 1;
+    await adicionarLadoSilencioso(d);
+  }
+  renderCards();
+  atualizarResumo();
+  atualizarBadge();
+  agendarSave();
+  setTimeout(atualizarEscalaZoom, 50);
 }
 
 // ─────────────────────────────────────────
-//  ÂNGULO DO LABEL
+//  CÁLCULO DE ÂNGULO DO LABEL
 // ─────────────────────────────────────────
 function calcAngLabel(anguloRua, rotacaoManual, fixado) {
-  if (fixado) return rotacaoManual || 0;
-  let a = (anguloRua - mapBearing + (rotacaoManual||0) + 360) % 360;
+  if (fixado) {
+    return rotacaoManual || 0;
+  }
+  let a = (anguloRua - mapBearing + (rotacaoManual || 0) + 360) % 360;
   if (a >  90 && a <= 270) a -= 180;
   if (a > 270)              a -= 360;
   return a;
 }
 
 // ─────────────────────────────────────────
-//  HTML DO MARCADOR — ACS | N*
+//  GERAR HTML DO MARCADOR  (label: ACS | X*)
 // ─────────────────────────────────────────
 function buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual, fixado) {
   const acsLbl = acs || `#${id}`;
   const acsCls = acs ? 'lbl-acs' : 'lbl-acs vazio';
-  const qtdStr = pessoas > 0 ? String(pessoas) : '–';
-  const ang    = calcAngLabel(anguloRua, rotacaoManual||0, fixado);
+  // ★ formato: número + asterisco (sem "pessoas")
+  const qtdLbl = pessoas > 0 ? `${pessoas}` : '–';
   const pre    = !!(acs || pessoas);
-  return `<div class="marker-wrapper${pre?' preenchido':''}" id="marker-${id}">
+  const ang    = calcAngLabel(anguloRua, rotacaoManual || 0, fixado);
+  return `<div class="marker-wrapper${pre ? ' preenchido' : ''}" id="marker-${id}">
             <div class="marker-label" style="--ang:${ang}deg">
-              <span class="${acsCls}">${escHtml(acsLbl)}</span><span class="lbl-sep">|</span><span class="lbl-qtd">${escHtml(qtdStr)}</span><span class="lbl-ast">*</span>
+              <span class="${acsCls}">${escHtml(acsLbl)}</span><span class="lbl-sep">|</span><span class="lbl-qtd">${escHtml(qtdLbl)}<span class="lbl-ast">*</span></span>
             </div>
             <div class="marker-pin"></div>
           </div>`;
 }
+
 function buildIcon(id, acs, pessoas, anguloRua, rotacaoManual, fixado) {
-  return L.divIcon({ className: '', html: buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual, fixado), iconAnchor: [0,0], iconSize: [1,1] });
+  return L.divIcon({
+    className: '',
+    html: buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual, fixado),
+    iconAnchor: [0, 0],
+    iconSize:   [1, 1]
+  });
 }
-function atualizarTodosOsIcones() { lados.forEach(l => atualizarIconeMarcador(l.id)); }
+
+// ─────────────────────────────────────────
+//  ATUALIZAR TODOS OS ÍCONES
+// ─────────────────────────────────────────
+function atualizarTodosOsIcones() {
+  lados.forEach(l => atualizarIconeMarcador(l.id));
+}
 
 // ─────────────────────────────────────────
 //  ESCALA POR ZOOM
 // ─────────────────────────────────────────
-function calcZoomScale(zoom) { return Math.min(3.0, Math.max(0.15, Math.pow(2,(zoom-16)*0.6))) * 0.5; }
+function calcZoomScale(zoom) {
+  const scale = Math.pow(2, (zoom - 16) * 0.6);
+  return Math.min(3.0, Math.max(0.15, scale)) * 0.5;
+}
+
 function atualizarEscalaZoom() {
-  const zoom = map.getZoom(), scale = calcZoomScale(zoom);
-  const isMini = zoom < 14, isMedio = zoom >= 14 && zoom < 15.5;
+  const zoom  = map.getZoom();
+  const scale = calcZoomScale(zoom);
+  const isMini  = zoom < 14;
+  const isMedio = zoom >= 14 && zoom < 15.5;
   lados.forEach(l => {
-    const el = document.getElementById(`marker-${l.id}`); if (!el) return;
+    const el = document.getElementById(`marker-${l.id}`);
+    if (!el) return;
     el.style.transform = `translate(-50%, -50%) scale(${scale})`;
-    el.classList.toggle('mini', isMini); el.classList.toggle('medio', isMedio);
+    el.classList.toggle('mini',  isMini);
+    el.classList.toggle('medio', isMedio);
   });
 }
 
 async function adicionarLadoSilencioso(d) {
   const id = d.id;
+  const anguloRua = d.angulo || 0;
+  const rotacaoManual = d.rotacaoManual || 0;
+  const fixado = !!d.fixado;
   const marker = L.marker([d.lat, d.lng], {
-    icon: buildIcon(id, d.acs||'', d.pessoas||0, d.angulo||0, d.rotacaoManual||0, !!d.fixado), draggable: true
+    icon: buildIcon(id, d.acs || '', d.pessoas || 0, anguloRua, rotacaoManual, fixado),
+    draggable: true
   }).addTo(map);
   marker.bindTooltip(`Lado #${id} — ${d.rua}`, { permanent: false });
   marker.on('click', () => abrirCard(id));
@@ -696,12 +1092,13 @@ async function adicionarLadoSilencioso(d) {
       if (l2) { l2.rua = nome; l2.angulo = ang2; atualizarCardHeader(id); atualizarIconeMarcador(id); agendarSave(); }
     });
   });
-  lados.push({ id, lat: d.lat, lng: d.lng, rua: d.rua, angulo: d.angulo||0, rotacaoManual: d.rotacaoManual||0, fixado: !!d.fixado, acs: d.acs||'', pessoas: d.pessoas||0, marker });
+  lados.push({ id, lat: d.lat, lng: d.lng, rua: d.rua, angulo: anguloRua, rotacaoManual, fixado, acs: d.acs || '', pessoas: d.pessoas || 0, marker });
 }
 
 function agendarSave() {
   if (!jbApiKey) return;
-  clearTimeout(saveTimer); setStatus('salvando', 'Salvando…');
+  clearTimeout(saveTimer);
+  setStatus('salvando', 'Salvando…');
   saveTimer = setTimeout(salvarNuvem, 1200);
 }
 
@@ -709,35 +1106,64 @@ async function salvarNuvem() {
   if (!jbApiKey) return;
   const payload = { lados: serializarLados(), proximoId, ts: Date.now() };
   try {
+    let res;
     if (!jbBinId) {
-      const res = await fetch('https://api.jsonbin.io/v3/b', { method:'POST',
-        headers: { 'Content-Type':'application/json','X-Master-Key':jbApiKey,'X-Bin-Name':'acs-varjota' },
-        body: JSON.stringify(payload) });
+      res = await fetch('https://api.jsonbin.io/v3/b', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': jbApiKey, 'X-Bin-Name': 'acs-varjota' },
+        body: JSON.stringify(payload)
+      });
       const j = await res.json();
-      if (j.metadata?.id) { jbBinId = j.metadata.id; salvarConfig(); setStatus('conectado',`Bin: ${jbBinId.slice(-6)}`); mostrarToast('✅ Bin criado e salvo!'); }
-      else throw new Error(JSON.stringify(j));
+      if (j.metadata?.id) {
+        jbBinId = j.metadata.id;
+        salvarConfig();
+        setStatus('conectado', `Bin: ${jbBinId.slice(-6)}`);
+        mostrarToast('✅ Bin criado e salvo!');
+      } else { throw new Error(JSON.stringify(j)); }
     } else {
-      const res = await fetch(`https://api.jsonbin.io/v3/b/${jbBinId}`, { method:'PUT',
-        headers: { 'Content-Type':'application/json','X-Master-Key':jbApiKey }, body: JSON.stringify(payload) });
+      res = await fetch(`https://api.jsonbin.io/v3/b/${jbBinId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': jbApiKey },
+        body: JSON.stringify(payload)
+      });
       if (!res.ok) throw new Error(await res.text());
-      lastSaveTs = payload.ts; setStatus('conectado',`Bin: ${jbBinId.slice(-6)}`);
+      lastSaveTs = payload.ts;
+      setStatus('conectado', `Bin: ${jbBinId.slice(-6)}`);
     }
-  } catch(e) { console.error(e); setStatus('erro','Erro ao salvar'); mostrarToast('❌ Erro ao salvar na nuvem'); }
+  } catch (e) {
+    console.error(e);
+    setStatus('erro', 'Erro ao salvar');
+    mostrarToast('❌ Erro ao salvar na nuvem');
+  }
 }
 
 async function carregarNuvem(silencioso = false) {
   if (!jbApiKey || !jbBinId) return false;
   try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${jbBinId}/latest`, { headers:{'X-Master-Key':jbApiKey} });
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${jbBinId}/latest`, {
+      headers: { 'X-Master-Key': jbApiKey }
+    });
     if (!res.ok) throw new Error(await res.text());
-    const j = await res.json(); const dados = j.record;
+    const j = await res.json();
+    const dados = j.record;
     if (dados?.ts && dados.ts === lastSaveTs) return true;
-    if (dados?.lados) { proximoId = dados.proximoId||1; await carregarDados(dados.lados); lastSaveTs = dados.ts||0; if (!silencioso) mostrarToast('☁️ Dados carregados da nuvem!'); }
+    if (dados?.lados) {
+      proximoId = dados.proximoId || 1;
+      await carregarDados(dados.lados);
+      lastSaveTs = dados.ts || 0;
+      if (!silencioso) mostrarToast('☁️ Dados carregados da nuvem!');
+    }
     return true;
-  } catch(e) { console.error(e); if (!silencioso) { setStatus('erro','Erro ao carregar'); mostrarToast('❌ Erro ao carregar da nuvem'); } return false; }
+  } catch (e) {
+    console.error(e);
+    if (!silencioso) { setStatus('erro', 'Erro ao carregar'); mostrarToast('❌ Erro ao carregar da nuvem'); }
+    return false;
+  }
 }
+
 function iniciarPolling() {
-  clearInterval(pollTimer); if (!jbApiKey || !jbBinId) return;
+  clearInterval(pollTimer);
+  if (!jbApiKey || !jbBinId) return;
   pollTimer = setInterval(() => carregarNuvem(true), 15000);
 }
 
@@ -747,102 +1173,129 @@ function abrirConfig() {
   document.getElementById('input-binid').value  = jbBinId;
   if (jbApiKey) document.getElementById('field-binid').style.display = 'block';
 }
+
 document.getElementById('input-apikey').addEventListener('input', function() {
   document.getElementById('field-binid').style.display = this.value.trim() ? 'block' : 'none';
 });
+
 document.getElementById('btn-modal-avancar').addEventListener('click', async () => {
-  const key = document.getElementById('input-apikey').value.trim();
+  const key   = document.getElementById('input-apikey').value.trim();
   const binid = document.getElementById('input-binid').value.trim();
   const erro  = document.getElementById('modal-erro');
   if (!key) { erro.textContent = 'Informe a Master Key.'; return; }
-  erro.textContent = ''; document.getElementById('btn-modal-avancar').textContent = 'Conectando…';
-  jbApiKey = key; jbBinId = binid; salvarConfig();
+  erro.textContent = '';
+  document.getElementById('btn-modal-avancar').textContent = 'Conectando…';
+  jbApiKey = key;
+  jbBinId  = binid;
+  salvarConfig();
   if (jbBinId) {
     const ok = await carregarNuvem(false);
-    if (ok) { setStatus('conectado',`Bin: ${jbBinId.slice(-6)}`); iniciarPolling(); document.getElementById('modal-config').classList.add('oculto'); mostrarToast('✅ Conectado ao JSONBin!'); }
-    else erro.textContent = 'Não foi possível carregar o Bin. Verifique a chave e o ID.';
+    if (ok) {
+      setStatus('conectado', `Bin: ${jbBinId.slice(-6)}`);
+      iniciarPolling();
+      document.getElementById('modal-config').classList.add('oculto');
+      mostrarToast('✅ Conectado ao JSONBin!');
+    } else {
+      erro.textContent = 'Não foi possível carregar o Bin. Verifique a chave e o ID.';
+    }
   } else {
-    setStatus('conectado','Pronto p/ salvar'); iniciarPolling();
-    document.getElementById('modal-config').classList.add('oculto'); mostrarToast('✅ Chave salva! O Bin será criado ao salvar.');
+    setStatus('conectado', 'Pronto p/ salvar');
+    iniciarPolling();
+    document.getElementById('modal-config').classList.add('oculto');
+    mostrarToast('✅ Chave salva! O Bin será criado ao salvar.');
   }
   document.getElementById('btn-modal-avancar').textContent = 'Continuar →';
 });
+
 document.getElementById('btn-modal-pular').addEventListener('click', () => {
-  document.getElementById('modal-config').classList.add('oculto'); setStatus('','Sem nuvem');
+  document.getElementById('modal-config').classList.add('oculto');
+  setStatus('', 'Sem nuvem');
 });
 
 // ─────────────────────────────────────────
 //  MAPA
 // ─────────────────────────────────────────
-const map = L.map('map', {
-  zoomControl: true, rotate: true, rotateControl: false,
-  bearing: 0, zoomDelta: 0.5, zoomSnap: 0.5, wheelPxPerZoomLevel: 120
-}).setView([-4.1928215, -40.4677377], 16);
-
+const map = L.map('map', { zoomControl: true, rotate: true, rotateControl: false, bearing: 0, zoomDelta: 0.5, zoomSnap: 0.5, wheelPxPerZoomLevel: 120 }).setView([-4.1928215, -40.4677377], 16);
 let mapBearing = 0;
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  maxZoom: 19
 }).addTo(map);
 
 map.on('zoomend', atualizarEscalaZoom);
-
-// ─────────────────────────────────────────
-//  ROTAÇÃO DO MAPA
-// ─────────────────────────────────────────
-const rotSlider = document.getElementById('rot-slider');
-const rotValTxt = document.getElementById('rot-val-txt');
-
-function aplicarRotacaoMapa(graus) {
-  mapBearing = ((graus % 360) + 360) % 360;
-  map.setBearing(mapBearing);
-  rotSlider.value = Math.round(mapBearing);
-  rotValTxt.textContent = `${Math.round(mapBearing)}°`;
-  document.getElementById('btn-rot-reset').textContent = mapBearing === 0 ? 'N' : '↺';
-  atualizarTodosOsIcones();
-}
-
-document.getElementById('btn-rot-esq').addEventListener('click',   () => aplicarRotacaoMapa(mapBearing - 10));
-document.getElementById('btn-rot-m1').addEventListener('click',    () => aplicarRotacaoMapa(mapBearing - 1));
-document.getElementById('btn-rot-p1').addEventListener('click',    () => aplicarRotacaoMapa(mapBearing + 1));
-document.getElementById('btn-rot-dir').addEventListener('click',   () => aplicarRotacaoMapa(mapBearing + 10));
-document.getElementById('btn-rot-reset').addEventListener('click', () => aplicarRotacaoMapa(0));
-rotSlider.addEventListener('input',   () => aplicarRotacaoMapa(parseFloat(rotSlider.value)));
-rotSlider.addEventListener('keydown', (e) => {
-  if (e.key === 'ArrowUp')   { e.preventDefault(); aplicarRotacaoMapa(mapBearing + 1); }
-  if (e.key === 'ArrowDown') { e.preventDefault(); aplicarRotacaoMapa(mapBearing - 1); }
-});
 
 // ─────────────────────────────────────────
 //  DRAG-TO-MAP
 // ─────────────────────────────────────────
 const dragHandle = document.getElementById('drag-handle');
 const dragGhost  = document.getElementById('drag-ghost');
-const dica       = document.getElementById('dica');
+const dica = document.getElementById('dica');
 let isDraggingNew = false;
 
 dragHandle.addEventListener('mousedown', (e) => {
-  e.preventDefault(); isDraggingNew = true; dragHandle.classList.add('dragging');
-  map.dragging.disable(); dragGhost.style.display = 'block'; moveGhost(e.clientX, e.clientY);
-  dica.textContent = '📍 Solte para fixar o marcador nesta posição'; dica.classList.add('visivel');
+  e.preventDefault();
+  isDraggingNew = true;
+  dragHandle.classList.add('dragging');
+  map.dragging.disable();
+  dragGhost.style.display = 'block';
+  moveGhost(e.clientX, e.clientY);
+  dica.textContent = '📍 Solte para fixar o marcador nesta posição';
+  dica.classList.add('visivel');
 });
-dragHandle.addEventListener('touchstart', (e) => {
-  isDraggingNew = true; dragHandle.classList.add('dragging'); map.dragging.disable();
-  dragGhost.style.display = 'block'; const t = e.touches[0]; moveGhost(t.clientX, t.clientY);
-  dica.textContent = '📍 Solte para fixar o marcador nesta posição'; dica.classList.add('visivel');
-}, { passive: true });
-document.addEventListener('mousemove', (e) => { if (isDraggingNew) moveGhost(e.clientX, e.clientY); });
-document.addEventListener('touchmove', (e) => { if (isDraggingNew) { const t = e.touches[0]; moveGhost(t.clientX, t.clientY); } }, { passive: true });
-document.addEventListener('mouseup',  async (e) => { if (isDraggingNew) finalizarDrag(e.clientX, e.clientY); });
-document.addEventListener('touchend', async (e) => { if (isDraggingNew) { const t = e.changedTouches[0]; finalizarDrag(t.clientX, t.clientY); } });
 
-function moveGhost(cx, cy) { dragGhost.style.left = cx+'px'; dragGhost.style.top = cy+'px'; }
+dragHandle.addEventListener('touchstart', (e) => {
+  isDraggingNew = true;
+  dragHandle.classList.add('dragging');
+  map.dragging.disable();
+  dragGhost.style.display = 'block';
+  const t = e.touches[0];
+  moveGhost(t.clientX, t.clientY);
+  dica.textContent = '📍 Solte para fixar o marcador nesta posição';
+  dica.classList.add('visivel');
+}, { passive: true });
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDraggingNew) return;
+  moveGhost(e.clientX, e.clientY);
+});
+
+document.addEventListener('touchmove', (e) => {
+  if (!isDraggingNew) return;
+  const t = e.touches[0];
+  moveGhost(t.clientX, t.clientY);
+}, { passive: true });
+
+document.addEventListener('mouseup', async (e) => {
+  if (!isDraggingNew) return;
+  finalizarDrag(e.clientX, e.clientY);
+});
+
+document.addEventListener('touchend', async (e) => {
+  if (!isDraggingNew) return;
+  const t = e.changedTouches[0];
+  finalizarDrag(t.clientX, t.clientY);
+});
+
+function moveGhost(cx, cy) {
+  dragGhost.style.left = cx + 'px';
+  dragGhost.style.top  = cy + 'px';
+}
+
 async function finalizarDrag(cx, cy) {
-  isDraggingNew = false; dragHandle.classList.remove('dragging');
-  dragGhost.style.display = 'none'; map.dragging.enable(); dica.classList.remove('visivel');
-  const rect = map.getContainer().getBoundingClientRect();
+  isDraggingNew = false;
+  dragHandle.classList.remove('dragging');
+  dragGhost.style.display = 'none';
+  map.dragging.enable();
+  dica.classList.remove('visivel');
+
+  const mapEl = map.getContainer();
+  const rect  = mapEl.getBoundingClientRect();
   if (cx < rect.left || cx > rect.right || cy < rect.top || cy > rect.bottom) return;
-  const latlng = map.containerPointToLatLng(L.point(cx - rect.left, cy - rect.top));
+
+  const point  = L.point(cx - rect.left, cy - rect.top);
+  const latlng = map.containerPointToLatLng(point);
+
   const { rua, angulo } = await buscarRuaEAngulo(latlng.lat, latlng.lng);
   adicionarLado(latlng.lat, latlng.lng, rua, angulo);
 }
@@ -851,31 +1304,47 @@ async function finalizarDrag(cx, cy) {
 //  GEOCODIFICAÇÃO REVERSA
 // ─────────────────────────────────────────
 async function buscarRuaEAngulo(lat, lng) {
-  let rua = 'Localização marcada', angulo = 0;
+  let rua = 'Localização marcada';
+  let angulo = 0;
   try {
-    const d = await (await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, { headers:{'Accept-Language':'pt-BR'} })).json();
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+    const r = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
+    const d = await r.json();
     rua = d.address?.road || d.address?.neighbourhood || d.display_name?.split(',')[0] || 'Local desconhecido';
   } catch {}
+
   try {
-    const delta = 0.0003, bbox = `${lat-delta},${lng-delta},${lat+delta},${lng+delta}`;
-    const od = await (await fetch('https://overpass-api.de/api/interpreter', {
-      method:'POST', body:`[out:json][timeout:5];way[highway](${bbox});out geom;`
-    })).json();
-    let melhorDist = Infinity, melhorAng = 0;
-    for (const way of (od.elements||[])) {
+    const delta = 0.0003;
+    const bbox = `${lat-delta},${lng-delta},${lat+delta},${lng+delta}`;
+    const query = `[out:json][timeout:5];way[highway](${bbox});out geom;`;
+    const ov = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST', body: query
+    });
+    const od = await ov.json();
+
+    let melhorDist = Infinity;
+    let melhorAng  = 0;
+
+    for (const way of (od.elements || [])) {
       if (!way.geometry || way.geometry.length < 2) continue;
       for (let i = 0; i < way.geometry.length - 1; i++) {
-        const a = way.geometry[i], b = way.geometry[i+1];
-        const mx = (a.lon+b.lon)/2, my = (a.lat+b.lat)/2;
-        const dist = Math.sqrt((mx-lng)**2+(my-lat)**2);
+        const a = way.geometry[i];
+        const b = way.geometry[i + 1];
+        const mx = (a.lon + b.lon) / 2;
+        const my = (a.lat + b.lat) / 2;
+        const dx = mx - lng, dy = my - lat;
+        const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist < melhorDist) {
           melhorDist = dist;
-          melhorAng = Math.atan2((b.lon-a.lon)*Math.cos(lat*Math.PI/180), b.lat-a.lat)*180/Math.PI;
+          const dLon = (b.lon - a.lon) * Math.cos(lat * Math.PI / 180);
+          const dLat = b.lat - a.lat;
+          melhorAng = Math.atan2(dLon, dLat) * 180 / Math.PI;
         }
       }
     }
     angulo = melhorAng;
   } catch {}
+
   return { rua, angulo };
 }
 
@@ -884,19 +1353,42 @@ async function buscarRuaEAngulo(lat, lng) {
 // ─────────────────────────────────────────
 function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
   const id = proximoId++;
-  const marker = L.marker([lat, lng], { icon: buildIcon(id,'',0,angulo,0,false), draggable:true }).addTo(map);
-  marker.bindTooltip(`Lado #${id} — ${rua}`, { permanent:false });
+
+  const marker = L.marker([lat, lng], {
+    icon: buildIcon(id, '', 0, angulo, 0),
+    draggable: true
+  }).addTo(map);
+
+  marker.bindTooltip(`Lado #${id} — ${rua}`, { permanent: false });
   marker.on('click', () => abrirCard(id));
   marker.on('dragend', (e) => {
     const l = lados.find(x => x.id === id);
     if (l) { l.lat = e.target.getLatLng().lat; l.lng = e.target.getLatLng().lng; }
-    buscarRuaEAngulo(e.target.getLatLng().lat, e.target.getLatLng().lng).then(({ rua:nome, angulo:ang }) => {
+    buscarRuaEAngulo(e.target.getLatLng().lat, e.target.getLatLng().lng).then(({ rua: nome, angulo: ang }) => {
       const l2 = lados.find(x => x.id === id);
-      if (l2) { l2.rua=nome; l2.angulo=ang; atualizarCardHeader(id); atualizarIconeMarcador(id); agendarSave(); }
+      if (l2) {
+        l2.rua    = nome;
+        l2.angulo = ang;
+        atualizarCardHeader(id);
+        atualizarIconeMarcador(id);
+        agendarSave();
+      }
     });
   });
-  lados.push({ id, lat, lng, rua, angulo, rotacaoManual:0, fixado:false, acs:'', pessoas:0, marker });
-  renderCards(); atualizarResumo(); abrirCard(id); atualizarBadge(); agendarSave();
+
+  const lado = { id, lat, lng, rua, angulo, rotacaoManual: 0, fixado: false, acs: '', pessoas: 0, marker };
+  lados.push(lado);
+
+  // Abrir painel se estiver recolhido
+  if (document.getElementById('painel').classList.contains('recolhido')) {
+    expandirPainel();
+  }
+
+  renderCards();
+  atualizarResumo();
+  abrirCard(id);
+  atualizarBadge();
+  agendarSave();
   setTimeout(atualizarEscalaZoom, 50);
 }
 
@@ -906,18 +1398,20 @@ function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
 function renderCards() {
   const lista = document.getElementById('lados-lista');
   const h3 = lista.querySelector('h3');
-  lista.innerHTML = ''; lista.appendChild(h3);
+  lista.innerHTML = '';
+  lista.appendChild(h3);
 
   if (lados.length === 0) {
     const vazio = document.createElement('p');
     vazio.style.cssText = 'font-size:12px;color:var(--muted);font-style:italic;margin-top:6px';
     vazio.textContent = 'Nenhum lado marcado. Arraste o marcador para o mapa.';
-    lista.appendChild(vazio); return;
+    lista.appendChild(vazio);
+    return;
   }
 
   lados.forEach(lado => {
     const card = document.createElement('div');
-    card.className = 'lado-card' + (lado.acs||lado.pessoas ? ' preenchido' : '');
+    card.className = 'lado-card' + (lado.acs || lado.pessoas ? ' preenchido' : '');
     card.id = `card-${lado.id}`;
 
     const header = document.createElement('div');
@@ -926,7 +1420,7 @@ function renderCards() {
       <div class="icone">📍</div>
       <div class="info">
         <div class="rua" title="${escHtml(lado.rua)}">#${lado.id} — ${escHtml(lado.rua)}</div>
-        <div class="sub">${lado.acs ? escHtml(lado.acs) : 'ACS não definida'} · ${lado.pessoas||0}*</div>
+        <div class="sub">${lado.acs ? escHtml(lado.acs) : 'ACS não definida'} · ${lado.pessoas || 0} pessoas</div>
       </div>
       <span class="toggle">⌄</span>`;
     header.addEventListener('click', () => toggleCard(lado.id));
@@ -934,260 +1428,587 @@ function renderCards() {
     const body = document.createElement('div');
     body.className = 'lado-card-body';
 
-    const campoRua = criarCampo('🏘️ Nome da Rua / Localização', 'text', lado.rua||'', 'Ex.: Rua das Flores');
-    campoRua.querySelector('input').addEventListener('input', function() { atualizarLado(lado.id, 'rua', this.value); });
+    // Campo Rua
+    const campoRua = document.createElement('div');
+    campoRua.className = 'campo';
+    campoRua.innerHTML = '<label>🏘️ Nome da Rua / Localização</label>';
+    const inputRua = document.createElement('input');
+    inputRua.type = 'text';
+    inputRua.placeholder = 'Ex.: Rua das Flores';
+    inputRua.value = lado.rua || '';
+    inputRua.addEventListener('input', function() {
+      atualizarLado(lado.id, 'rua', this.value);
+    });
+    campoRua.appendChild(inputRua);
 
-    const campoAcs = criarCampo('👤 Nome da ACS', 'text', lado.acs||'', 'Ex.: Maria da Silva');
-    campoAcs.querySelector('input').addEventListener('input', function() {
+    // Campo ACS
+    const campoAcs = document.createElement('div');
+    campoAcs.className = 'campo';
+    campoAcs.innerHTML = '<label>👤 Nome da ACS</label>';
+    const inputAcs = document.createElement('input');
+    inputAcs.type = 'text';
+    inputAcs.placeholder = 'Ex.: Maria da Silva';
+    inputAcs.value = lado.acs || '';
+    inputAcs.addEventListener('input', function() {
       atualizarLado(lado.id, 'acs', this.value);
-      const prev = body.querySelector('.prev-acs');
-      if (prev) { prev.textContent = this.value||`#${lado.id}`; prev.className = 'prev-acs'+(this.value?'':' vazio'); }
-    });
-
-    const campoPessoas = criarCampo('👥 Total de pessoas neste lado*', 'number', lado.pessoas>0?String(lado.pessoas):'', '0');
-    campoPessoas.querySelector('input').min = '0';
-    campoPessoas.querySelector('input').addEventListener('input', function() {
-      atualizarLado(lado.id, 'pessoas', this.value);
-      const prev = body.querySelector('.prev-qtd');
-      if (prev) prev.textContent = parseInt(this.value,10)>0 ? String(parseInt(this.value,10)) : '–';
-    });
-
-    // ─── BLOCO DE ROTAÇÃO DO LABEL ─────────────────────────────────────────
-    const rotBloco = document.createElement('div');
-    rotBloco.className = 'rot-bloco';
-    const rotLbl = document.createElement('label');
-    rotLbl.textContent = '🔄 Rotação do nome no mapa';
-    rotBloco.appendChild(rotLbl);
-
-    const preview = document.createElement('div');
-    preview.className = 'rot-preview';
-    const previewLabel = document.createElement('div');
-    previewLabel.className = 'rot-preview-label';
-    const acsV = lado.acs || `#${lado.id}`;
-    const acsC = lado.acs ? 'prev-acs' : 'prev-acs vazio';
-    const qtdV = lado.pessoas > 0 ? String(lado.pessoas) : '–';
-    previewLabel.innerHTML = `<span class="${acsC}">${escHtml(acsV)}</span><span class="prev-sep">|</span><span class="prev-qtd">${escHtml(qtdV)}</span><span class="prev-ast">*</span>`;
-    previewLabel.style.transform = `rotate(${lado.rotacaoManual||0}deg)`;
-    preview.appendChild(previewLabel);
-    rotBloco.appendChild(preview);
-
-    const controles = document.createElement('div');
-    controles.className = 'rot-controles';
-
-    const bM10 = mkBtn('↺','Girar -10°'); const bM1 = mkBtn('−','Girar -1°','15px','700');
-    const wrap = document.createElement('div'); wrap.className = 'rot-slider-wrap';
-    const sl = document.createElement('input'); sl.type='range'; sl.min='-180'; sl.max='180'; sl.step='1'; sl.value=String(lado.rotacaoManual||0);
-    const vd = document.createElement('span'); vd.className='rot-val'; vd.textContent=`${lado.rotacaoManual||0}°`;
-    wrap.appendChild(sl); wrap.appendChild(vd);
-    const bP1 = mkBtn('+','Girar +1°','15px','700'); const bP10 = mkBtn('↻','Girar +10°');
-    const bRes = mkBtn('0°','Resetar rotação',null,null,true);
-
-    function apRot(val) {
-      let v = Math.max(-180, Math.min(180, Math.round(val)));
-      sl.value=String(v); vd.textContent=`${v}°`;
-      previewLabel.style.transform=`rotate(${v}deg)`;
-      atualizarLado(lado.id,'rotacaoManual',v);
-    }
-    bM10.addEventListener('click', () => apRot((lado.rotacaoManual||0)-10));
-    bM1.addEventListener('click',  () => apRot((lado.rotacaoManual||0)-1));
-    bP1.addEventListener('click',  () => apRot((lado.rotacaoManual||0)+1));
-    bP10.addEventListener('click', () => apRot((lado.rotacaoManual||0)+10));
-    bRes.addEventListener('click', () => apRot(0));
-    sl.addEventListener('input',   () => apRot(parseFloat(sl.value)));
-
-    controles.appendChild(bM10); controles.appendChild(bM1); controles.appendChild(wrap);
-    controles.appendChild(bP1);  controles.appendChild(bP10); controles.appendChild(bRes);
-    rotBloco.appendChild(controles);
-
-    const fixarRow = document.createElement('div');
-    fixarRow.className = 'fixar-row'+(lado.fixado?' ativo':'');
-    fixarRow.title = 'Quando fixado, o nome não gira com o mapa';
-    fixarRow.innerHTML = `<span class="fixar-icon">📌</span><span class="fixar-txt">${lado.fixado?'Nome fixado (não acompanha rotação do mapa)':'Fixar posição do nome'}</span><div class="fixar-toggle"></div>`;
-    fixarRow.addEventListener('click', () => {
-      const novoF = !lado.fixado;
-      if (novoF) {
-        const av = Math.round(calcAngLabel(lado.angulo||0, lado.rotacaoManual||0, false));
-        lado.rotacaoManual=av; sl.value=String(av); vd.textContent=`${av}°`; previewLabel.style.transform=`rotate(${av}deg)`;
-      } else {
-        lado.rotacaoManual=0; sl.value='0'; vd.textContent='0°'; previewLabel.style.transform='rotate(0deg)';
+      const prev = body.querySelector('.rotacao-preview-label .prev-acs');
+      if (prev) {
+        prev.textContent = this.value || `#${lado.id}`;
+        prev.className = 'prev-acs' + (this.value ? '' : ' vazio');
       }
-      fixarRow.classList.toggle('ativo',novoF);
-      fixarRow.querySelector('.fixar-txt').textContent = novoF?'Nome fixado (não acompanha rotação do mapa)':'Fixar posição do nome';
-      atualizarLado(lado.id,'fixado',novoF);
     });
-    rotBloco.appendChild(fixarRow);
+    campoAcs.appendChild(inputAcs);
+
+    // Campo Pessoas
+    const campoPessoas = document.createElement('div');
+    campoPessoas.className = 'campo';
+    campoPessoas.innerHTML = '<label>👥 Total de pessoas neste lado</label>';
+    const inputPessoas = document.createElement('input');
+    inputPessoas.type = 'number';
+    inputPessoas.min = '0';
+    inputPessoas.placeholder = '0';
+    inputPessoas.value = lado.pessoas > 0 ? lado.pessoas : '';
+    inputPessoas.addEventListener('input', function() {
+      atualizarLado(lado.id, 'pessoas', this.value);
+      const prev = body.querySelector('.rotacao-preview-label .prev-qtd');
+      if (prev) {
+        const v = parseInt(this.value, 10) || 0;
+        // Preview do label usa o mesmo formato X*
+        prev.textContent = v > 0 ? `${v}*` : '–*';
+      }
+    });
+    campoPessoas.appendChild(inputPessoas);
+
+    // ─── CAMPO DE ROTAÇÃO DO LABEL ───────────────────────────
+    const campoRot = document.createElement('div');
+    campoRot.className = 'campo-rotacao';
+
+    const labelRot = document.createElement('label');
+    labelRot.innerHTML = '🔄 Rotação do nome no mapa';
+    campoRot.appendChild(labelRot);
+
+    // Preview — mostra o label no formato atual ACS | X*
+    const preview = document.createElement('div');
+    preview.className = 'rotacao-preview';
+    const previewLabel = document.createElement('div');
+    previewLabel.className = 'rotacao-preview-label';
+    const acsLblVal = lado.acs || `#${lado.id}`;
+    const acsCls = lado.acs ? 'prev-acs' : 'prev-acs vazio';
+    const qtdLblVal = lado.pessoas > 0 ? `${lado.pessoas}*` : '–*';
+    previewLabel.innerHTML = `<span class="${acsCls}">${escHtml(acsLblVal)}</span><span class="prev-qtd">${escHtml(qtdLblVal)}</span>`;
+    const rotManual = lado.rotacaoManual || 0;
+    previewLabel.style.transform = `rotate(${rotManual}deg)`;
+    preview.appendChild(previewLabel);
+    campoRot.appendChild(preview);
+
+    // Controles
+    const controles = document.createElement('div');
+    controles.className = 'rotacao-controles';
+
+    const btnMenos10 = document.createElement('button');
+    btnMenos10.textContent = '↺';
+    btnMenos10.title = 'Girar -10°';
+
+    const btnMenos1 = document.createElement('button');
+    btnMenos1.textContent = '−';
+    btnMenos1.title = 'Girar -1°';
+    btnMenos1.style.fontSize = '16px';
+    btnMenos1.style.fontWeight = '700';
+
+    const wrapSlider = document.createElement('div');
+    wrapSlider.className = 'rot-input-wrap';
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = '-180';
+    slider.max = '180';
+    slider.step = '1';
+    slider.value = String(rotManual);
+    const valDisplay = document.createElement('span');
+    valDisplay.className = 'rot-val';
+    valDisplay.textContent = `${rotManual}°`;
+    wrapSlider.appendChild(slider);
+    wrapSlider.appendChild(valDisplay);
+
+    const btnMais1 = document.createElement('button');
+    btnMais1.textContent = '+';
+    btnMais1.title = 'Girar +1°';
+    btnMais1.style.fontSize = '16px';
+    btnMais1.style.fontWeight = '700';
+
+    const btnMais10 = document.createElement('button');
+    btnMais10.textContent = '↻';
+    btnMais10.title = 'Girar +10°';
+
+    const btnReset = document.createElement('button');
+    btnReset.textContent = '0°';
+    btnReset.className = 'btn-rot-snap';
+    btnReset.title = 'Resetar rotação';
+
+    function aplicarRotacaoLabel(val) {
+      let v = Math.round(val);
+      if (v > 180) v = 180;
+      if (v < -180) v = -180;
+      slider.value = String(v);
+      valDisplay.textContent = `${v}°`;
+      previewLabel.style.transform = `rotate(${v}deg)`;
+      atualizarLado(lado.id, 'rotacaoManual', v);
+    }
+
+    btnMenos10.addEventListener('click', () => aplicarRotacaoLabel((lado.rotacaoManual || 0) - 10));
+    btnMenos1.addEventListener('click',  () => aplicarRotacaoLabel((lado.rotacaoManual || 0) - 1));
+    btnMais1.addEventListener('click',   () => aplicarRotacaoLabel((lado.rotacaoManual || 0) + 1));
+    btnMais10.addEventListener('click',  () => aplicarRotacaoLabel((lado.rotacaoManual || 0) + 10));
+    btnReset.addEventListener('click',   () => aplicarRotacaoLabel(0));
+    slider.addEventListener('input', () => aplicarRotacaoLabel(parseFloat(slider.value)));
+
+    controles.appendChild(btnMenos10);
+    controles.appendChild(btnMenos1);
+    controles.appendChild(wrapSlider);
+    controles.appendChild(btnMais1);
+    controles.appendChild(btnMais10);
+    controles.appendChild(btnReset);
+    campoRot.appendChild(controles);
+
+    // Toggle Fixar
+    const fixarRow = document.createElement('div');
+    fixarRow.className = 'fixar-row' + (lado.fixado ? ' ativo' : '');
+    fixarRow.title = 'Quando fixado, o nome não gira com o mapa';
+    fixarRow.innerHTML = `
+      <span class="fixar-icon">📌</span>
+      <span class="fixar-txt">${lado.fixado ? 'Nome fixado (não acompanha rotação do mapa)' : 'Fixar posição do nome'}</span>
+      <div class="fixar-toggle"></div>`;
+    fixarRow.addEventListener('click', () => {
+      const novoFixado = !lado.fixado;
+      if (novoFixado) {
+        const anguloVisual = calcAngLabel(lado.angulo || 0, lado.rotacaoManual || 0, false);
+        const v = Math.round(anguloVisual);
+        lado.rotacaoManual = v;
+        slider.value = String(v);
+        valDisplay.textContent = `${v}°`;
+        previewLabel.style.transform = `rotate(${v}deg)`;
+      } else {
+        lado.rotacaoManual = 0;
+        slider.value = '0';
+        valDisplay.textContent = '0°';
+        previewLabel.style.transform = 'rotate(0deg)';
+      }
+      fixarRow.classList.toggle('ativo', novoFixado);
+      fixarRow.querySelector('.fixar-txt').textContent = novoFixado
+        ? 'Nome fixado (não acompanha rotação do mapa)'
+        : 'Fixar posição do nome';
+      atualizarLado(lado.id, 'fixado', novoFixado);
+    });
+    campoRot.appendChild(fixarRow);
 
     const btnRem = document.createElement('button');
-    btnRem.className='btn-remover'; btnRem.textContent='🗑️ Remover este lado';
+    btnRem.className = 'btn-remover';
+    btnRem.textContent = '🗑️ Remover este lado';
     btnRem.addEventListener('click', () => removerLado(lado.id));
 
-    body.appendChild(campoRua); body.appendChild(campoAcs); body.appendChild(campoPessoas);
-    body.appendChild(rotBloco); body.appendChild(btnRem);
-    card.appendChild(header);  card.appendChild(body);
+    body.appendChild(campoRua);
+    body.appendChild(campoAcs);
+    body.appendChild(campoPessoas);
+    body.appendChild(campoRot);
+    body.appendChild(btnRem);
+
+    card.appendChild(header);
+    card.appendChild(body);
     lista.appendChild(card);
   });
 }
 
-function criarCampo(labelTxt, tipo, valor, placeholder) {
-  const div = document.createElement('div'); div.className='campo';
-  const lbl = document.createElement('label'); lbl.textContent=labelTxt;
-  const inp = document.createElement('input'); inp.type=tipo; inp.value=valor; inp.placeholder=placeholder;
-  div.appendChild(lbl); div.appendChild(inp); return div;
-}
-function mkBtn(txt, title, fontSize, fontWeight, isSnap) {
-  const b = document.createElement('button');
-  b.className = 'rot-btn'+(isSnap?' snap':''); b.textContent=txt; b.title=title;
-  if (fontSize)   b.style.fontSize=fontSize;
-  if (fontWeight) b.style.fontWeight=fontWeight;
-  return b;
+function toggleCard(id) {
+  const card = document.getElementById(`card-${id}`);
+  if (card) card.classList.toggle('aberto');
 }
 
-function toggleCard(id) { const c=document.getElementById(`card-${id}`); if(c) c.classList.toggle('aberto'); }
-function abrirCard(id)  {
-  // Se o painel estiver recolhido, abrir automaticamente
-  if (painelRecolhido) togglePainel();
-  const c=document.getElementById(`card-${id}`);
-  if(c){ c.classList.add('aberto'); setTimeout(()=>c.scrollIntoView({behavior:'smooth',block:'nearest'}),50); }
+function abrirCard(id) {
+  const card = document.getElementById(`card-${id}`);
+  if (card) {
+    card.classList.add('aberto');
+    setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+  }
 }
+
 function atualizarCardHeader(id) {
-  const lado=lados.find(x=>x.id===id); if(!lado) return;
-  const c=document.getElementById(`card-${id}`); if(!c) return;
-  const sub=c.querySelector('.sub'); if(sub) sub.textContent=`${lado.acs||'ACS não definida'} · ${lado.pessoas||0}*`;
-  const rua=c.querySelector('.rua'); if(rua){rua.title=lado.rua; rua.textContent=`#${lado.id} — ${lado.rua}`;}
+  const lado = lados.find(x => x.id === id);
+  if (!lado) return;
+  const cardEl = document.getElementById(`card-${id}`);
+  if (cardEl) {
+    const sub = cardEl.querySelector('.sub');
+    if (sub) sub.textContent = `${lado.acs || 'ACS não definida'} · ${lado.pessoas || 0} pessoas`;
+    const ruaEl = cardEl.querySelector('.rua');
+    if (ruaEl) { ruaEl.title = lado.rua; ruaEl.textContent = `#${lado.id} — ${lado.rua}`; }
+  }
   atualizarResumo();
 }
 
 // ─────────────────────────────────────────
-//  ATUALIZAR LADO
+//  ATUALIZAR DADOS DE UM LADO
 // ─────────────────────────────────────────
 function atualizarLado(id, campo, valor) {
-  const lado = lados.find(x=>x.id===id); if(!lado) return;
-  if      (campo==='pessoas')       lado.pessoas       = parseInt(valor,10)||0;
-  else if (campo==='rotacaoManual') lado.rotacaoManual = Number(valor)||0;
-  else if (campo==='fixado')        lado.fixado        = !!valor;
-  else                              lado[campo]        = valor;
-  const c=document.getElementById(`card-${id}`);
-  if(c){
-    const sub=c.querySelector('.sub'); if(sub) sub.textContent=`${lado.acs||'ACS não definida'} · ${lado.pessoas||0}*`;
-    const rua=c.querySelector('.rua'); if(rua){rua.title=lado.rua; rua.textContent=`#${lado.id} — ${lado.rua}`;}
-    c.classList.toggle('preenchido',!!(lado.acs||lado.pessoas));
+  const lado = lados.find(x => x.id === id);
+  if (!lado) return;
+
+  if (campo === 'pessoas') {
+    lado.pessoas = parseInt(valor, 10) || 0;
+  } else if (campo === 'rotacaoManual') {
+    lado.rotacaoManual = Number(valor) || 0;
+  } else if (campo === 'fixado') {
+    lado.fixado = !!valor;
+  } else {
+    lado[campo] = valor;
   }
-  atualizarIconeMarcador(id); atualizarResumo(); agendarSave();
-}
 
-function removerLado(id) {
-  const idx=lados.findIndex(x=>x.id===id); if(idx===-1) return;
-  map.removeLayer(lados[idx].marker); lados.splice(idx,1);
-  renderCards(); atualizarResumo(); atualizarBadge();
-}
+  const cardEl = document.getElementById(`card-${id}`);
+  if (cardEl) {
+    const sub = cardEl.querySelector('.sub');
+    if (sub) sub.textContent = `${lado.acs || 'ACS não definida'} · ${lado.pessoas || 0} pessoas`;
+    const ruaEl = cardEl.querySelector('.rua');
+    if (ruaEl) { ruaEl.title = lado.rua; ruaEl.textContent = `#${lado.id} — ${lado.rua}`; }
+    cardEl.classList.toggle('preenchido', !!(lado.acs || lado.pessoas));
+  }
 
-function atualizarIconeMarcador(id) {
-  const lado=lados.find(x=>x.id===id); if(!lado) return;
-  lado.marker.setIcon(buildIcon(id, lado.acs, lado.pessoas, lado.angulo||0, lado.rotacaoManual||0, lado.fixado));
+  atualizarIconeMarcador(id);
+  atualizarResumo();
+  agendarSave();
 }
 
 // ─────────────────────────────────────────
-//  RESUMO
+//  REMOVER LADO
+// ─────────────────────────────────────────
+function removerLado(id) {
+  const idx = lados.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  map.removeLayer(lados[idx].marker);
+  lados.splice(idx, 1);
+  renderCards();
+  atualizarResumo();
+  atualizarBadge();
+}
+
+// ─────────────────────────────────────────
+//  ATUALIZAR ÍCONE DO MARCADOR
+// ─────────────────────────────────────────
+function atualizarIconeMarcador(id) {
+  const lado = lados.find(x => x.id === id);
+  if (!lado) return;
+  lado.marker.setIcon(buildIcon(id, lado.acs, lado.pessoas, lado.angulo || 0, lado.rotacaoManual || 0, lado.fixado));
+}
+
+// ─────────────────────────────────────────
+//  RESUMO POR ACS
 // ─────────────────────────────────────────
 function atualizarResumo() {
-  const listaEl=document.getElementById('lista-acs'), totalEl=document.getElementById('total-num');
-  const mapa={}; let total=0;
-  lados.forEach(l=>{ const nome=(l.acs||'').trim(), qtd=l.pessoas||0; total+=qtd; if(!nome) return; mapa[nome]=(mapa[nome]||0)+qtd; });
-  totalEl.textContent=total.toLocaleString('pt-BR');
-  const nomes=Object.keys(mapa);
-  if(!nomes.length){ listaEl.innerHTML='<p id="sem-dados" style="font-size:12px;color:var(--muted);font-style:italic">Nenhum dado inserido ainda.</p>'; return; }
-  nomes.sort((a,b)=>mapa[b]-mapa[a]);
-  listaEl.innerHTML=nomes.map(n=>`<div class="acs-total-row"><span class="nome">👤 ${escHtml(n)}</span><span class="qtd">${mapa[n].toLocaleString('pt-BR')}</span></div>`).join('');
+  const listaEl = document.getElementById('lista-acs');
+  const totalEl = document.getElementById('total-num');
+
+  const mapa = {};
+  let total = 0;
+  lados.forEach(l => {
+    const nome = (l.acs || '').trim();
+    const qtd = l.pessoas || 0;
+    total += qtd;
+    if (!nome) return;
+    if (!mapa[nome]) mapa[nome] = 0;
+    mapa[nome] += qtd;
+  });
+
+  totalEl.textContent = total.toLocaleString('pt-BR');
+
+  const nomes = Object.keys(mapa);
+  if (nomes.length === 0) {
+    listaEl.innerHTML = '<p id="sem-dados" style="font-size:12px;color:var(--muted);font-style:italic">Nenhum dado inserido ainda.</p>';
+    return;
+  }
+
+  nomes.sort((a, b) => mapa[b] - mapa[a]);
+  listaEl.innerHTML = nomes.map(nome => `
+    <div class="acs-total-row">
+      <span class="nome">👤 ${escHtml(nome)}</span>
+      <span class="qtd">${mapa[nome].toLocaleString('pt-BR')}</span>
+    </div>`).join('');
 }
-function atualizarBadge() { document.getElementById('badge-lados').textContent=`${lados.length} lado${lados.length!==1?'s':''}`; }
 
 // ─────────────────────────────────────────
-//  RUAS
+//  BADGE
 // ─────────────────────────────────────────
-let ruasLayer=null, ruasVisiveis=false, ruasCarregadas=false;
+function atualizarBadge() {
+  document.getElementById('badge-lados').textContent = `${lados.length} lado${lados.length !== 1 ? 's' : ''}`;
+}
+
+// ─────────────────────────────────────────
+//  CAMADA DE RUAS (Overpass OSM)
+// ─────────────────────────────────────────
+let ruasLayer    = null;
+let ruasVisiveis = false;
+let ruasCarregadas = false;
+
 async function carregarRuas() {
-  const btn=document.getElementById('btn-ruas'); btn.textContent='⏳ Carregando…'; btn.disabled=true;
+  const btn = document.getElementById('btn-ruas');
+  btn.textContent = '⏳ Carregando…';
+  btn.disabled = true;
   try {
-    const data=await(await fetch('https://overpass-api.de/api/interpreter',{method:'POST',
-      body:`[out:json][timeout:30];(way[highway~"^(residential|unclassified|tertiary|secondary|primary|trunk|living_street|service|footway|path|track)$"](around:3500,-4.1928215,-40.4677377););out geom;`})).json();
-    ruasLayer=L.layerGroup();
-    for(const way of(data.elements||[])){
-      if(!way.geometry||way.geometry.length<2) continue;
-      const coords=way.geometry.map(p=>[p.lat,p.lon]), nome=way.tags?.name||'', tipo=way.tags?.highway||'';
-      const cor=tipo==='primary'||tipo==='secondary'?'#1565c0':tipo==='tertiary'?'#2e7d32':'#e65100';
-      const linha=L.polyline(coords,{color:cor,weight:(tipo==='primary'||tipo==='secondary')?3:2,opacity:.75,dashArray:(tipo==='footway'||tipo==='path')?'4,4':null});
-      if(nome) linha.bindTooltip(nome,{sticky:true,className:'tooltip-rua'});
+    const query = `[out:json][timeout:30];
+      (way[highway~"^(residential|unclassified|tertiary|secondary|primary|trunk|living_street|service|footway|path|track)$"](around:3500,-4.1928215,-40.4677377););
+      out geom;`;
+    const res = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      body: query
+    });
+    const data = await res.json();
+
+    ruasLayer = L.layerGroup();
+    for (const way of (data.elements || [])) {
+      if (!way.geometry || way.geometry.length < 2) continue;
+      const coords = way.geometry.map(p => [p.lat, p.lon]);
+      const nome   = way.tags?.name || '';
+      const tipo   = way.tags?.highway || '';
+      const cor    = tipo === 'primary' || tipo === 'secondary' ? '#1565c0'
+                   : tipo === 'tertiary' ? '#2e7d32'
+                   : '#e65100';
+      const linha = L.polyline(coords, {
+        color: cor,
+        weight: tipo === 'primary' || tipo === 'secondary' ? 3 : 2,
+        opacity: 0.75,
+        dashArray: tipo === 'footway' || tipo === 'path' ? '4,4' : null
+      });
+      if (nome) linha.bindTooltip(nome, { sticky: true, className: 'tooltip-rua' });
       ruasLayer.addLayer(linha);
     }
-    ruasCarregadas=true; mostrarToast(`✅ ${data.elements?.length||0} ruas carregadas!`);
-  } catch(e){ console.error(e); mostrarToast('❌ Erro ao carregar ruas.'); btn.textContent='🛣️ Ruas'; btn.disabled=false; return; }
-  btn.disabled=false; ativarRuas();
+    ruasCarregadas = true;
+    mostrarToast(`✅ ${data.elements?.length || 0} ruas carregadas!`);
+  } catch(e) {
+    console.error(e);
+    mostrarToast('❌ Erro ao carregar ruas. Tente novamente.');
+    btn.textContent = '🛣️ Ruas';
+    btn.disabled = false;
+    return;
+  }
+  btn.disabled = false;
+  ativarRuas();
 }
-function ativarRuas()   { if(ruasLayer) ruasLayer.addTo(map); ruasVisiveis=true;  const b=document.getElementById('btn-ruas'); b.textContent='🛣️ Ruas ✓'; b.classList.add('ativo'); }
-function desativarRuas(){ if(ruasLayer) map.removeLayer(ruasLayer); ruasVisiveis=false; const b=document.getElementById('btn-ruas'); b.textContent='🛣️ Ruas'; b.classList.remove('ativo'); }
-document.getElementById('btn-ruas').addEventListener('click',()=>{ if(ruasVisiveis) desativarRuas(); else if(ruasCarregadas) ativarRuas(); else carregarRuas(); });
-const styleRua=document.createElement('style');
-styleRua.textContent=`.tooltip-rua{background:#fff;border:1px solid #ccc;border-radius:4px;padding:2px 7px;font-size:11px;font-family:'Sora',sans-serif;font-weight:600;color:#1e2a38;box-shadow:0 1px 4px rgba(0,0,0,.15);}`;
+
+function ativarRuas() {
+  const btn = document.getElementById('btn-ruas');
+  if (ruasLayer) { ruasLayer.addTo(map); }
+  ruasVisiveis = true;
+  btn.textContent = '🛣️ Ruas ✓';
+  btn.classList.add('ativo');
+}
+
+function desativarRuas() {
+  const btn = document.getElementById('btn-ruas');
+  if (ruasLayer) { map.removeLayer(ruasLayer); }
+  ruasVisiveis = false;
+  btn.textContent = '🛣️ Ruas';
+  btn.classList.remove('ativo');
+}
+
+document.getElementById('btn-ruas').addEventListener('click', () => {
+  if (ruasVisiveis) desativarRuas();
+  else if (ruasCarregadas) ativarRuas();
+  else carregarRuas();
+});
+
+const styleRua = document.createElement('style');
+styleRua.textContent = `.tooltip-rua { background:#fff; border:1px solid #ccc; border-radius:4px; padding:2px 7px; font-size:11px; font-family:'Sora',sans-serif; font-weight:600; color:#1e2a38; box-shadow:0 1px 4px rgba(0,0,0,.15); }`;
 document.head.appendChild(styleRua);
 
 // ─────────────────────────────────────────
-//  EXPORTAR / CAPTURAR / LIMPAR
+//  ROTAÇÃO DO MAPA — com slider estilo card
 // ─────────────────────────────────────────
-document.getElementById('btn-exportar').addEventListener('click',()=>{
-  const blob=new Blob([JSON.stringify(serializarLados(),null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download=`acs_varjota_${new Date().toISOString().slice(0,10)}.json`; a.click();
+const rotInput = document.getElementById('rot-input');
+const rotRange = document.getElementById('rot-range');
+
+function sincronizarControlesRot() {
+  const v = Math.round(mapBearing);
+  rotInput.value = v;
+  rotRange.value = v;
+  document.getElementById('btn-rot-reset').textContent = mapBearing === 0 ? 'N' : '↺';
+}
+
+function girarMapa(delta) {
+  mapBearing = (mapBearing + delta + 360) % 360;
+  aplicarRotacao();
+}
+
+function aplicarRotacao() {
+  map.setBearing(mapBearing);
+  sincronizarControlesRot();
+  atualizarTodosOsIcones();
+}
+
+document.getElementById('btn-rot-esq').addEventListener('click',    () => girarMapa(-10));
+document.getElementById('btn-rot-dir').addEventListener('click',    () => girarMapa(10));
+document.getElementById('btn-rot-menos1').addEventListener('click', () => girarMapa(-1));
+document.getElementById('btn-rot-mais1').addEventListener('click',  () => girarMapa(1));
+
+document.getElementById('btn-rot-reset').addEventListener('click', () => {
+  mapBearing = 0;
+  aplicarRotacao();
 });
 
-document.getElementById('btn-capturar').addEventListener('click', async()=>{
-  const btn=document.getElementById('btn-capturar');
-  if(btn.classList.contains('capturando')) return;
-  btn.classList.add('capturando'); btn.textContent='⏳ Capturando…';
-  const toolbar=document.getElementById('toolbar'), statusEl=document.getElementById('status-nuvem'), legendaEl=document.getElementById('legenda-asterisco');
-  toolbar.style.display='none'; statusEl.style.display='none'; legendaEl.style.display='none';
+rotRange.addEventListener('input', () => {
+  const val = parseFloat(rotRange.value);
+  if (isNaN(val)) return;
+  mapBearing = ((val % 360) + 360) % 360;
+  map.setBearing(mapBearing);
+  rotInput.value = Math.round(mapBearing);
+  document.getElementById('btn-rot-reset').textContent = mapBearing === 0 ? 'N' : '↺';
+  atualizarTodosOsIcones();
+});
+
+rotInput.addEventListener('input', () => {
+  const val = parseFloat(rotInput.value);
+  if (isNaN(val)) return;
+  mapBearing = ((val % 360) + 360) % 360;
+  map.setBearing(mapBearing);
+  rotRange.value = Math.round(mapBearing);
+  document.getElementById('btn-rot-reset').textContent = mapBearing === 0 ? 'N' : '↺';
+  atualizarTodosOsIcones();
+});
+
+rotInput.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowUp')   { e.preventDefault(); girarMapa(1);  }
+  if (e.key === 'ArrowDown') { e.preventDefault(); girarMapa(-1); }
+});
+
+// ─────────────────────────────────────────
+//  EXPORTAR JSON
+// ─────────────────────────────────────────
+document.getElementById('btn-exportar').addEventListener('click', () => {
+  const dados = lados.map(l => ({
+    id: l.id,
+    rua: l.rua,
+    lat: l.lat,
+    lng: l.lng,
+    acs: l.acs,
+    pessoas: l.pessoas,
+    rotacaoManual: l.rotacaoManual || 0,
+    fixado: !!l.fixado
+  }));
+  const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `acs_varjota_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+});
+
+// ─────────────────────────────────────────
+//  CAPTURAR MAPA COMO PNG
+// ─────────────────────────────────────────
+document.getElementById('btn-capturar').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-capturar');
+  if (btn.classList.contains('capturando')) return;
+  btn.classList.add('capturando');
+  btn.textContent = '⏳ Capturando…';
+
+  const toolbar       = document.getElementById('toolbar');
+  const statusNuvem   = document.getElementById('status-nuvem');
+  const dica          = document.getElementById('dica');
+  const legendaAst    = document.getElementById('legenda-asterisco');
+  const painelToggle  = document.getElementById('painel-toggle');
+  const painelTab     = document.getElementById('painel-tab-fixo');
+  toolbar.style.display      = 'none';
+  statusNuvem.style.display  = 'none';
+  dica.style.display         = 'none';
+  legendaAst.style.display   = 'none';
+  painelToggle.style.display = 'none';
+  painelTab.style.display    = 'none';
+
   try {
-    const canvas=await html2canvas(document.getElementById('map'),{useCORS:true,allowTaint:true,logging:false,scale:2,backgroundColor:'#f4f6f9'});
-    const totalPessoas=document.getElementById('total-num').textContent;
-    const dataAtual=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
-    const fc=document.createElement('canvas'); fc.width=canvas.width; fc.height=canvas.height+80;
-    const ctx=fc.getContext('2d');
-    ctx.fillStyle='#1a7f4b'; ctx.fillRect(0,canvas.height,fc.width,80);
-    ctx.drawImage(canvas,0,0);
-    ctx.fillStyle='#fff'; ctx.font='bold 28px Sora,sans-serif'; ctx.textBaseline='middle';
-    ctx.fillText('Mapa ACS — Varjota/CE',30,canvas.height+28);
-    ctx.font='24px Sora,sans-serif'; ctx.fillStyle='rgba(255,255,255,0.8)';
-    ctx.fillText(`Total: ${totalPessoas} pessoas  ·  Gerado em ${dataAtual}`,30,canvas.height+60);
-    const link=document.createElement('a');
-    link.download=`mapa_acs_varjota_${new Date().toISOString().slice(0,10)}.png`;
-    link.href=fc.toDataURL('image/png'); link.click();
+    const mapEl = document.getElementById('map');
+    const canvas = await html2canvas(mapEl, {
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      scale: 2,
+      backgroundColor: '#f4f6f9'
+    });
+
+    const totalPessoas = document.getElementById('total-num').textContent;
+    const dataAtual = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const rodapeAltura = 40;
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width  = canvas.width;
+    finalCanvas.height = canvas.height + rodapeAltura * 2;
+    const ctx = finalCanvas.getContext('2d');
+
+    ctx.fillStyle = '#1a7f4b';
+    ctx.fillRect(0, canvas.height, finalCanvas.width, rodapeAltura * 2);
+    ctx.drawImage(canvas, 0, 0);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${28}px Sora, sans-serif`;
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Mapa ACS — Varjota/CE', 30, canvas.height + rodapeAltura * 0.7);
+
+    ctx.font = `${24}px Sora, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.fillText(`Total: ${totalPessoas} pessoas  ·  Gerado em ${dataAtual}  ·  * = nº de pessoas`, 30, canvas.height + rodapeAltura * 1.5);
+
+    const link = document.createElement('a');
+    link.download = `mapa_acs_varjota_${new Date().toISOString().slice(0,10)}.png`;
+    link.href = finalCanvas.toDataURL('image/png');
+    link.click();
     mostrarToast('✅ Imagem salva com sucesso!');
-  } catch(e){ console.error(e); mostrarToast('❌ Erro ao capturar o mapa.'); }
-  finally { toolbar.style.display=''; statusEl.style.display=''; legendaEl.style.display=''; btn.classList.remove('capturando'); btn.textContent='🖼️ Salvar Mapa'; }
+  } catch (e) {
+    console.error(e);
+    mostrarToast('❌ Erro ao capturar o mapa. Tente novamente.');
+  } finally {
+    toolbar.style.display      = '';
+    statusNuvem.style.display  = '';
+    legendaAst.style.display   = '';
+    painelToggle.style.display = '';
+    btn.classList.remove('capturando');
+    btn.textContent = '🖼️ Salvar Mapa';
+  }
 });
 
-document.getElementById('btn-limpar').addEventListener('click',()=>{
-  if(!lados.length||!confirm('Deseja remover todos os lados marcados?')) return;
-  lados.forEach(l=>map.removeLayer(l.marker));
-  lados=[]; proximoId=1; renderCards(); atualizarResumo(); atualizarBadge(); agendarSave();
+// ─────────────────────────────────────────
+//  LIMPAR TUDO
+// ─────────────────────────────────────────
+document.getElementById('btn-limpar').addEventListener('click', () => {
+  if (!lados.length) return;
+  if (!confirm('Deseja remover todos os lados marcados?')) return;
+  lados.forEach(l => map.removeLayer(l.marker));
+  lados = [];
+  proximoId = 1;
+  renderCards();
+  atualizarResumo();
+  atualizarBadge();
+  agendarSave();
 });
 
 // ─────────────────────────────────────────
 //  UTIL
 // ─────────────────────────────────────────
-function escHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 // ─────────────────────────────────────────
 //  BOOT
 // ─────────────────────────────────────────
 carregarConfig();
-if(jbApiKey && jbBinId){
-  setStatus('salvando','Carregando…');
-  carregarNuvem(false).then(ok=>{ if(ok){setStatus('conectado',`Bin: ${jbBinId.slice(-6)}`); iniciarPolling();} else setStatus('erro','Erro ao conectar'); });
+if (jbApiKey && jbBinId) {
+  setStatus('salvando', 'Carregando…');
+  carregarNuvem(false).then(ok => {
+    if (ok) { setStatus('conectado', `Bin: ${jbBinId.slice(-6)}`); iniciarPolling(); }
+    else    { setStatus('erro', 'Erro ao conectar'); }
+  });
 } else {
-  renderCards(); atualizarResumo();
-  if(!jbApiKey) setTimeout(()=>document.getElementById('modal-config').classList.remove('oculto'),600);
+  renderCards();
+  atualizarResumo();
+  if (!jbApiKey) {
+    setTimeout(() => document.getElementById('modal-config').classList.remove('oculto'), 600);
+  }
 }
-map.whenReady(()=>atualizarEscalaZoom());
+
+map.whenReady(() => atualizarEscalaZoom());
 </script>
 </body>
 </html>
