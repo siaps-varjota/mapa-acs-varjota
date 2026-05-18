@@ -1195,9 +1195,15 @@ const tileEsriSat = L.tileLayer(
 });
 
 // ── Labels de ruas via CartoDB tiles (light_only_labels + invert por img) ────
-map.createPane('labelsPane');
-map.getPane('labelsPane').style.zIndex = 650;
-map.getPane('labelsPane').style.pointerEvents = 'none';
+// O pane é criado DENTRO do mapPane para herdar a rotação do leaflet-rotate
+const mapPaneEl = map.getPane('mapPane');
+const labelsPaneEl = document.createElement('div');
+labelsPaneEl.className = 'leaflet-pane leaflet-labels-pane';
+labelsPaneEl.style.zIndex = '650';
+labelsPaneEl.style.pointerEvents = 'none';
+mapPaneEl.appendChild(labelsPaneEl);
+map._panes['labelsPane'] = labelsPaneEl;
+map._paneRenderers['labelsPane'] = undefined;
 
 const tileEsriLabels = L.tileLayer(
   'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
