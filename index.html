@@ -1300,6 +1300,7 @@ async function carregarEMostrarLabels() {
 
   } catch(e) {
     console.error(e);
+    alert('Erro labels: ' + e.message);
     mostrarToast('❌ Erro ao carregar nomes de ruas');
   }
 }
