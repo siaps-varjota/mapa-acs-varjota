@@ -1194,14 +1194,13 @@ const tileEsriSat = L.tileLayer(
   maxZoom: 22
 });
 
-// ── Labels sobre satélite: CartoDB Dark Only Labels com lighten ──────────────
+// ── Labels sobre satélite: CartoDB Light Only Labels ────────────────────────
 map.createPane('labelsPane');
 map.getPane('labelsPane').style.zIndex = 450;
 map.getPane('labelsPane').style.pointerEvents = 'none';
-map.getPane('labelsPane').style.mixBlendMode = 'lighten';
 
 const tileEsriLabels = L.tileLayer(
-  'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
+  'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
   attribution: '© <a href="https://carto.com/">CARTO</a>',
   subdomains: 'abcd',
   maxNativeZoom: 19,
@@ -1209,6 +1208,27 @@ const tileEsriLabels = L.tileLayer(
   pane: 'labelsPane',
   opacity: 1.0
 });
+
+// Ao ativar satélite, aplica invert só nos <img> do labelsPane (não no satélite)
+function aplicarInvertLabels() {
+  setTimeout(() => {
+    const imgs = map.getPane('labelsPane').querySelectorAll('img');
+    imgs.forEach(img => {
+      img.style.filter = 'invert(1) contrast(1.4)';
+      img.style.mixBlendMode = 'normal';
+    });
+  }, 300);
+}
+
+// Observa novos tiles adicionados ao labelsPane e aplica o filtro
+const labelsObserver = new MutationObserver(() => {
+  const imgs = map.getPane('labelsPane').querySelectorAll('img:not([data-inv])');
+  imgs.forEach(img => {
+    img.style.filter = 'invert(1) contrast(1.4)';
+    img.setAttribute('data-inv', '1');
+  });
+});
+labelsObserver.observe(document.getElementById('map'), { childList: true, subtree: true });
 
 let sateliteAtivo = false;
 tileOSM.addTo(map);
