@@ -1194,15 +1194,17 @@ const tileEsriSat = L.tileLayer(
   maxZoom: 22
 });
 
-// ── CORREÇÃO: CartoDB labels-only sobre o satélite ──────────────────────────
-// Entrega apenas textos (nomes de ruas, bairros, municípios) sem fundo de mapa,
-// deixando a imagem aérea visível por baixo. Cobertura boa até zoom 18-19.
+// ── CORREÇÃO: pane dedicado para labels ficarem sempre acima do satélite ────
+map.createPane('labelsPane');
+map.getPane('labelsPane').style.zIndex = 450;
+map.getPane('labelsPane').style.pointerEvents = 'none';
+
 const tileEsriLabels = L.tileLayer(
   'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
   attribution: 'Tiles © Esri',
   maxNativeZoom: 19,
   maxZoom: 22,
-  pane: 'overlayPane',
+  pane: 'labelsPane',
   opacity: 0.9
 });
 
