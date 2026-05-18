@@ -1194,14 +1194,14 @@ const tileEsriSat = L.tileLayer(
   maxZoom: 22
 });
 
-// ── Labels sobre satélite: CartoDB Dark Only Labels invertido ────────────────
+// ── Labels sobre satélite: CartoDB Dark Only Labels com lighten ──────────────
 map.createPane('labelsPane');
 map.getPane('labelsPane').style.zIndex = 450;
 map.getPane('labelsPane').style.pointerEvents = 'none';
-map.getPane('labelsPane').style.mixBlendMode = 'screen';
+map.getPane('labelsPane').style.mixBlendMode = 'lighten';
 
 const tileEsriLabels = L.tileLayer(
-  'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+  'https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
   attribution: '© <a href="https://carto.com/">CARTO</a>',
   subdomains: 'abcd',
   maxNativeZoom: 19,
