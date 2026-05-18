@@ -1194,69 +1194,61 @@ const tileEsriSat = L.tileLayer(
   maxZoom: 22
 });
 
-// ── Labels de ruas vetoriais: carregados via Overpass, tamanho fixo por zoom ─
+// ── Labels de ruas vetoriais ─────────────────────────────────────────────────
 map.createPane('labelsPane');
-map.getPane('labelsPane').style.zIndex = 450;
+map.getPane('labelsPane').style.zIndex = 650;
 map.getPane('labelsPane').style.pointerEvents = 'none';
 
-// tileEsriLabels é um stub vazio — labels são feitos via labelsRuasLayer abaixo
 const tileEsriLabels = { addTo: () => {}, remove: () => {} };
 
 let labelsRuasLayer  = null;
 let labelsCarregados = false;
 let labelsSatAtivo   = false;
 
-// Tamanho de fonte adaptado ao zoom atual
 function fontSizeParaZoom(zoom) {
-  if (zoom >= 18) return 13;
-  if (zoom >= 17) return 12;
-  if (zoom >= 16) return 11;
-  if (zoom >= 15) return 10;
-  return 9;
+  if (zoom >= 18) return 14;
+  if (zoom >= 17) return 13;
+  if (zoom >= 16) return 12;
+  if (zoom >= 15) return 11;
+  return 10;
 }
 
-// Cria o ícone de label de rua com estilo amarelo/contorno escuro
-function buildLabelRuaIcon(nome, angulo) {
-  const zoom = map.getZoom();
-  const fs   = fontSizeParaZoom(zoom);
-  let ang = angulo % 360;
-  if (ang >  90 && ang <= 270) ang -= 180;
-  if (ang > 270)               ang -= 360;
-  const div = document.createElement('div');
-  div.style.cssText = [
-    'transform:rotate(' + ang + 'deg)',
-    'transform-origin:center center',
-    'white-space:nowrap',
-    'font-family:Sora,sans-serif',
-    'font-size:' + fs + 'px',
-    'font-weight:700',
-    'color:#ffe066',
-    'text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 3px #000',
-    'pointer-events:none',
-    'line-height:1'
-  ].join(';');
-  div.textContent = nome;
-  return L.divIcon({ className: '', html: div.outerHTML, iconAnchor: [0, 0], iconSize: [1, 1] });
+function buildLabelRuaIcon(nome, ang) {
+  const fs = fontSizeParaZoom(map.getZoom());
+  // mantém texto legível (não de cabeça pra baixo)
+  let a = ang % 360;
+  if (a > 90 && a <= 270) a -= 180;
+  if (a > 270) a -= 360;
+  return L.divIcon({
+    className: 'label-rua-icon',
+    html: `<span style="display:inline-block;transform:rotate(${a}deg);font-family:Sora,sans-serif;font-size:${fs}px;font-weight:700;color:#ffe066;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;white-space:nowrap;line-height:1">${nome}</span>`,
+    iconAnchor: [0, 0],
+    iconSize: null
+  });
 }
 
-// Calcula ponto médio + ângulo de um way OSM
 function calcWayMidAngulo(geometry) {
   const mid = Math.floor(geometry.length / 2);
-  const a   = geometry[Math.max(0, mid - 1)];
-  const b   = geometry[Math.min(geometry.length - 1, mid)];
+  const a = geometry[Math.max(0, mid - 1)];
+  const b = geometry[Math.min(geometry.length - 1, mid)];
   const dLon = (b.lon - a.lon) * Math.cos(a.lat * Math.PI / 180);
   const dLat = b.lat - a.lat;
-  const ang  = Math.atan2(dLon, dLat) * 180 / Math.PI;
-  const lat  = (a.lat + b.lat) / 2;
-  const lng  = (a.lon + b.lon) / 2;
-  return { lat, lng, ang };
+  return {
+    lat: (a.lat + b.lat) / 2,
+    lng: (a.lon + b.lon) / 2,
+    ang: Math.atan2(dLon, dLat) * 180 / Math.PI
+  };
 }
 
-async function carregarLabelsRuas() {
+async function carregarEMostrarLabels() {
+  if (labelsCarregados) {
+    labelsRuasLayer.addTo(map);
+    labelsSatAtivo = true;
+    return;
+  }
+  mostrarToast('⏳ Carregando nomes das ruas…', 4000);
   try {
-    const query = `[out:json][timeout:30];
-(way[highway~"^(residential|unclassified|tertiary|secondary|primary|trunk|living_street|service)$"][name](around:3500,-4.1928215,-40.4677377););
-out geom tags;`;
+    const query = `[out:json][timeout:30];(way[highway][name](around:3500,-4.1928215,-40.4677377););out geom tags;`;
     const res = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -1265,61 +1257,39 @@ out geom tags;`;
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    // Deduplica: um label por nome de rua (ponto mais central)
-    const porNome = {};
+    labelsRuasLayer = L.layerGroup();
+
+    const vistos = new Set();
     for (const way of (data.elements || [])) {
       const nome = way.tags?.name;
       if (!nome || !way.geometry || way.geometry.length < 2) continue;
-      if (!porNome[nome]) porNome[nome] = [];
-      porNome[nome].push(way);
-    }
-
-    labelsRuasLayer = L.layerGroup();
-
-    for (const [nome, ways] of Object.entries(porNome)) {
-      for (const way of ways) {
-        const { lat, lng, ang } = calcWayMidAngulo(way.geometry);
-        const marker = L.marker([lat, lng], {
-          icon: buildLabelRuaIcon(nome, ang),
-          pane: 'labelsPane',
-          interactive: false,
-          keyboard: false
-        });
-        marker._ruaNome   = nome;
-        marker._ruaAngulo = ang;
-        labelsRuasLayer.addLayer(marker);
-      }
+      const { lat, lng, ang } = calcWayMidAngulo(way.geometry);
+      const m = L.marker([lat, lng], {
+        icon: buildLabelRuaIcon(nome, ang),
+        pane: 'labelsPane',
+        interactive: false
+      });
+      m._ruaNome = nome;
+      m._ruaAng  = ang;
+      labelsRuasLayer.addLayer(m);
     }
 
     labelsCarregados = true;
-    mostrarToast(`🗺️ ${Object.keys(porNome).length} ruas carregadas no satélite`);
+    labelsRuasLayer.addTo(map);
+    labelsSatAtivo = true;
+    mostrarToast(`✅ ${data.elements?.length || 0} segmentos carregados`);
 
-    // Atualiza tamanho de fonte ao mudar zoom
-    map.on('zoomend', () => {
+    map.on('zoomend rotate', () => {
       if (!labelsSatAtivo || !labelsRuasLayer) return;
       labelsRuasLayer.eachLayer(m => {
-        if (m._ruaNome) m.setIcon(buildLabelRuaIcon(m._ruaNome, m._ruaAngulo));
-      });
-    });
-
-    // Atualiza ângulos ao girar o mapa
-    map.on('rotate', () => {
-      if (!labelsSatAtivo || !labelsRuasLayer) return;
-      labelsRuasLayer.eachLayer(m => {
-        if (m._ruaNome) m.setIcon(buildLabelRuaIcon(m._ruaNome, m._ruaAngulo));
+        if (m._ruaNome) m.setIcon(buildLabelRuaIcon(m._ruaNome, m._ruaAng));
       });
     });
 
   } catch(e) {
-    console.error('Erro ao carregar labels de ruas:', e);
+    console.error(e);
     mostrarToast('❌ Erro ao carregar nomes de ruas');
   }
-}
-
-function ativarLabelsRuas() {
-  if (!labelsCarregados) return;
-  labelsRuasLayer.addTo(map);
-  labelsSatAtivo = true;
 }
 
 function desativarLabelsRuas() {
@@ -1337,12 +1307,7 @@ function ativarSatelite() {
   const btn = document.getElementById('btn-satelite');
   btn.textContent = '🛰️ Satélite ✓';
   btn.classList.add('ativo');
-  // Carrega labels na primeira vez, depois só exibe
-  if (!labelsCarregados) {
-    carregarLabelsRuas().then(() => ativarLabelsRuas());
-  } else {
-    ativarLabelsRuas();
-  }
+  carregarEMostrarLabels();
 }
 
 function desativarSatelite() {
