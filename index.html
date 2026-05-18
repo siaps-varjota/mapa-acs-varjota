@@ -1194,41 +1194,142 @@ const tileEsriSat = L.tileLayer(
   maxZoom: 22
 });
 
-// ── Labels sobre satélite: CartoDB Light Only Labels ────────────────────────
+// ── Labels de ruas vetoriais: carregados via Overpass, tamanho fixo por zoom ─
 map.createPane('labelsPane');
 map.getPane('labelsPane').style.zIndex = 450;
 map.getPane('labelsPane').style.pointerEvents = 'none';
 
-const tileEsriLabels = L.tileLayer(
-  'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
-  attribution: '© <a href="https://carto.com/">CARTO</a>',
-  subdomains: 'abcd',
-  maxNativeZoom: 19,
-  maxZoom: 22,
-  pane: 'labelsPane',
-  opacity: 1.0
-});
+// tileEsriLabels é um stub vazio — labels são feitos via labelsRuasLayer abaixo
+const tileEsriLabels = { addTo: () => {}, remove: () => {} };
 
-// Ao ativar satélite, aplica invert só nos <img> do labelsPane (não no satélite)
-function aplicarInvertLabels() {
-  setTimeout(() => {
-    const imgs = map.getPane('labelsPane').querySelectorAll('img');
-    imgs.forEach(img => {
-      img.style.filter = 'invert(1) sepia(0.5) saturate(3) hue-rotate(5deg) contrast(1.3) brightness(1.15)';
-      img.style.mixBlendMode = 'normal';
-    });
-  }, 300);
+let labelsRuasLayer  = null;
+let labelsCarregados = false;
+let labelsSatAtivo   = false;
+
+// Tamanho de fonte adaptado ao zoom atual
+function fontSizeParaZoom(zoom) {
+  if (zoom >= 18) return 13;
+  if (zoom >= 17) return 12;
+  if (zoom >= 16) return 11;
+  if (zoom >= 15) return 10;
+  return 9;
 }
 
-// Observa novos tiles adicionados ao labelsPane e aplica o filtro
-const labelsObserver = new MutationObserver(() => {
-  const imgs = map.getPane('labelsPane').querySelectorAll('img:not([data-inv])');
-  imgs.forEach(img => {
-    img.style.filter = 'invert(1) sepia(0.5) saturate(3) hue-rotate(5deg) contrast(1.3) brightness(1.15)';
-    img.setAttribute('data-inv', '1');
-  });
-});
-labelsObserver.observe(document.getElementById('map'), { childList: true, subtree: true });
+// Cria o ícone de label de rua com estilo amarelo/contorno escuro
+function buildLabelRuaIcon(nome, angulo) {
+  const zoom = map.getZoom();
+  const fs   = fontSizeParaZoom(zoom);
+  // Normaliza ângulo para -90..90 (texto legível)
+  let ang = angulo % 360;
+  if (ang >  90 && ang <= 270) ang -= 180;
+  if (ang > 270)               ang -= 360;
+  const html = `<div style="
+    transform: rotate(${ang}deg);
+    transform-origin: center center;
+    white-space: nowrap;
+    font-family: 'Sora', sans-serif;
+    font-size: ${fs}px;
+    font-weight: 700;
+    color: #ffe066;
+    text-shadow:
+      -1px -1px 0 #000,
+       1px -1px 0 #000,
+      -1px  1px 0 #000,
+       1px  1px 0 #000,
+       0    0   3px #000;
+    pointer-events: none;
+    line-height: 1;
+  ">${escHtml(nome)}</div>`;
+  return L.divIcon({ className: '', html, iconAnchor: [0, 0], iconSize: [1, 1] });
+}
+
+// Calcula ponto médio + ângulo de um way OSM
+function calcWayMidAngulo(geometry) {
+  const mid = Math.floor(geometry.length / 2);
+  const a   = geometry[Math.max(0, mid - 1)];
+  const b   = geometry[Math.min(geometry.length - 1, mid)];
+  const dLon = (b.lon - a.lon) * Math.cos(a.lat * Math.PI / 180);
+  const dLat = b.lat - a.lat;
+  const ang  = Math.atan2(dLon, dLat) * 180 / Math.PI;
+  const lat  = (a.lat + b.lat) / 2;
+  const lng  = (a.lon + b.lon) / 2;
+  return { lat, lng, ang };
+}
+
+async function carregarLabelsRuas() {
+  try {
+    const query = `[out:json][timeout:30];
+(way[highway~"^(residential|unclassified|tertiary|secondary|primary|trunk|living_street|service)$"][name](around:3500,-4.1928215,-40.4677377););
+out geom tags;`;
+    const res = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `data=${encodeURIComponent(query)}`
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    // Deduplica: um label por nome de rua (ponto mais central)
+    const porNome = {};
+    for (const way of (data.elements || [])) {
+      const nome = way.tags?.name;
+      if (!nome || !way.geometry || way.geometry.length < 2) continue;
+      if (!porNome[nome]) porNome[nome] = [];
+      porNome[nome].push(way);
+    }
+
+    labelsRuasLayer = L.layerGroup([], { pane: 'labelsPane' });
+
+    for (const [nome, ways] of Object.entries(porNome)) {
+      // Coloca um label a cada ~400m ao longo da rua (evita repetição excessiva)
+      for (const way of ways) {
+        const { lat, lng, ang } = calcWayMidAngulo(way.geometry);
+        const marker = L.marker([lat, lng], {
+          icon: buildLabelRuaIcon(nome, ang),
+          pane: 'labelsPane',
+          interactive: false,
+          keyboard: false
+        });
+        marker._ruaNome  = nome;
+        marker._ruaAngulo = ang;
+        labelsRuasLayer.addLayer(marker);
+      }
+    }
+
+    labelsCarregados = true;
+
+    // Atualiza tamanho de fonte ao mudar zoom
+    map.on('zoomend', () => {
+      if (!labelsSatAtivo || !labelsRuasLayer) return;
+      labelsRuasLayer.eachLayer(m => {
+        if (m._ruaNome) m.setIcon(buildLabelRuaIcon(m._ruaNome, m._ruaAngulo));
+      });
+    });
+
+    // Atualiza ângulos ao girar o mapa
+    map.on('rotate', () => {
+      if (!labelsSatAtivo || !labelsRuasLayer) return;
+      labelsRuasLayer.eachLayer(m => {
+        if (m._ruaNome) m.setIcon(buildLabelRuaIcon(m._ruaNome, m._ruaAngulo));
+      });
+    });
+
+  } catch(e) {
+    console.error('Erro ao carregar labels de ruas:', e);
+    mostrarToast('❌ Erro ao carregar nomes de ruas');
+  }
+}
+
+function ativarLabelsRuas() {
+  if (!labelsCarregados) return;
+  labelsRuasLayer.addTo(map);
+  labelsSatAtivo = true;
+}
+
+function desativarLabelsRuas() {
+  if (labelsRuasLayer) map.removeLayer(labelsRuasLayer);
+  labelsSatAtivo = false;
+}
 
 let sateliteAtivo = false;
 tileOSM.addTo(map);
@@ -1236,16 +1337,21 @@ tileOSM.addTo(map);
 function ativarSatelite() {
   map.removeLayer(tileOSM);
   tileEsriSat.addTo(map);
-  tileEsriLabels.addTo(map);
   sateliteAtivo = true;
   const btn = document.getElementById('btn-satelite');
   btn.textContent = '🛰️ Satélite ✓';
   btn.classList.add('ativo');
+  // Carrega labels na primeira vez, depois só exibe
+  if (!labelsCarregados) {
+    carregarLabelsRuas().then(() => ativarLabelsRuas());
+  } else {
+    ativarLabelsRuas();
+  }
 }
 
 function desativarSatelite() {
   map.removeLayer(tileEsriSat);
-  map.removeLayer(tileEsriLabels);
+  desativarLabelsRuas();
   tileOSM.addTo(map);
   sateliteAtivo = false;
   const btn = document.getElementById('btn-satelite');
