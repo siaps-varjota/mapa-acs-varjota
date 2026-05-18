@@ -284,25 +284,27 @@
     align-items: center;
     padding: 8px 0 2px;
   }
+
+  /* ── PREVIEW LABEL (painel) — fundo branco semi-transparente ── */
   .rotacao-preview-label {
-    background: rgba(0,0,0,0.65);
-    color: #ffffff;
+    background: rgba(255,255,255,0.88);
+    color: #1e2a38;
     border-radius: 5px;
     padding: 3px 10px;
     font-size: 11px;
     font-weight: 600;
     font-family: 'Sora', sans-serif;
     white-space: nowrap;
-    box-shadow: 0 1px 6px rgba(0,0,0,.5);
-    border: 1px solid rgba(255,255,255,.2);
+    box-shadow: 0 1px 4px rgba(0,0,0,.18);
+    border: 1px solid rgba(0,0,0,.10);
     line-height: 1.5;
     text-align: center;
     pointer-events: none;
     transition: transform .1s;
   }
-  .rotacao-preview-label .prev-acs { display: block; color: #a8e6c2; font-size: 11px; }
-  .rotacao-preview-label .prev-acs.vazio { color: rgba(255,255,255,.45); font-style: italic; }
-  .rotacao-preview-label .prev-qtd { display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: #ffffff; }
+  .rotacao-preview-label .prev-acs { display: block; color: #1a7f4b; font-size: 11px; font-weight: 700; }
+  .rotacao-preview-label .prev-acs.vazio { color: rgba(0,0,0,.35); font-style: italic; }
+  .rotacao-preview-label .prev-qtd { display: block; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: #1e2a38; }
 
   .fixar-row {
     display: flex;
@@ -564,6 +566,7 @@
     font-size: 11px;
   }
 
+  /* ── MARCADOR — sem ponto, só o card flutuando ── */
   .marker-wrapper {
     position: relative;
     cursor: pointer;
@@ -576,35 +579,18 @@
   .marker-wrapper.medio .lbl-qtd { display: none; }
   .marker-wrapper.medio .lbl-sep { display: none; }
 
-  .marker-pin {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: var(--verde);
-    border: 2px solid #fff;
-    border-radius: 50%;
-    box-shadow: 0 1px 5px rgba(0,0,0,.4);
-    transition: background .2s;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 2;
-  }
-  .marker-wrapper:hover .marker-pin { background: var(--laranja); }
-  .marker-wrapper.preenchido .marker-pin { background: var(--azul); }
-
+  /* ── LABEL DO MARCADOR — fundo branco semi-transparente ── */
   .marker-label {
     display: block;
-    background: rgba(0,0,0,0.65);
-    color: #ffffff;
+    background: rgba(255,255,255,0.88);
     border-radius: 5px;
     padding: 2px 8px;
     font-size: 11px;
     font-weight: 600;
     font-family: 'Sora', sans-serif;
     white-space: nowrap;
-    box-shadow: 0 1px 6px rgba(0,0,0,.5);
-    border: 1px solid rgba(255,255,255,.2);
+    box-shadow: 0 1px 4px rgba(0,0,0,.18);
+    border: 1px solid rgba(0,0,0,.10);
     line-height: 1.6;
     text-align: center;
     pointer-events: none;
@@ -613,11 +599,11 @@
     position: relative;
     z-index: 3;
   }
-  .marker-label .lbl-acs { display: inline; color: #a8e6c2; font-size: 11px; font-weight: 700; }
-  .marker-label .lbl-acs.vazio { color: rgba(255,255,255,.45); font-style: italic; }
-  .marker-label .lbl-sep { display: inline; color: rgba(255,255,255,.25); font-size: 10px; margin: 0 4px; }
-  .marker-label .lbl-qtd { display: inline; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #ffffff; letter-spacing: .3px; }
-  .marker-label .lbl-ast { display: inline; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: var(--verde2); vertical-align: super; line-height: 0; }
+  .marker-label .lbl-acs { display: inline; color: #1a7f4b; font-size: 11px; font-weight: 700; }
+  .marker-label .lbl-acs.vazio { color: rgba(0,0,0,.35); font-style: italic; }
+  .marker-label .lbl-sep { display: inline; color: rgba(0,0,0,.15); font-size: 10px; margin: 0 4px; }
+  .marker-label .lbl-qtd { display: inline; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #1e2a38; letter-spacing: .3px; }
+  .marker-label .lbl-ast { display: inline; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: #25b36a; vertical-align: super; line-height: 0; }
 
   #lados-lista::-webkit-scrollbar { width: 5px; }
   #lados-lista::-webkit-scrollbar-track { background: transparent; }
@@ -979,7 +965,7 @@ function calcAngLabel(anguloRua, rotacaoManual, fixado) {
 }
 
 // ─────────────────────────────────────────
-//  GERAR HTML DO MARCADOR
+//  GERAR HTML DO MARCADOR — sem ponto
 // ─────────────────────────────────────────
 function buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual, fixado) {
   const acsLbl = acs || `#${id}`;
@@ -991,7 +977,6 @@ function buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual, fixado) {
             <div class="marker-label" style="--ang:${ang}deg">
               <span class="${acsCls}">${escHtml(acsLbl)}</span><span class="lbl-sep">|</span><span class="lbl-qtd">${escHtml(qtdLbl)}<span class="lbl-ast">*</span></span>
             </div>
-            <div class="marker-pin"></div>
           </div>`;
 }
 
@@ -1194,8 +1179,6 @@ const tileEsriSat = L.tileLayer(
   maxZoom: 22
 });
 
-// ── Labels de ruas via CartoDB tiles ────────────────────────────────────────
-// Usa o tilePane nativo (que já gira com o mapa) com zIndex alto
 const tileEsriLabels = L.tileLayer(
   'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
   attribution: '© <a href="https://carto.com/">CARTO</a>',
@@ -1208,7 +1191,6 @@ const tileEsriLabels = L.tileLayer(
 });
 
 function aplicarFiltroLabels() {
-  // Aplica filtro apenas nos tiles do tileEsriLabels (identifica pelo URL)
   const container = map.getContainer();
   if (!container) return;
   container.querySelectorAll('img.leaflet-tile:not([data-filtered])').forEach(img => {
