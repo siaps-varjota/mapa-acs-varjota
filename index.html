@@ -521,6 +521,61 @@
   #rot-input::-webkit-outer-spin-button { -webkit-appearance: none; }
   #rot-input:focus { border-color: var(--verde2); background: #fff; }
 
+  /* ─── CONTROLE DE ZOOM ──────────────────────────────────────────────────── */
+  #zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: #fff;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    padding: 4px 7px;
+    height: 32px;
+    flex-shrink: 0;
+  }
+  #zoom-controls button {
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--borda);
+    border-radius: 5px;
+    background: var(--cinza);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, border-color .15s;
+    flex-shrink: 0;
+    padding: 0;
+    line-height: 1;
+    font-family: 'Sora', sans-serif;
+    color: var(--texto);
+  }
+  #zoom-controls button:hover { background: var(--borda); border-color: var(--verde2); }
+  #btn-zoom-reset {
+    font-size: 11px !important;
+    color: var(--azul) !important;
+    width: auto !important;
+    padding: 0 6px !important;
+  }
+  #zoom-wrap-slider { display: flex; align-items: center; gap: 5px; }
+  #zoom-range {
+    width: 70px;
+    height: 4px;
+    accent-color: var(--verde2);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 0;
+  }
+  #zoom-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--texto);
+    min-width: 38px;
+    text-align: right;
+  }
+
   #dica {
     position: absolute;
     top: 70px;
@@ -775,6 +830,16 @@
         <div id="drag-handle" title="Arraste para o mapa para adicionar um lado">
           <span class="drag-icon">📍</span>
           <span class="drag-label">Arraste para o mapa</span>
+        </div>
+
+        <div id="zoom-controls">
+          <button id="btn-zoom-menos" title="Zoom −">−</button>
+          <div id="zoom-wrap-slider">
+            <input id="zoom-range" type="range" min="13" max="19" step="1" value="16" title="Nível de zoom" />
+            <span id="zoom-val">16</span>
+          </div>
+          <button id="btn-zoom-mais" title="Zoom +">+</button>
+          <button id="btn-zoom-reset" title="Zoom padrão">⌂</button>
         </div>
 
         <div id="rot-controls">
@@ -1155,12 +1220,12 @@ document.getElementById('btn-modal-pular').addEventListener('click', () => {
 //  MAPA
 // ─────────────────────────────────────────
 const map = L.map('map', {
-  zoomControl: true,
+  zoomControl: false,
   rotate: true,
   rotateControl: false,
   bearing: 0,
-  zoomDelta: 0.75,
-  zoomSnap: 0.75,
+  zoomDelta: 1,
+  zoomSnap: 0,
   wheelPxPerZoomLevel: 250
 }).setView([-4.1928215, -40.4677377], 16);
 
@@ -1815,6 +1880,59 @@ rotInput.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowUp')   { e.preventDefault(); girarMapa(1);  }
   if (e.key === 'ArrowDown') { e.preventDefault(); girarMapa(-1); }
 });
+
+
+// ─────────────────────────────────────────
+//  ZOOM COM SLIDER (% relativo ao zoom padrão)
+// ─────────────────────────────────────────
+const ZOOM_PADRAO = 16;
+const ZOOM_STEP   = 10;   // % por clique (+/-)
+const PCT_MIN     = 25;
+const PCT_MAX     = 400;
+
+const zoomRange = document.getElementById('zoom-range');
+const zoomVal   = document.getElementById('zoom-val');
+
+// pct → zoom level  (100% = zoom 16)
+function pctParaZoom(pct) {
+  return ZOOM_PADRAO + Math.log2(pct / 100);
+}
+
+// zoom level → pct
+function zoomParaPct(z) {
+  return Math.round(Math.pow(2, z - ZOOM_PADRAO) * 100);
+}
+
+function sincronizarZoom() {
+  const pct = zoomParaPct(map.getZoom());
+  const clamped = Math.max(PCT_MIN, Math.min(PCT_MAX, pct));
+  zoomRange.value = clamped;
+  zoomVal.textContent = clamped + '%';
+}
+
+function setZoomPct(pct) {
+  pct = Math.max(PCT_MIN, Math.min(PCT_MAX, Math.round(pct / 5) * 5));
+  map.setZoom(pctParaZoom(pct));
+  sincronizarZoom();
+}
+
+// slider de 25 a 400 step 5
+zoomRange.min   = PCT_MIN;
+zoomRange.max   = PCT_MAX;
+zoomRange.step  = 5;
+zoomRange.value = 100;
+
+zoomRange.addEventListener('input', () => setZoomPct(parseInt(zoomRange.value)));
+document.getElementById('btn-zoom-menos').addEventListener('click', () => {
+  const cur = zoomParaPct(map.getZoom());
+  setZoomPct(cur - ZOOM_STEP);
+});
+document.getElementById('btn-zoom-mais').addEventListener('click', () => {
+  const cur = zoomParaPct(map.getZoom());
+  setZoomPct(cur + ZOOM_STEP);
+});
+document.getElementById('btn-zoom-reset').addEventListener('click', () => setZoomPct(100));
+map.on('zoomend', sincronizarZoom);
 
 // ─────────────────────────────────────────
 //  EXPORTAR JSON
