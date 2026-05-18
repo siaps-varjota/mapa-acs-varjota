@@ -1195,15 +1195,16 @@ const tileEsriSat = L.tileLayer(
 });
 
 // ── Labels de ruas via CartoDB tiles (light_only_labels + invert por img) ────
-// O pane é criado DENTRO do mapPane para herdar a rotação do leaflet-rotate
-const mapPaneEl = map.getPane('mapPane');
-const labelsPaneEl = document.createElement('div');
-labelsPaneEl.className = 'leaflet-pane leaflet-labels-pane';
-labelsPaneEl.style.zIndex = '650';
-labelsPaneEl.style.pointerEvents = 'none';
-mapPaneEl.appendChild(labelsPaneEl);
-map._panes['labelsPane'] = labelsPaneEl;
-map._paneRenderers['labelsPane'] = undefined;
+// No leaflet-rotate, o container que gira é o pai do tilePane.
+// Criamos o labelsPane como irmão do tilePane para herdar a rotação.
+map.createPane('labelsPane');
+map.getPane('labelsPane').style.zIndex = 250;
+map.getPane('labelsPane').style.pointerEvents = 'none';
+// Move o pane para dentro do mesmo container rotacionável que o tilePane
+const _tilePane = map.getPane('tilePane');
+if (_tilePane && _tilePane.parentNode) {
+  _tilePane.parentNode.appendChild(map.getPane('labelsPane'));
+}
 
 const tileEsriLabels = L.tileLayer(
   'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
