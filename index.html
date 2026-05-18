@@ -1194,18 +1194,19 @@ const tileEsriSat = L.tileLayer(
   maxZoom: 22
 });
 
-// ── CORREÇÃO: pane dedicado para labels ficarem sempre acima do satélite ────
+// ── Labels sobre satélite: CartoDB Light Only Labels ────────────────────────
 map.createPane('labelsPane');
 map.getPane('labelsPane').style.zIndex = 450;
 map.getPane('labelsPane').style.pointerEvents = 'none';
 
 const tileEsriLabels = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-  attribution: 'Tiles © Esri',
+  'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+  attribution: '© <a href="https://carto.com/">CARTO</a>',
+  subdomains: 'abcd',
   maxNativeZoom: 19,
   maxZoom: 22,
   pane: 'labelsPane',
-  opacity: 0.9
+  opacity: 1.0
 });
 
 let sateliteAtivo = false;
