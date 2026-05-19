@@ -61,7 +61,6 @@
 
   #map { flex: 1; position: relative; overflow: hidden; }
 
-  /* ─── PAINEL LATERAL ───────────────────────────────────────────────────── */
   #painel {
     width: 380px;
     min-width: 380px;
@@ -82,7 +81,6 @@
     border-left: none;
   }
 
-  /* ─── BOTÃO TOGGLE ──────────────────────────────────────────────────────── */
   #painel-toggle {
     position: absolute;
     right: 0;
@@ -353,7 +351,7 @@
   }
   .btn-remover:hover { opacity: .7; }
 
-  /* ─── TOOLBAR CENTRALIZADA ──────────────────────────────────────────────── */
+  /* ─── TOOLBAR ── */
   #toolbar {
     position: absolute;
     bottom: 12px;
@@ -455,7 +453,100 @@
     border-color: #4caf50;
   }
 
-  /* ─── CONTROLE DE ROTAÇÃO DO MAPA ───────────────────────────────────────── */
+  /* ─── BOTÃO COLORIR QUARTEIRÃO ── */
+  #btn-colorir {
+    background: var(--cinza);
+    color: #7b1fa2;
+    border: 1px solid #ce93d8;
+    position: relative;
+  }
+  #btn-colorir:hover { background: #f3e5f5; }
+  #btn-colorir.ativo {
+    background: #7b1fa2;
+    color: #fff;
+    border-color: #7b1fa2;
+    animation: pulse-btn 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse-btn {
+    0%,100% { box-shadow: 0 0 0 0 rgba(123,31,162,.4); }
+    50%      { box-shadow: 0 0 0 5px rgba(123,31,162,.0); }
+  }
+
+  /* ─── PICKER DE COR ── */
+  #colorir-painel {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fffffff5;
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.18);
+    backdrop-filter: blur(6px);
+    z-index: 950;
+    white-space: nowrap;
+  }
+  #colorir-painel.visivel { display: flex; }
+  #colorir-painel label { font-size: 11px; font-weight: 700; color: var(--muted); }
+
+  .cor-swatch {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform .15s, border-color .15s;
+    flex-shrink: 0;
+  }
+  .cor-swatch:hover   { transform: scale(1.2); }
+  .cor-swatch.selecionada { border-color: var(--texto); transform: scale(1.15); }
+
+  #cor-custom {
+    width: 28px; height: 28px;
+    border: none; border-radius: 50%;
+    cursor: pointer;
+    padding: 0;
+    overflow: hidden;
+    background: none;
+    flex-shrink: 0;
+    outline: 1px solid var(--borda);
+    outline-offset: 2px;
+  }
+
+  #colorir-painel .sep {
+    width: 1px; height: 20px;
+    background: var(--borda);
+  }
+
+  #opacidade-wrap {
+    display: flex; align-items: center; gap: 5px;
+  }
+  #opacidade-wrap label { font-size: 10px; color: var(--muted); font-weight: 600; }
+  #opacidade-range {
+    width: 60px; height: 4px;
+    accent-color: #7b1fa2;
+    cursor: pointer;
+  }
+  #opacidade-val { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--texto); min-width: 28px; }
+
+  #btn-limpar-quarteiroes {
+    background: none; border: 1px solid #ffcdd2;
+    color: var(--vermelho); font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 6px; cursor: pointer;
+    transition: background .15s;
+    height: 24px;
+    white-space: nowrap;
+  }
+  #btn-limpar-quarteiroes:hover { background: #ffebee; }
+
+  /* cursor especial no modo colorir */
+  #map.modo-colorir { cursor: crosshair !important; }
+  #map.modo-colorir .leaflet-container { cursor: crosshair !important; }
+
+  /* ─── CONTROLE DE ROTAÇÃO ── */
   #rot-controls {
     display: flex;
     align-items: center;
@@ -468,8 +559,7 @@
     flex-shrink: 0;
   }
   #rot-controls button {
-    width: 24px;
-    height: 24px;
+    width: 24px; height: 24px;
     border: 1px solid var(--borda);
     border-radius: 5px;
     background: var(--cinza);
@@ -485,172 +575,84 @@
     color: var(--texto);
   }
   #rot-controls button:hover { background: var(--borda); border-color: var(--verde2); }
-  #btn-rot-reset {
-    font-size: 9px !important;
-    color: var(--azul) !important;
-    width: auto !important;
-    padding: 0 6px !important;
-  }
+  #btn-rot-reset { font-size: 9px !important; color: var(--azul) !important; width: auto !important; padding: 0 6px !important; }
   #rot-wrap-slider { display: flex; align-items: center; gap: 4px; }
   #rot-range {
-    width: 60px;
-    height: 4px;
+    width: 60px; height: 4px;
     accent-color: var(--verde2);
     cursor: pointer;
-    border: none;
-    background: transparent;
-    padding: 0;
+    border: none; background: transparent; padding: 0;
   }
   #rot-input {
-    width: 38px;
-    padding: 1px 3px;
-    border: 1px solid var(--borda);
-    border-radius: 5px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--texto);
-    background: var(--cinza);
-    text-align: center;
-    outline: none;
-    height: 22px;
+    width: 38px; padding: 1px 3px;
+    border: 1px solid var(--borda); border-radius: 5px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
+    color: var(--texto); background: var(--cinza); text-align: center;
+    outline: none; height: 22px;
     -moz-appearance: textfield;
   }
-  #rot-input::-webkit-inner-spin-button,
-  #rot-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+  #rot-input::-webkit-inner-spin-button, #rot-input::-webkit-outer-spin-button { -webkit-appearance: none; }
   #rot-input:focus { border-color: var(--verde2); background: #fff; }
 
-  /* ─── CONTROLE DE ZOOM ──────────────────────────────────────────────────── */
+  /* ─── ZOOM ── */
   #zoom-controls {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    background: #fff;
-    border: 1px solid var(--borda);
-    border-radius: 8px;
-    padding: 4px 7px;
-    height: 32px;
-    flex-shrink: 0;
+    display: flex; align-items: center; gap: 3px;
+    background: #fff; border: 1px solid var(--borda);
+    border-radius: 8px; padding: 4px 7px; height: 32px; flex-shrink: 0;
   }
   #zoom-controls button {
-    width: 24px;
-    height: 24px;
-    border: 1px solid var(--borda);
-    border-radius: 5px;
-    background: var(--cinza);
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 700;
+    width: 24px; height: 24px;
+    border: 1px solid var(--borda); border-radius: 5px;
+    background: var(--cinza); cursor: pointer;
+    font-size: 14px; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
     transition: background .15s, border-color .15s;
-    flex-shrink: 0;
-    padding: 0;
-    line-height: 1;
-    font-family: 'Sora', sans-serif;
-    color: var(--texto);
+    flex-shrink: 0; padding: 0; line-height: 1;
+    font-family: 'Sora', sans-serif; color: var(--texto);
   }
   #zoom-controls button:hover { background: var(--borda); border-color: var(--verde2); }
-  #btn-zoom-reset {
-    font-size: 11px !important;
-    color: var(--azul) !important;
-    width: auto !important;
-    padding: 0 6px !important;
-  }
+  #btn-zoom-reset { font-size: 11px !important; color: var(--azul) !important; width: auto !important; padding: 0 6px !important; }
   #zoom-wrap-slider { display: flex; align-items: center; gap: 5px; }
-  #zoom-range {
-    width: 70px;
-    height: 4px;
-    accent-color: var(--verde2);
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    padding: 0;
-  }
-  #zoom-val {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--texto);
-    min-width: 38px;
-    text-align: right;
-  }
+  #zoom-range { width: 70px; height: 4px; accent-color: var(--verde2); cursor: pointer; border: none; background: transparent; padding: 0; }
+  #zoom-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: var(--texto); min-width: 38px; text-align: right; }
 
   #dica {
-    position: absolute;
-    top: 70px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 900;
-    background: var(--azul);
-    color: #fff;
-    padding: 8px 18px;
-    border-radius: 50px;
-    font-size: 12px;
-    font-weight: 600;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity .3s;
+    position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
+    z-index: 900; background: var(--azul); color: #fff;
+    padding: 8px 18px; border-radius: 50px; font-size: 12px; font-weight: 600;
+    pointer-events: none; opacity: 0; transition: opacity .3s;
   }
   #dica.visivel { opacity: 1; }
 
   #legenda-asterisco {
-    position: absolute;
-    bottom: 58px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 800;
-    background: rgba(255,255,255,.92);
-    padding: 4px 11px;
-    border-radius: 20px;
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--muted);
-    box-shadow: 0 2px 8px rgba(0,0,0,.12);
-    backdrop-filter: blur(4px);
-    border: 1px solid var(--borda);
-    pointer-events: none;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    white-space: nowrap;
+    position: absolute; bottom: 58px; left: 50%; transform: translateX(-50%);
+    z-index: 800; background: rgba(255,255,255,.92);
+    padding: 4px 11px; border-radius: 20px;
+    font-size: 10px; font-weight: 600; color: var(--muted);
+    box-shadow: 0 2px 8px rgba(0,0,0,.12); backdrop-filter: blur(4px);
+    border: 1px solid var(--borda); pointer-events: none;
+    display: flex; align-items: center; gap: 5px; white-space: nowrap;
   }
-  #legenda-asterisco strong {
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--verde);
-    font-size: 11px;
-  }
+  #legenda-asterisco strong { font-family: 'JetBrains Mono', monospace; color: var(--verde); font-size: 11px; }
 
-  /* ── MARCADOR ── */
   .marker-wrapper {
-    position: relative;
-    cursor: pointer;
-    display: inline-block;
+    position: relative; cursor: pointer; display: inline-block;
     transform: translate(-50%, -50%) scale(var(--zoom-scale, 0.5));
-    transform-origin: 50% 50%;
-    transition: transform 0.15s ease-out;
+    transform-origin: 50% 50%; transition: transform 0.15s ease-out;
   }
   .marker-wrapper.mini .marker-label { display: none; }
   .marker-wrapper.medio .lbl-qtd { display: none; }
   .marker-wrapper.medio .lbl-sep { display: none; }
 
   .marker-label {
-    display: block;
-    background: rgba(255,255,255,0.88);
-    border-radius: 5px;
-    padding: 2px 8px;
-    font-size: 11px;
-    font-weight: 600;
-    font-family: 'Sora', sans-serif;
-    white-space: nowrap;
-    box-shadow: 0 1px 4px rgba(0,0,0,.18);
-    border: 1px solid rgba(0,0,0,.10);
-    line-height: 1.6;
-    text-align: center;
+    display: block; background: rgba(255,255,255,0.88);
+    border-radius: 5px; padding: 2px 8px;
+    font-size: 11px; font-weight: 600; font-family: 'Sora', sans-serif;
+    white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.18);
+    border: 1px solid rgba(0,0,0,.10); line-height: 1.6; text-align: center;
     pointer-events: none;
-    transform: rotate(var(--ang, 0deg));
-    transform-origin: center center;
-    position: relative;
-    z-index: 3;
+    transform: rotate(var(--ang, 0deg)); transform-origin: center center;
+    position: relative; z-index: 3;
   }
   .marker-label .lbl-acs { display: inline; color: #1a7f4b; font-size: 11px; font-weight: 700; }
   .marker-label .lbl-acs.vazio { color: rgba(0,0,0,.35); font-style: italic; }
@@ -663,99 +665,52 @@
   #lados-lista::-webkit-scrollbar-thumb { background: var(--borda); border-radius: 5px; }
 
   #total-geral {
-    padding: 12px 18px;
-    border-top: 1px solid var(--borda);
-    background: var(--cinza);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
+    padding: 12px 18px; border-top: 1px solid var(--borda);
+    background: var(--cinza); display: flex; align-items: center;
+    justify-content: space-between; flex-shrink: 0;
   }
   #total-geral span { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
-  #total-geral .num {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--verde);
-  }
+  #total-geral .num { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--verde); }
 
-  /* ─── MODAIS ─────────────────────────────────────────────────────────────── */
+  /* ─── MODAIS ── */
   .modal-overlay {
     position: fixed; inset: 0; z-index: 9999;
-    background: rgba(10,20,35,.7);
-    backdrop-filter: blur(4px);
-    display: flex; align-items: center; justify-content: center;
-    padding: 20px;
+    background: rgba(10,20,35,.7); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
   }
   .modal-overlay.oculto { display: none; }
   .modal-box {
-    background: #fff;
-    border-radius: 16px;
-    padding: 32px 28px 24px;
-    max-width: 460px;
-    width: 100%;
-    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    background: #fff; border-radius: 16px; padding: 32px 28px 24px;
+    max-width: 460px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.3);
   }
   .modal-icon { font-size: 40px; text-align: center; margin-bottom: 10px; }
   .modal-box h2 { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 8px; }
   .modal-box p  { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 18px; line-height: 1.6; }
   .modal-steps { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
   .step { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--texto); }
-  .step span {
-    background: var(--verde); color: #fff;
-    border-radius: 50%; width: 22px; height: 22px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
-  }
+  .step span { background: var(--verde); color: #fff; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
   .step a { color: var(--azul); font-weight: 600; }
   .modal-field { margin-bottom: 14px; }
   .modal-field label { font-size: 12px; font-weight: 700; color: var(--muted); display: block; margin-bottom: 5px; }
-  .modal-field input {
-    width: 100%; padding: 10px 12px;
-    border: 1px solid var(--borda); border-radius: 8px;
-    font-size: 13px; font-family: 'Sora', sans-serif;
-    outline: none; transition: border-color .2s;
-  }
+  .modal-field input { width: 100%; padding: 10px 12px; border: 1px solid var(--borda); border-radius: 8px; font-size: 13px; font-family: 'Sora', sans-serif; outline: none; transition: border-color .2s; }
   .modal-field input:focus { border-color: var(--verde2); }
   .modal-field input.mono { font-family: 'JetBrains Mono', monospace; }
   .modal-erro { color: var(--vermelho); font-size: 12px; min-height: 18px; margin-bottom: 10px; text-align: center; }
   .modal-btns { display: flex; flex-direction: column; gap: 8px; }
-  .modal-btns button {
-    width: 100%; padding: 12px;
-    border: none; border-radius: 10px; cursor: pointer;
-    font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700;
-    background: var(--verde); color: #fff; transition: background .2s;
-  }
+  .modal-btns button { width: 100%; padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700; background: var(--verde); color: #fff; transition: background .2s; }
   .modal-btns button:hover { background: var(--verde2); }
-  .modal-btns .btn-secundario {
-    background: var(--cinza); color: var(--muted);
-    border: 1px solid var(--borda); font-weight: 400;
-  }
+  .modal-btns .btn-secundario { background: var(--cinza); color: var(--muted); border: 1px solid var(--borda); font-weight: 400; }
   .modal-btns .btn-secundario:hover { background: var(--borda); }
   .modal-btns .btn-azul { background: var(--azul); }
   .modal-btns .btn-azul:hover { background: #1976d2; }
 
-  /* ─── PREVIEW DO MAPA NO MODAL DE SALVAR ────────────────────────────────── */
   #preview-canvas-wrap {
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid var(--borda);
-    margin-bottom: 16px;
-    background: var(--cinza);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 120px;
+    border-radius: 10px; overflow: hidden; border: 1px solid var(--borda);
+    margin-bottom: 16px; background: var(--cinza);
+    display: flex; align-items: center; justify-content: center; min-height: 120px;
   }
-  #preview-canvas-wrap canvas, #preview-canvas-wrap img {
-    max-width: 100%;
-    max-height: 220px;
-    display: block;
-  }
-  #preview-spinner {
-    font-size: 28px;
-    animation: spin 1s linear infinite;
-  }
+  #preview-canvas-wrap canvas, #preview-canvas-wrap img { max-width: 100%; max-height: 220px; display: block; }
+  #preview-spinner { font-size: 28px; animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   #status-nuvem {
@@ -764,14 +719,10 @@
     padding: 5px 12px; font-size: 11px; font-weight: 600;
     box-shadow: 0 2px 8px rgba(0,0,0,.15);
     display: flex; align-items: center; gap: 6px;
-    cursor: pointer; border: 1px solid var(--borda);
-    transition: all .2s;
+    cursor: pointer; border: 1px solid var(--borda); transition: all .2s;
   }
   #status-nuvem:hover { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.2); }
-  #status-nuvem .dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--muted); flex-shrink: 0;
-  }
+  #status-nuvem .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
   #status-nuvem.conectado .dot { background: var(--verde2); }
   #status-nuvem.salvando .dot  { background: var(--laranja); animation: pulse .6s infinite; }
   #status-nuvem.erro .dot      { background: var(--vermelho); }
@@ -779,12 +730,9 @@
 
   #toast {
     position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-    background: #1e2a38; color: #fff;
-    padding: 9px 20px; border-radius: 50px;
-    font-size: 12px; font-weight: 600;
-    z-index: 9998; opacity: 0; pointer-events: none;
-    transition: opacity .3s;
-    white-space: nowrap;
+    background: #1e2a38; color: #fff; padding: 9px 20px; border-radius: 50px;
+    font-size: 12px; font-weight: 600; z-index: 9998; opacity: 0; pointer-events: none;
+    transition: opacity .3s; white-space: nowrap;
   }
   #toast.visivel { opacity: 1; }
 
@@ -824,6 +772,28 @@
         <span class="toggle-label">Painel</span>
       </button>
 
+      <!-- Painel de opções de cor (acima da toolbar) -->
+      <div id="colorir-painel">
+        <label>Cor:</label>
+        <div class="cor-swatch selecionada" style="background:#ef5350" data-cor="#ef5350" title="Vermelho"></div>
+        <div class="cor-swatch" style="background:#42a5f5" data-cor="#42a5f5" title="Azul"></div>
+        <div class="cor-swatch" style="background:#66bb6a" data-cor="#66bb6a" title="Verde"></div>
+        <div class="cor-swatch" style="background:#ffa726" data-cor="#ffa726" title="Laranja"></div>
+        <div class="cor-swatch" style="background:#ab47bc" data-cor="#ab47bc" title="Roxo"></div>
+        <div class="cor-swatch" style="background:#26c6da" data-cor="#26c6da" title="Ciano"></div>
+        <div class="cor-swatch" style="background:#ffee58" data-cor="#ffee58" title="Amarelo"></div>
+        <div class="cor-swatch" style="background:#8d6e63" data-cor="#8d6e63" title="Marrom"></div>
+        <input type="color" id="cor-custom" value="#ef5350" title="Cor personalizada" />
+        <div class="sep"></div>
+        <div id="opacidade-wrap">
+          <label>Opacidade:</label>
+          <input type="range" id="opacidade-range" min="5" max="90" value="35" step="5" />
+          <span id="opacidade-val">35%</span>
+        </div>
+        <div class="sep"></div>
+        <button id="btn-limpar-quarteiroes">🗑️ Limpar quadras</button>
+      </div>
+
       <div id="toolbar">
         <div id="drag-handle" title="Arraste para o mapa para adicionar um lado">
           <span class="drag-icon">📍</span>
@@ -854,6 +824,7 @@
 
         <button id="btn-satelite">🛰️ Satélite</button>
         <button id="btn-ruas">🛣️ Ruas</button>
+        <button id="btn-colorir">🎨 Colorir Quadra</button>
         <button id="btn-capturar">🖼️ Salvar Mapa</button>
         <button id="btn-exportar">📋 Exportar JSON</button>
         <button id="btn-limpar">🗑️ Limpar Tudo</button>
@@ -861,7 +832,7 @@
       <div id="drag-ghost">📍</div>
     </div>
 
-    <!-- ─── MODAL CONFIG NUVEM ─────────────────────────────────────── -->
+    <!-- MODAL CONFIG NUVEM -->
     <div id="modal-config" class="modal-overlay oculto">
       <div class="modal-box">
         <div class="modal-icon">☁️</div>
@@ -888,7 +859,7 @@
       </div>
     </div>
 
-    <!-- ─── MODAL SALVAR IMAGEM ────────────────────────────────────── -->
+    <!-- MODAL SALVAR IMAGEM -->
     <div id="modal-salvar" class="modal-overlay oculto">
       <div class="modal-box">
         <div class="modal-icon">🖼️</div>
@@ -943,6 +914,277 @@ let lados = [];
 let modoAdicionar = false;
 let proximoId = 1;
 
+// ─── COLORIR QUARTEIRÕES ─────────────────
+let modoColorir       = false;
+let corSelecionada    = '#ef5350';
+let opacidadeColorir  = 0.35;
+let quarteiroes       = [];   // { polygon, cor, opacidade }
+
+function toggleColorir() {
+  modoColorir = !modoColorir;
+  const btn   = document.getElementById('btn-colorir');
+  const painel = document.getElementById('colorir-painel');
+  const mapEl  = document.getElementById('map');
+
+  btn.classList.toggle('ativo', modoColorir);
+  btn.textContent = modoColorir ? '🎨 Colorindo… (ESC p/ sair)' : '🎨 Colorir Quadra';
+  painel.classList.toggle('visivel', modoColorir);
+  mapEl.classList.toggle('modo-colorir', modoColorir);
+
+  if (modoColorir) {
+    mostrarToast('🎨 Clique dentro de um quarteirão para colorir', 3000);
+    map.dragging.disable();
+  } else {
+    map.dragging.enable();
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modoColorir) toggleColorir();
+});
+
+// Swatches de cor
+document.querySelectorAll('.cor-swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    document.querySelectorAll('.cor-swatch').forEach(s => s.classList.remove('selecionada'));
+    sw.classList.add('selecionada');
+    corSelecionada = sw.dataset.cor;
+    document.getElementById('cor-custom').value = corSelecionada;
+  });
+});
+
+document.getElementById('cor-custom').addEventListener('input', function() {
+  corSelecionada = this.value;
+  document.querySelectorAll('.cor-swatch').forEach(s => s.classList.remove('selecionada'));
+});
+
+document.getElementById('opacidade-range').addEventListener('input', function() {
+  opacidadeColorir = parseInt(this.value) / 100;
+  document.getElementById('opacidade-val').textContent = this.value + '%';
+  // Atualiza todos os polígonos existentes com nova opacidade? Não — só afeta novos.
+});
+
+document.getElementById('btn-colorir').addEventListener('click', toggleColorir);
+
+document.getElementById('btn-limpar-quarteiroes').addEventListener('click', () => {
+  quarteiroes.forEach(q => { try { map.removeLayer(q.polygon); } catch {} });
+  quarteiroes = [];
+  mostrarToast('🗑️ Quadras coloridas removidas');
+  agendarSave();
+});
+
+// ─── BUSCAR QUARTEIRÃO VIA OVERPASS ──────
+async function buscarQuarteirao(lat, lng) {
+  const delta = 0.0015;
+  const bbox  = `${lat - delta},${lng - delta},${lat + delta},${lng + delta}`;
+
+  // Tenta buscar o menor polígono de forma que contém o ponto
+  const query = `[out:json][timeout:10];
+(
+  way[building](${bbox});
+  way[landuse](${bbox});
+  way[leisure](${bbox});
+  way[amenity](${bbox});
+)(._;<;);out geom;`;
+
+  try {
+    const res = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `data=${encodeURIComponent(query)}`
+    });
+    const data = await res.json();
+
+    // Filtra apenas ways com geometria fechada que contêm o ponto
+    let candidatos = [];
+    for (const el of (data.elements || [])) {
+      if (el.type !== 'way' || !el.geometry || el.geometry.length < 3) continue;
+      const coords = el.geometry.map(p => [p.lat, p.lon]);
+      if (pontoNoPoli(lat, lng, coords)) {
+        const area = calcArea(coords);
+        candidatos.push({ coords, area });
+      }
+    }
+
+    if (candidatos.length > 0) {
+      // Pega o menor polígono que contém o ponto
+      candidatos.sort((a, b) => a.area - b.area);
+      return candidatos[0].coords;
+    }
+  } catch (e) {
+    console.warn('Overpass buildings falhou, tentando ruas…', e);
+  }
+
+  // Fallback: tenta construir quarteirão a partir das ruas mais próximas
+  return await buscarQuarteiraoRuas(lat, lng);
+}
+
+async function buscarQuarteiraoRuas(lat, lng) {
+  const delta = 0.002;
+  const bbox  = `${lat - delta},${lng - delta},${lat + delta},${lng + delta}`;
+  const query = `[out:json][timeout:10];
+way[highway~"^(residential|unclassified|tertiary|secondary|primary|living_street|service)$"](${bbox});
+out geom;`;
+
+  try {
+    const res = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `data=${encodeURIComponent(query)}`
+    });
+    const data = await res.json();
+
+    // Acha as 4 ruas mais próximas do ponto e tenta formar um polígono convexo
+    let segmentos = [];
+    for (const way of (data.elements || [])) {
+      if (!way.geometry || way.geometry.length < 2) continue;
+      for (let i = 0; i < way.geometry.length - 1; i++) {
+        const a = way.geometry[i];
+        const b = way.geometry[i + 1];
+        const mx = (a.lon + b.lon) / 2;
+        const my = (a.lat + b.lat) / 2;
+        const dx = mx - lng, dy = my - lat;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        segmentos.push({ a, b, dist });
+      }
+    }
+
+    segmentos.sort((x, y) => x.dist - y.dist);
+    const top = segmentos.slice(0, 30);
+
+    // Coleta todos os pontos únicos das ruas próximas
+    const pts = [];
+    top.forEach(s => {
+      pts.push([s.a.lat, s.a.lon]);
+      pts.push([s.b.lat, s.b.lon]);
+    });
+
+    if (pts.length < 3) return null;
+
+    // Calcula o casco convexo dos pontos para formar um polígono de quarteirão aproximado
+    const hull = convexHull(pts);
+    if (hull.length < 3) return null;
+
+    // Verifica se o ponto clicado está dentro do hull
+    if (!pontoNoPoli(lat, lng, hull)) {
+      // Se não estiver, usa um quadrado simples como fallback
+      const d = 0.0003;
+      return [[lat+d,lng-d],[lat+d,lng+d],[lat-d,lng+d],[lat-d,lng-d]];
+    }
+    return hull;
+  } catch (e) {
+    console.error('Fallback ruas falhou:', e);
+    // Último fallback: quadrado simples
+    const d = 0.0003;
+    return [[lat+d,lng-d],[lat+d,lng+d],[lat-d,lng+d],[lat-d,lng-d]];
+  }
+}
+
+// ─── GEOMETRIA ────────────────────────────
+function pontoNoPoli(lat, lng, coords) {
+  let inside = false;
+  for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+    const xi = coords[i][1], yi = coords[i][0];
+    const xj = coords[j][1], yj = coords[j][0];
+    const intersect = ((yi > lat) !== (yj > lat)) &&
+      (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function calcArea(coords) {
+  let area = 0;
+  for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+    area += (coords[j][1] + coords[i][1]) * (coords[j][0] - coords[i][0]);
+  }
+  return Math.abs(area / 2);
+}
+
+function convexHull(points) {
+  if (points.length < 3) return points;
+  points = points.slice().sort((a, b) => a[1] !== b[1] ? a[1] - b[1] : a[0] - b[0]);
+  const cross = (O, A, B) =>
+    (A[1] - O[1]) * (B[0] - O[0]) - (A[0] - O[0]) * (B[1] - O[1]);
+  const lower = [];
+  for (const p of points) {
+    while (lower.length >= 2 && cross(lower[lower.length-2], lower[lower.length-1], p) <= 0)
+      lower.pop();
+    lower.push(p);
+  }
+  const upper = [];
+  for (let i = points.length - 1; i >= 0; i--) {
+    const p = points[i];
+    while (upper.length >= 2 && cross(upper[upper.length-2], upper[upper.length-1], p) <= 0)
+      upper.pop();
+    upper.push(p);
+  }
+  upper.pop(); lower.pop();
+  return lower.concat(upper);
+}
+
+// ─── CLICK NO MAPA PARA COLORIR ──────────
+async function colorirQuarteirao(e) {
+  if (!modoColorir) return;
+
+  const lat = e.latlng.lat;
+  const lng = e.latlng.lng;
+
+  // Verifica se clicou em cima de um polígono já existente → remove
+  for (let i = quarteiroes.length - 1; i >= 0; i--) {
+    const q = quarteiroes[i];
+    const latLngs = q.polygon.getLatLngs()[0];
+    const coords  = latLngs.map(ll => [ll.lat, ll.lng]);
+    if (pontoNoPoli(lat, lng, coords)) {
+      map.removeLayer(q.polygon);
+      quarteiroes.splice(i, 1);
+      mostrarToast('🗑️ Coloração removida');
+      agendarSave();
+      return;
+    }
+  }
+
+  // Busca o contorno do quarteirão
+  const dicaEl = document.getElementById('dica');
+  dicaEl.textContent = '⏳ Buscando quarteirão…';
+  dicaEl.classList.add('visivel');
+
+  const coords = await buscarQuarteirao(lat, lng);
+
+  dicaEl.classList.remove('visivel');
+
+  if (!coords || coords.length < 3) {
+    mostrarToast('❌ Não foi possível identificar o quarteirão');
+    return;
+  }
+
+  const cor = corSelecionada;
+  const opa = opacidadeColorir;
+
+  const polygon = L.polygon(coords, {
+    color: cor,
+    fillColor: cor,
+    fillOpacity: opa,
+    weight: 2,
+    opacity: 0.8
+  }).addTo(map);
+
+  // Clique no polígono já existente → remove
+  polygon.on('click', (ev) => {
+    if (!modoColorir) return;
+    L.DomEvent.stopPropagation(ev);
+    map.removeLayer(polygon);
+    const idx = quarteiroes.findIndex(q => q.polygon === polygon);
+    if (idx !== -1) quarteiroes.splice(idx, 1);
+    mostrarToast('🗑️ Coloração removida');
+    agendarSave();
+  });
+
+  quarteiroes.push({ polygon, cor, opacidade: opa, coords });
+  agendarSave();
+  mostrarToast('✅ Quarteirão colorido! Clique novamente para remover.');
+}
+
 // ─────────────────────────────────────────
 //  PAINEL RECOLHÍVEL
 // ─────────────────────────────────────────
@@ -991,7 +1233,8 @@ function mostrarToast(msg, dur = 2500) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('visivel');
-  setTimeout(() => t.classList.remove('visivel'), dur);
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('visivel'), dur);
 }
 
 function serializarLados() {
@@ -1001,6 +1244,14 @@ function serializarLados() {
     rotacaoManual: l.rotacaoManual || 0,
     fixado: !!l.fixado,
     acs: l.acs, pessoas: l.pessoas
+  }));
+}
+
+function serializarQuarteiroes() {
+  return quarteiroes.map(q => ({
+    cor: q.cor,
+    opacidade: q.opacidade,
+    coords: q.coords
   }));
 }
 
@@ -1020,6 +1271,32 @@ async function carregarDados(dados) {
   setTimeout(atualizarEscalaZoom, 50);
 }
 
+function carregarQuarteiroesSalvos(dados) {
+  if (!Array.isArray(dados)) return;
+  quarteiroes.forEach(q => { try { map.removeLayer(q.polygon); } catch {} });
+  quarteiroes = [];
+  dados.forEach(q => {
+    if (!q.coords || q.coords.length < 3) return;
+    const polygon = L.polygon(q.coords, {
+      color: q.cor,
+      fillColor: q.cor,
+      fillOpacity: q.opacidade,
+      weight: 2,
+      opacity: 0.8
+    }).addTo(map);
+    polygon.on('click', (ev) => {
+      if (!modoColorir) return;
+      L.DomEvent.stopPropagation(ev);
+      map.removeLayer(polygon);
+      const idx = quarteiroes.findIndex(x => x.polygon === polygon);
+      if (idx !== -1) quarteiroes.splice(idx, 1);
+      mostrarToast('🗑️ Coloração removida');
+      agendarSave();
+    });
+    quarteiroes.push({ polygon, cor: q.cor, opacidade: q.opacidade, coords: q.coords });
+  });
+}
+
 // ─────────────────────────────────────────
 //  CÁLCULO DE ÂNGULO DO LABEL
 // ─────────────────────────────────────────
@@ -1031,9 +1308,6 @@ function calcAngLabel(anguloRua, rotacaoManual, fixado) {
   return a;
 }
 
-// ─────────────────────────────────────────
-//  GERAR HTML DO MARCADOR
-// ─────────────────────────────────────────
 function buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual, fixado) {
   const acsLbl = acs || `#${id}`;
   const acsCls = acs ? 'lbl-acs' : 'lbl-acs vazio';
@@ -1110,7 +1384,12 @@ function agendarSave() {
 
 async function salvarNuvem() {
   if (!jbApiKey) return;
-  const payload = { lados: serializarLados(), proximoId, ts: Date.now() };
+  const payload = {
+    lados: serializarLados(),
+    quarteiroes: serializarQuarteiroes(),
+    proximoId,
+    ts: Date.now()
+  };
   try {
     let res;
     if (!jbBinId) {
@@ -1156,6 +1435,7 @@ async function carregarNuvem(silencioso = false) {
     if (dados?.lados) {
       proximoId = dados.proximoId || 1;
       await carregarDados(dados.lados);
+      if (dados.quarteiroes) carregarQuarteiroesSalvos(dados.quarteiroes);
       lastSaveTs = dados.ts || 0;
       if (!silencioso) mostrarToast('☁️ Dados carregados da nuvem!');
     }
@@ -1233,7 +1513,7 @@ const map = L.map('map', {
 
 let mapBearing = 0;
 
-// ─── CAMADAS BASE ────────────────────────────────────────────────────────────
+// ─── CAMADAS BASE ────────────────────────
 const tileOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   maxZoom: 19
@@ -1241,20 +1521,15 @@ const tileOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
 
 const tileEsriSat = L.tileLayer(
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-  attribution: 'Tiles © Esri — Source: Esri, DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community',
-  maxNativeZoom: 17,
-  maxZoom: 22
+  attribution: 'Tiles © Esri',
+  maxNativeZoom: 17, maxZoom: 22
 });
 
 const tileEsriLabels = L.tileLayer(
   'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
-  attribution: '© <a href="https://carto.com/">CARTO</a>',
-  subdomains: 'abcd',
-  maxNativeZoom: 19,
-  maxZoom: 22,
-  pane: 'tilePane',
-  zIndex: 300,
-  opacity: 1.0
+  attribution: '© CARTO',
+  subdomains: 'abcd', maxNativeZoom: 19, maxZoom: 22,
+  pane: 'tilePane', zIndex: 300, opacity: 1.0
 });
 
 function aplicarFiltroLabels() {
@@ -1310,6 +1585,13 @@ document.getElementById('btn-satelite').addEventListener('click', () => {
 
 map.on('zoomend', atualizarEscalaZoom);
 
+// ─── CLICK NO MAPA ────────────────────────
+map.on('click', (e) => {
+  if (modoColorir) {
+    colorirQuarteirao(e);
+  }
+});
+
 // ─────────────────────────────────────────
 //  DRAG-TO-MAP
 // ─────────────────────────────────────────
@@ -1319,6 +1601,7 @@ const dica = document.getElementById('dica');
 let isDraggingNew = false;
 
 dragHandle.addEventListener('mousedown', (e) => {
+  if (modoColorir) return;
   e.preventDefault();
   isDraggingNew = true;
   dragHandle.classList.add('dragging');
@@ -1330,6 +1613,7 @@ dragHandle.addEventListener('mousedown', (e) => {
 });
 
 dragHandle.addEventListener('touchstart', (e) => {
+  if (modoColorir) return;
   isDraggingNew = true;
   dragHandle.classList.add('dragging');
   map.dragging.disable();
@@ -1409,16 +1693,12 @@ async function buscarRuaEAngulo(lat, lng) {
       body: `data=${encodeURIComponent(query)}`
     });
     const od = await ov.json();
-
-    let melhorDist = Infinity;
-    let melhorAng  = 0;
+    let melhorDist = Infinity, melhorAng = 0;
     for (const way of (od.elements || [])) {
       if (!way.geometry || way.geometry.length < 2) continue;
       for (let i = 0; i < way.geometry.length - 1; i++) {
-        const a = way.geometry[i];
-        const b = way.geometry[i + 1];
-        const mx = (a.lon + b.lon) / 2;
-        const my = (a.lat + b.lat) / 2;
+        const a = way.geometry[i], b = way.geometry[i + 1];
+        const mx = (a.lon + b.lon) / 2, my = (a.lat + b.lat) / 2;
         const dx = mx - lng, dy = my - lat;
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist < melhorDist) {
@@ -1461,7 +1741,6 @@ function adicionarLado(lat, lng, rua = 'Localização marcada', angulo = 0) {
   lados.push(lado);
 
   if (!painelAberto) togglePainel();
-
   renderCards();
   atualizarResumo();
   abrirCard(id);
@@ -1510,9 +1789,7 @@ function renderCards() {
     campoRua.className = 'campo';
     campoRua.innerHTML = '<label>🏘️ Nome da Rua / Localização</label>';
     const inputRua = document.createElement('input');
-    inputRua.type = 'text';
-    inputRua.placeholder = 'Ex.: Rua das Flores';
-    inputRua.value = lado.rua || '';
+    inputRua.type = 'text'; inputRua.placeholder = 'Ex.: Rua das Flores'; inputRua.value = lado.rua || '';
     inputRua.addEventListener('input', function() { atualizarLado(lado.id, 'rua', this.value); });
     campoRua.appendChild(inputRua);
 
@@ -1520,9 +1797,7 @@ function renderCards() {
     campoAcs.className = 'campo';
     campoAcs.innerHTML = '<label>👤 Nome da ACS</label>';
     const inputAcs = document.createElement('input');
-    inputAcs.type = 'text';
-    inputAcs.placeholder = 'Ex.: Maria da Silva';
-    inputAcs.value = lado.acs || '';
+    inputAcs.type = 'text'; inputAcs.placeholder = 'Ex.: Maria da Silva'; inputAcs.value = lado.acs || '';
     inputAcs.addEventListener('input', function() {
       atualizarLado(lado.id, 'acs', this.value);
       const prev = body.querySelector('.rotacao-preview-label .prev-acs');
@@ -1534,9 +1809,7 @@ function renderCards() {
     campoPessoas.className = 'campo';
     campoPessoas.innerHTML = '<label>👥 Total de pessoas neste lado</label>';
     const inputPessoas = document.createElement('input');
-    inputPessoas.type = 'number';
-    inputPessoas.min = '0';
-    inputPessoas.placeholder = '0';
+    inputPessoas.type = 'number'; inputPessoas.min = '0'; inputPessoas.placeholder = '0';
     inputPessoas.value = lado.pessoas > 0 ? lado.pessoas : '';
     inputPessoas.addEventListener('input', function() {
       atualizarLado(lado.id, 'pessoas', this.value);
@@ -1749,9 +2022,7 @@ function atualizarBadge() {
 // ─────────────────────────────────────────
 //  CAMADA DE RUAS (Overpass OSM)
 // ─────────────────────────────────────────
-let ruasLayer      = null;
-let ruasVisiveis   = false;
-let ruasCarregadas = false;
+let ruasLayer = null, ruasVisiveis = false, ruasCarregadas = false;
 
 async function carregarRuas() {
   const btn = document.getElementById('btn-ruas');
@@ -1761,16 +2032,13 @@ async function carregarRuas() {
     const query = `[out:json][timeout:30];
 (way[highway~"^(residential|unclassified|tertiary|secondary|primary|trunk|living_street|service|footway|path|track)$"](around:3500,-4.1928215,-40.4677377););
 out geom;`;
-
     const res = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `data=${encodeURIComponent(query)}`
     });
-
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-
     ruasLayer = L.layerGroup();
     for (const way of (data.elements || [])) {
       if (!way.geometry || way.geometry.length < 2) continue;
@@ -1778,13 +2046,10 @@ out geom;`;
       const nome   = way.tags?.name || '';
       const tipo   = way.tags?.highway || '';
       const cor    = tipo === 'primary' || tipo === 'secondary' ? '#1565c0'
-                   : tipo === 'tertiary' ? '#2e7d32'
-                   : '#e65100';
+                   : tipo === 'tertiary' ? '#2e7d32' : '#e65100';
       const linha = L.polyline(coords, {
-        color: cor,
-        weight: tipo === 'primary' || tipo === 'secondary' ? 3 : 2,
-        opacity: 0.75,
-        dashArray: tipo === 'footway' || tipo === 'path' ? '4,4' : null
+        color: cor, weight: tipo === 'primary' || tipo === 'secondary' ? 3 : 2,
+        opacity: 0.75, dashArray: tipo === 'footway' || tipo === 'path' ? '4,4' : null
       });
       if (nome) linha.bindTooltip(nome, { sticky: true, className: 'tooltip-rua' });
       ruasLayer.addLayer(linha);
@@ -1792,7 +2057,7 @@ out geom;`;
     ruasCarregadas = true;
     mostrarToast(`✅ ${data.elements?.length || 0} ruas carregadas!`);
   } catch(e) {
-    console.error('Erro ao carregar ruas:', e);
+    console.error(e);
     mostrarToast('❌ Erro ao carregar ruas. Tente novamente.');
     btn.textContent = '🛣️ Ruas';
     btn.disabled = false;
@@ -1886,21 +2151,12 @@ rotInput.addEventListener('keydown', (e) => {
 // ─────────────────────────────────────────
 //  ZOOM COM SLIDER
 // ─────────────────────────────────────────
-const ZOOM_PADRAO = 16;
-const ZOOM_STEP   = 20;
-const PCT_MIN     = 25;
-const PCT_MAX     = 400;
-
+const ZOOM_PADRAO = 16, ZOOM_STEP = 20, PCT_MIN = 25, PCT_MAX = 400;
 const zoomRange = document.getElementById('zoom-range');
 const zoomVal   = document.getElementById('zoom-val');
 
-function pctParaZoom(pct) {
-  return ZOOM_PADRAO + Math.log2(pct / 100);
-}
-
-function zoomParaPct(z) {
-  return Math.round(Math.pow(2, z - ZOOM_PADRAO) * 100);
-}
+function pctParaZoom(pct) { return ZOOM_PADRAO + Math.log2(pct / 100); }
+function zoomParaPct(z)   { return Math.round(Math.pow(2, z - ZOOM_PADRAO) * 100); }
 
 function sincronizarZoom() {
   const pct = zoomParaPct(map.getZoom());
@@ -1915,20 +2171,10 @@ function setZoomPct(pct) {
   sincronizarZoom();
 }
 
-zoomRange.min   = PCT_MIN;
-zoomRange.max   = PCT_MAX;
-zoomRange.step  = 5;
-zoomRange.value = 100;
-
+zoomRange.min = PCT_MIN; zoomRange.max = PCT_MAX; zoomRange.step = 5; zoomRange.value = 100;
 zoomRange.addEventListener('input', () => setZoomPct(parseInt(zoomRange.value)));
-document.getElementById('btn-zoom-menos').addEventListener('click', () => {
-  const cur = zoomParaPct(map.getZoom());
-  setZoomPct(cur - ZOOM_STEP);
-});
-document.getElementById('btn-zoom-mais').addEventListener('click', () => {
-  const cur = zoomParaPct(map.getZoom());
-  setZoomPct(cur + ZOOM_STEP);
-});
+document.getElementById('btn-zoom-menos').addEventListener('click', () => setZoomPct(zoomParaPct(map.getZoom()) - ZOOM_STEP));
+document.getElementById('btn-zoom-mais').addEventListener('click',  () => setZoomPct(zoomParaPct(map.getZoom()) + ZOOM_STEP));
 document.getElementById('btn-zoom-reset').addEventListener('click', () => setZoomPct(100));
 map.on('zoomend', sincronizarZoom);
 
@@ -1936,11 +2182,14 @@ map.on('zoomend', sincronizarZoom);
 //  EXPORTAR JSON
 // ─────────────────────────────────────────
 document.getElementById('btn-exportar').addEventListener('click', () => {
-  const dados = lados.map(l => ({
-    id: l.id, rua: l.rua, lat: l.lat, lng: l.lng,
-    acs: l.acs, pessoas: l.pessoas,
-    rotacaoManual: l.rotacaoManual || 0, fixado: !!l.fixado
-  }));
+  const dados = {
+    lados: lados.map(l => ({
+      id: l.id, rua: l.rua, lat: l.lat, lng: l.lng,
+      acs: l.acs, pessoas: l.pessoas,
+      rotacaoManual: l.rotacaoManual || 0, fixado: !!l.fixado
+    })),
+    quarteiroes: serializarQuarteiroes()
+  };
   const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -1950,10 +2199,6 @@ document.getElementById('btn-exportar').addEventListener('click', () => {
 
 // ─────────────────────────────────────────
 //  CAPTURAR MAPA
-//  _canvasMapaSemRodape guarda apenas o
-//  mapa capturado. O rodapé é composto
-//  no btn-confirmar-salvar com o nome
-//  do documento já digitado.
 // ─────────────────────────────────────────
 let _canvasMapaSemRodape = null;
 
@@ -1963,16 +2208,18 @@ document.getElementById('btn-capturar').addEventListener('click', async () => {
   btn.classList.add('capturando');
   btn.textContent = '⏳ Processando…';
 
-  const toolbar       = document.getElementById('toolbar');
-  const statusNuvem   = document.getElementById('status-nuvem');
-  const dicaEl        = document.getElementById('dica');
-  const legendaAst    = document.getElementById('legenda-asterisco');
-  const painelToggle  = document.getElementById('painel-toggle');
+  const toolbar      = document.getElementById('toolbar');
+  const statusNuvem  = document.getElementById('status-nuvem');
+  const dicaEl       = document.getElementById('dica');
+  const legendaAst   = document.getElementById('legenda-asterisco');
+  const painelToggle = document.getElementById('painel-toggle');
+  const colorirP     = document.getElementById('colorir-painel');
   toolbar.style.display         = 'none';
   statusNuvem.style.display     = 'none';
   dicaEl.style.display          = 'none';
   legendaAst.style.display      = 'none';
   painelToggle.style.visibility = 'hidden';
+  colorirP.style.display        = 'none';
 
   try {
     const mapEl = document.getElementById('map');
@@ -1980,11 +2227,7 @@ document.getElementById('btn-capturar').addEventListener('click', async () => {
       useCORS: true, allowTaint: true, logging: false,
       scale: 2, backgroundColor: '#f4f6f9'
     });
-
-    // Guarda o canvas puro do mapa (sem rodapé)
     _canvasMapaSemRodape = canvas;
-
-    // Gera preview no modal já com rodapé provisório (nome vazio)
     const previewFinal = montarCanvasFinal(canvas, '');
     const wrap = document.getElementById('preview-canvas-wrap');
     wrap.innerHTML = '';
@@ -1992,17 +2235,11 @@ document.getElementById('btn-capturar').addEventListener('click', async () => {
     img.src = previewFinal.toDataURL('image/png');
     wrap.appendChild(img);
 
-    // Preenche sugestões de nome
     const dataAtual = new Date().toISOString().slice(0, 10);
     document.getElementById('input-nome-doc').value      = '';
     document.getElementById('input-nome-arquivo').value  = `mapa_acs_varjota_${dataAtual}`;
-
     document.getElementById('modal-salvar').classList.remove('oculto');
-    setTimeout(() => {
-      const inputDoc = document.getElementById('input-nome-doc');
-      inputDoc.focus();
-    }, 100);
-
+    setTimeout(() => document.getElementById('input-nome-doc').focus(), 100);
   } catch (e) {
     console.error(e);
     mostrarToast('❌ Erro ao capturar o mapa. Tente novamente.');
@@ -2011,85 +2248,57 @@ document.getElementById('btn-capturar').addEventListener('click', async () => {
     statusNuvem.style.display     = '';
     legendaAst.style.display      = '';
     painelToggle.style.visibility = '';
+    if (modoColorir) colorirP.classList.add('visivel');
     btn.classList.remove('capturando');
     btn.textContent = '🖼️ Salvar Mapa';
   }
 });
 
-// ─────────────────────────────────────────
-//  MONTAR CANVAS FINAL COM RODAPÉ
-//  nomeDoc = texto do campo "Nome do documento"
-// ─────────────────────────────────────────
 function montarCanvasFinal(mapaCanvas, nomeDoc) {
   const totalPessoas = document.getElementById('total-num').textContent;
   const dataAtual    = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const rodapeAltura = 40;
-
   const finalCanvas  = document.createElement('canvas');
   finalCanvas.width  = mapaCanvas.width;
   finalCanvas.height = mapaCanvas.height + rodapeAltura * 2;
   const ctx = finalCanvas.getContext('2d');
-
-  // Fundo do rodapé
   ctx.fillStyle = '#1a7f4b';
   ctx.fillRect(0, mapaCanvas.height, finalCanvas.width, rodapeAltura * 2);
-
-  // Mapa
   ctx.drawImage(mapaCanvas, 0, 0);
-
-  // Título: "Mapa ACS — <nomeDoc> — Varjota/CE"
-  const tituloBase = 'Mapa ACS';
-  const tituloFim  = 'Varjota/CE';
-  const titulo     = nomeDoc
-    ? `${tituloBase} — ${nomeDoc} — ${tituloFim}`
-    : `${tituloBase} — ${tituloFim}`;
-
-  ctx.fillStyle    = '#ffffff';
-  ctx.font         = `bold 28px Sora, sans-serif`;
+  const tituloBase = 'Mapa ACS', tituloFim = 'Varjota/CE';
+  const titulo = nomeDoc ? `${tituloBase} — ${nomeDoc} — ${tituloFim}` : `${tituloBase} — ${tituloFim}`;
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold 28px Sora, sans-serif`;
   ctx.textBaseline = 'middle';
   ctx.fillText(titulo, 30, mapaCanvas.height + rodapeAltura * 0.7);
-
-  // Subtítulo
-  ctx.font      = `24px Sora, sans-serif`;
+  ctx.font = `24px Sora, sans-serif`;
   ctx.fillStyle = 'rgba(255,255,255,0.8)';
-  ctx.fillText(
-    `Total: ${totalPessoas} pessoas  ·  Gerado em ${dataAtual}  ·  * = nº de pessoas`,
-    30,
-    mapaCanvas.height + rodapeAltura * 1.5
-  );
-
+  ctx.fillText(`Total: ${totalPessoas} pessoas  ·  Gerado em ${dataAtual}  ·  * = nº de pessoas`, 30, mapaCanvas.height + rodapeAltura * 1.5);
   return finalCanvas;
 }
 
-// Atualiza o preview ao digitar o nome do documento
 document.getElementById('input-nome-doc').addEventListener('input', () => {
   if (!_canvasMapaSemRodape) return;
-  const nomeDoc  = document.getElementById('input-nome-doc').value.trim();
-  const preview  = montarCanvasFinal(_canvasMapaSemRodape, nomeDoc);
-  const wrap     = document.getElementById('preview-canvas-wrap');
+  const nomeDoc = document.getElementById('input-nome-doc').value.trim();
+  const preview = montarCanvasFinal(_canvasMapaSemRodape, nomeDoc);
+  const wrap    = document.getElementById('preview-canvas-wrap');
   wrap.innerHTML = '';
-  const img      = document.createElement('img');
-  img.src        = preview.toDataURL('image/png');
-  img.style.maxWidth  = '100%';
-  img.style.maxHeight = '220px';
-  img.style.display   = 'block';
+  const img = document.createElement('img');
+  img.src = preview.toDataURL('image/png');
+  img.style.maxWidth = '100%'; img.style.maxHeight = '220px'; img.style.display = 'block';
   wrap.appendChild(img);
 });
 
 document.getElementById('btn-confirmar-salvar').addEventListener('click', () => {
   if (!_canvasMapaSemRodape) return;
-
-  const nomeDoc  = document.getElementById('input-nome-doc').value.trim();
+  const nomeDoc     = document.getElementById('input-nome-doc').value.trim();
   const finalCanvas = montarCanvasFinal(_canvasMapaSemRodape, nomeDoc);
-
   let nomeArq = (document.getElementById('input-nome-arquivo').value || 'mapa_acs_varjota').trim();
   nomeArq = nomeArq.replace(/\.png$/i, '');
-
-  const link      = document.createElement('a');
-  link.download   = `${nomeArq}.png`;
-  link.href       = finalCanvas.toDataURL('image/png');
+  const link = document.createElement('a');
+  link.download = `${nomeArq}.png`;
+  link.href     = finalCanvas.toDataURL('image/png');
   link.click();
-
   document.getElementById('modal-salvar').classList.add('oculto');
   _canvasMapaSemRodape = null;
   mostrarToast('✅ Imagem salva com sucesso!');
@@ -2109,10 +2318,11 @@ document.getElementById('input-nome-arquivo').addEventListener('keydown', (e) =>
 //  LIMPAR TUDO
 // ─────────────────────────────────────────
 document.getElementById('btn-limpar').addEventListener('click', () => {
-  if (!lados.length) return;
-  if (!confirm('Deseja remover todos os lados marcados?')) return;
+  if (!lados.length && !quarteiroes.length) return;
+  if (!confirm('Deseja remover todos os lados marcados e quadras coloridas?')) return;
   lados.forEach(l => map.removeLayer(l.marker));
-  lados = [];
+  quarteiroes.forEach(q => { try { map.removeLayer(q.polygon); } catch {} });
+  lados = []; quarteiroes = [];
   proximoId = 1;
   renderCards();
   atualizarResumo();
