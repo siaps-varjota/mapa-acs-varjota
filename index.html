@@ -285,7 +285,6 @@
     padding: 8px 0 2px;
   }
 
-  /* ── PREVIEW LABEL (painel) — fundo branco semi-transparente ── */
   .rotacao-preview-label {
     background: rgba(255,255,255,0.88);
     color: #1e2a38;
@@ -621,7 +620,7 @@
     font-size: 11px;
   }
 
-  /* ── MARCADOR — sem ponto, só o card flutuando ── */
+  /* ── MARCADOR ── */
   .marker-wrapper {
     position: relative;
     cursor: pointer;
@@ -634,7 +633,6 @@
   .marker-wrapper.medio .lbl-qtd { display: none; }
   .marker-wrapper.medio .lbl-sep { display: none; }
 
-  /* ── LABEL DO MARCADOR — fundo branco semi-transparente ── */
   .marker-label {
     display: block;
     background: rgba(255,255,255,0.88);
@@ -899,7 +897,11 @@
           <span id="preview-spinner">⏳</span>
         </div>
         <div class="modal-field">
-          <label>📝 Nome do arquivo</label>
+          <label>📝 Nome do documento / mapa</label>
+          <input type="text" id="input-nome-doc" placeholder="Ex.: ESF 01 — Área 1" />
+        </div>
+        <div class="modal-field">
+          <label>💾 Nome do arquivo</label>
           <input type="text" id="input-nome-arquivo" placeholder="mapa_acs_varjota" />
         </div>
         <div class="modal-btns">
@@ -1030,7 +1032,7 @@ function calcAngLabel(anguloRua, rotacaoManual, fixado) {
 }
 
 // ─────────────────────────────────────────
-//  GERAR HTML DO MARCADOR — sem ponto
+//  GERAR HTML DO MARCADOR
 // ─────────────────────────────────────────
 function buildMarkerHtml(id, acs, pessoas, anguloRua, rotacaoManual, fixado) {
   const acsLbl = acs || `#${id}`;
@@ -1881,24 +1883,21 @@ rotInput.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowDown') { e.preventDefault(); girarMapa(-1); }
 });
 
-
 // ─────────────────────────────────────────
-//  ZOOM COM SLIDER (% relativo ao zoom padrão)
+//  ZOOM COM SLIDER
 // ─────────────────────────────────────────
 const ZOOM_PADRAO = 16;
-const ZOOM_STEP   = 20;   // % por clique (+/-)
+const ZOOM_STEP   = 20;
 const PCT_MIN     = 25;
 const PCT_MAX     = 400;
 
 const zoomRange = document.getElementById('zoom-range');
 const zoomVal   = document.getElementById('zoom-val');
 
-// pct → zoom level  (100% = zoom 16)
 function pctParaZoom(pct) {
   return ZOOM_PADRAO + Math.log2(pct / 100);
 }
 
-// zoom level → pct
 function zoomParaPct(z) {
   return Math.round(Math.pow(2, z - ZOOM_PADRAO) * 100);
 }
@@ -1916,7 +1915,6 @@ function setZoomPct(pct) {
   sincronizarZoom();
 }
 
-// slider de 25 a 400 step 5
 zoomRange.min   = PCT_MIN;
 zoomRange.max   = PCT_MAX;
 zoomRange.step  = 5;
@@ -1951,9 +1949,13 @@ document.getElementById('btn-exportar').addEventListener('click', () => {
 });
 
 // ─────────────────────────────────────────
-//  CAPTURAR MAPA — COM MODAL PARA RENOMEAR
+//  CAPTURAR MAPA
+//  _canvasMapaSemRodape guarda apenas o
+//  mapa capturado. O rodapé é composto
+//  no btn-confirmar-salvar com o nome
+//  do documento já digitado.
 // ─────────────────────────────────────────
-let _canvasCapturado = null;
+let _canvasMapaSemRodape = null;
 
 document.getElementById('btn-capturar').addEventListener('click', async () => {
   const btn = document.getElementById('btn-capturar');
@@ -1966,10 +1968,10 @@ document.getElementById('btn-capturar').addEventListener('click', async () => {
   const dicaEl        = document.getElementById('dica');
   const legendaAst    = document.getElementById('legenda-asterisco');
   const painelToggle  = document.getElementById('painel-toggle');
-  toolbar.style.display      = 'none';
-  statusNuvem.style.display  = 'none';
-  dicaEl.style.display       = 'none';
-  legendaAst.style.display   = 'none';
+  toolbar.style.display         = 'none';
+  statusNuvem.style.display     = 'none';
+  dicaEl.style.display          = 'none';
+  legendaAst.style.display      = 'none';
   painelToggle.style.visibility = 'hidden';
 
   try {
@@ -1979,73 +1981,127 @@ document.getElementById('btn-capturar').addEventListener('click', async () => {
       scale: 2, backgroundColor: '#f4f6f9'
     });
 
-    const totalPessoas = document.getElementById('total-num').textContent;
-    const dataAtual = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
-    const rodapeAltura = 40;
-    const finalCanvas = document.createElement('canvas');
-    finalCanvas.width  = canvas.width;
-    finalCanvas.height = canvas.height + rodapeAltura * 2;
-    const ctx = finalCanvas.getContext('2d');
+    // Guarda o canvas puro do mapa (sem rodapé)
+    _canvasMapaSemRodape = canvas;
 
-    ctx.fillStyle = '#1a7f4b';
-    ctx.fillRect(0, canvas.height, finalCanvas.width, rodapeAltura * 2);
-    ctx.drawImage(canvas, 0, 0);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold 28px Sora, sans-serif`;
-    ctx.textBaseline = 'middle';
-    ctx.fillText('Mapa ACS — Varjota/CE', 30, canvas.height + rodapeAltura * 0.7);
-    ctx.font = `24px Sora, sans-serif`;
-    ctx.fillStyle = 'rgba(255,255,255,0.8)';
-    ctx.fillText(`Total: ${totalPessoas} pessoas  ·  Gerado em ${dataAtual}  ·  * = nº de pessoas`, 30, canvas.height + rodapeAltura * 1.5);
-
-    _canvasCapturado = finalCanvas;
-
+    // Gera preview no modal já com rodapé provisório (nome vazio)
+    const previewFinal = montarCanvasFinal(canvas, '');
     const wrap = document.getElementById('preview-canvas-wrap');
     wrap.innerHTML = '';
     const img = document.createElement('img');
-    img.src = finalCanvas.toDataURL('image/png');
+    img.src = previewFinal.toDataURL('image/png');
     wrap.appendChild(img);
 
-    const nomeSugerido = `mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;
-    const inputNome = document.getElementById('input-nome-arquivo');
-    inputNome.value = nomeSugerido;
+    // Preenche sugestões de nome
+    const dataAtual = new Date().toISOString().slice(0, 10);
+    document.getElementById('input-nome-doc').value      = '';
+    document.getElementById('input-nome-arquivo').value  = `mapa_acs_varjota_${dataAtual}`;
 
     document.getElementById('modal-salvar').classList.remove('oculto');
-    setTimeout(() => { inputNome.focus(); inputNome.select(); }, 100);
+    setTimeout(() => {
+      const inputDoc = document.getElementById('input-nome-doc');
+      inputDoc.focus();
+    }, 100);
 
   } catch (e) {
     console.error(e);
     mostrarToast('❌ Erro ao capturar o mapa. Tente novamente.');
   } finally {
-    toolbar.style.display      = '';
-    statusNuvem.style.display  = '';
-    legendaAst.style.display   = '';
+    toolbar.style.display         = '';
+    statusNuvem.style.display     = '';
+    legendaAst.style.display      = '';
     painelToggle.style.visibility = '';
     btn.classList.remove('capturando');
     btn.textContent = '🖼️ Salvar Mapa';
   }
 });
 
+// ─────────────────────────────────────────
+//  MONTAR CANVAS FINAL COM RODAPÉ
+//  nomeDoc = texto do campo "Nome do documento"
+// ─────────────────────────────────────────
+function montarCanvasFinal(mapaCanvas, nomeDoc) {
+  const totalPessoas = document.getElementById('total-num').textContent;
+  const dataAtual    = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const rodapeAltura = 40;
+
+  const finalCanvas  = document.createElement('canvas');
+  finalCanvas.width  = mapaCanvas.width;
+  finalCanvas.height = mapaCanvas.height + rodapeAltura * 2;
+  const ctx = finalCanvas.getContext('2d');
+
+  // Fundo do rodapé
+  ctx.fillStyle = '#1a7f4b';
+  ctx.fillRect(0, mapaCanvas.height, finalCanvas.width, rodapeAltura * 2);
+
+  // Mapa
+  ctx.drawImage(mapaCanvas, 0, 0);
+
+  // Título: "Mapa ACS — <nomeDoc> — Varjota/CE"
+  const tituloBase = 'Mapa ACS';
+  const tituloFim  = 'Varjota/CE';
+  const titulo     = nomeDoc
+    ? `${tituloBase} — ${nomeDoc} — ${tituloFim}`
+    : `${tituloBase} — ${tituloFim}`;
+
+  ctx.fillStyle    = '#ffffff';
+  ctx.font         = `bold 28px Sora, sans-serif`;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(titulo, 30, mapaCanvas.height + rodapeAltura * 0.7);
+
+  // Subtítulo
+  ctx.font      = `24px Sora, sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.fillText(
+    `Total: ${totalPessoas} pessoas  ·  Gerado em ${dataAtual}  ·  * = nº de pessoas`,
+    30,
+    mapaCanvas.height + rodapeAltura * 1.5
+  );
+
+  return finalCanvas;
+}
+
+// Atualiza o preview ao digitar o nome do documento
+document.getElementById('input-nome-doc').addEventListener('input', () => {
+  if (!_canvasMapaSemRodape) return;
+  const nomeDoc  = document.getElementById('input-nome-doc').value.trim();
+  const preview  = montarCanvasFinal(_canvasMapaSemRodape, nomeDoc);
+  const wrap     = document.getElementById('preview-canvas-wrap');
+  wrap.innerHTML = '';
+  const img      = document.createElement('img');
+  img.src        = preview.toDataURL('image/png');
+  img.style.maxWidth  = '100%';
+  img.style.maxHeight = '220px';
+  img.style.display   = 'block';
+  wrap.appendChild(img);
+});
+
 document.getElementById('btn-confirmar-salvar').addEventListener('click', () => {
-  if (!_canvasCapturado) return;
-  let nome = (document.getElementById('input-nome-arquivo').value || 'mapa_acs_varjota').trim();
-  nome = nome.replace(/\.png$/i, '');
-  const link = document.createElement('a');
-  link.download = `${nome}.png`;
-  link.href = _canvasCapturado.toDataURL('image/png');
+  if (!_canvasMapaSemRodape) return;
+
+  const nomeDoc  = document.getElementById('input-nome-doc').value.trim();
+  const finalCanvas = montarCanvasFinal(_canvasMapaSemRodape, nomeDoc);
+
+  let nomeArq = (document.getElementById('input-nome-arquivo').value || 'mapa_acs_varjota').trim();
+  nomeArq = nomeArq.replace(/\.png$/i, '');
+
+  const link      = document.createElement('a');
+  link.download   = `${nomeArq}.png`;
+  link.href       = finalCanvas.toDataURL('image/png');
   link.click();
+
   document.getElementById('modal-salvar').classList.add('oculto');
-  _canvasCapturado = null;
+  _canvasMapaSemRodape = null;
   mostrarToast('✅ Imagem salva com sucesso!');
 });
 
 document.getElementById('btn-cancelar-salvar').addEventListener('click', () => {
   document.getElementById('modal-salvar').classList.add('oculto');
-  _canvasCapturado = null;
+  _canvasMapaSemRodape = null;
 });
 
 document.getElementById('input-nome-arquivo').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') document.getElementById('btn-confirmar-salvar').click();
+  if (e.key === 'Enter')  document.getElementById('btn-confirmar-salvar').click();
   if (e.key === 'Escape') document.getElementById('btn-cancelar-salvar').click();
 });
 
