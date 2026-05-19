@@ -36,7 +36,6 @@
   #painel-header{padding:16px 18px 12px;border-bottom:1px solid var(--borda);background:var(--cinza);flex-shrink:0;}
   #painel-header h2{font-size:14px;font-weight:700;color:var(--verde);}
   #painel-header p{font-size:11px;color:var(--muted);margin-top:2px;}
-  /* TABS */
   #tabs{display:flex;gap:2px;padding:8px 12px 0;border-bottom:1px solid var(--borda);flex-shrink:0;background:#fff;}
   .tab-btn{padding:6px 14px;border:none;background:transparent;border-radius:7px 7px 0 0;font-family:'Sora',sans-serif;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
   .tab-btn.ativo{color:var(--verde);border-bottom:2px solid var(--verde);background:var(--verde-bg);}
@@ -52,7 +51,6 @@
   #sem-dados{font-size:12px;color:var(--muted);font-style:italic;}
   #lados-lista{flex:1;overflow-y:auto;overflow-x:visible;padding:12px 18px 24px;display:flex;flex-direction:column;gap:8px;min-height:0;}
   #lados-lista h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:4px;}
-  /* QUARTEIRÕES LISTA */
   #qts-lista{flex:1;overflow-y:auto;padding:12px 18px 24px;display:flex;flex-direction:column;gap:8px;min-height:0;}
   #qts-lista h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:4px;}
   .qt-card{background:var(--cinza);border:1px solid var(--borda);border-radius:10px;flex-shrink:0;overflow:hidden;}
@@ -170,7 +168,6 @@
   .marker-label .lbl-sep{display:inline;color:rgba(0,0,0,.15);font-size:10px;margin:0 4px;}
   .marker-label .lbl-qtd{display:inline;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#1e2a38;letter-spacing:.3px;}
   .marker-label .lbl-ast{display:inline;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#25b36a;vertical-align:super;line-height:0;}
-  /* Label de quarteirão no mapa */
   .qt-label-wrapper{position:relative;cursor:pointer;display:inline-block;transform:translate(-50%,-50%) scale(var(--zoom-scale,0.5));transform-origin:50% 50%;transition:transform 0.15s ease-out;pointer-events:none;}
   .qt-label-inner{background:rgba(255,255,255,0.82);border-radius:5px;padding:2px 10px;font-size:12px;font-weight:700;font-family:'Sora',sans-serif;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.2);border:1px solid rgba(0,0,0,.12);line-height:1.6;text-align:center;transform:rotate(var(--ang,0deg));transform-origin:center center;}
   #lados-lista::-webkit-scrollbar,#qts-lista::-webkit-scrollbar{width:5px;}
@@ -213,9 +210,15 @@
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
   #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e2a38;color:#fff;padding:9px 20px;border-radius:50px;font-size:12px;font-weight:600;z-index:9998;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap;}
   #toast.visivel{opacity:1;}
-  /* Handle de rotação do polígono */
   .qt-rot-handle{cursor:grab;transition:transform .1s;}
   .qt-rot-handle:active{cursor:grabbing;}
+
+  /* ── Seletor de forma ── */
+  .forma-selector{display:flex;gap:8px;margin-top:4px;}
+  .forma-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px 6px 8px;border:2px solid var(--borda);border-radius:10px;background:var(--cinza);cursor:pointer;font-family:'Sora',sans-serif;font-size:10px;font-weight:700;color:var(--muted);transition:all .18s;line-height:1;user-select:none;}
+  .forma-btn:hover{border-color:var(--roxo);background:var(--roxo-bg);color:var(--roxo);}
+  .forma-btn.ativo{border-color:var(--roxo);background:var(--roxo-bg);color:var(--roxo);box-shadow:0 0 0 3px rgba(106,27,154,.12);}
+
   @media(max-width:700px){
     #painel{width:100%;min-width:100%;position:absolute;bottom:0;left:0;right:0;height:45%;z-index:800;border-left:none;border-top:1px solid var(--borda);}
     #painel.recolhido{transform:translateY(100%);min-width:unset;}
@@ -326,28 +329,20 @@
         <h2>📊 Totais por ACS</h2>
         <p>Atualizado em tempo real conforme preenchimento</p>
       </div>
-      <!-- TABS -->
       <div id="tabs">
         <button class="tab-btn ativo" data-tab="lados" onclick="mudarTab('lados')">📍 Lados</button>
         <button class="tab-btn roxo" data-tab="quarteirao" onclick="mudarTab('quarteirao')">⬜ Quarteirões</button>
       </div>
-
-      <!-- ACS RESUMO (só na tab lados) -->
       <div id="resumo" style="flex-shrink:0;">
         <h3>ACS cadastradas</h3>
         <div id="lista-acs"><p id="sem-dados">Nenhum dado inserido ainda.</p></div>
       </div>
-
-      <!-- TAB LADOS -->
       <div class="tab-content ativo" id="tab-lados">
         <div id="lados-lista"><h3>Lados de quadra marcados</h3></div>
       </div>
-
-      <!-- TAB QUARTEIRÕES -->
       <div class="tab-content" id="tab-quarteirao">
         <div id="qts-lista"><h3>Quarteirões desenhados</h3></div>
       </div>
-
       <div id="total-geral">
         <span>Total geral de pessoas</span>
         <span class="num" id="total-num">0</span>
@@ -363,7 +358,7 @@
 <script>
 // ─── ESTADO GLOBAL ───────────────────────────────────────────────────────────
 let lados = [];
-let quarteiroesData = [];   // {id, lat, lng, largura, altura, angulo, nome, cor, polygon, labelMarker}
+let quarteiroesData = [];
 let modoAdicionar = false;
 let proximoId = 1;
 let proximoQtId = 1;
@@ -400,7 +395,7 @@ function carregarConfig(){try{const c=JSON.parse(localStorage.getItem(LS_KEY)||'
 function salvarConfig(){localStorage.setItem(LS_KEY,JSON.stringify({apiKey:jbApiKey,binId:jbBinId}));}
 function setStatus(estado,txt){const el=document.getElementById('status-nuvem'),tx=document.getElementById('status-txt');el.className='';el.classList.add(estado);tx.textContent=txt;}
 function serializarLados(){return lados.map(l=>({id:l.id,lat:l.lat,lng:l.lng,rua:l.rua,angulo:l.angulo||0,rotacaoManual:l.rotacaoManual||0,fixado:!!l.fixado,acs:l.acs,pessoas:l.pessoas}));}
-function serializarQuarteiroesData(){return quarteiroesData.map(q=>({id:q.id,lat:q.lat,lng:q.lng,largura:q.largura,altura:q.altura,angulo:q.angulo,nome:q.nome,cor:q.cor}));}
+function serializarQuarteiroesData(){return quarteiroesData.map(q=>({id:q.id,lat:q.lat,lng:q.lng,largura:q.largura,altura:q.altura,angulo:q.angulo,nome:q.nome,cor:q.cor,forma:q.forma||'retangulo'}));}
 function agendarSave(){if(!jbApiKey)return;clearTimeout(saveTimer);setStatus('salvando','Salvando…');saveTimer=setTimeout(salvarNuvem,1200);}
 async function salvarNuvem(){if(!jbApiKey)return;const payload={lados:serializarLados(),quarteiroesData:serializarQuarteiroesData(),proximoId,proximoQtId,ts:Date.now()};try{let res;if(!jbBinId){res=await fetch('https://api.jsonbin.io/v3/b',{method:'POST',headers:{'Content-Type':'application/json','X-Master-Key':jbApiKey,'X-Bin-Name':'acs-varjota'},body:JSON.stringify(payload)});const j=await res.json();if(j.metadata?.id){jbBinId=j.metadata.id;salvarConfig();setStatus('conectado',`Bin: ${jbBinId.slice(-6)}`);mostrarToast('✅ Bin criado e salvo!');}else throw new Error(JSON.stringify(j));}else{res=await fetch(`https://api.jsonbin.io/v3/b/${jbBinId}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':jbApiKey},body:JSON.stringify(payload)});if(!res.ok)throw new Error(await res.text());lastSaveTs=payload.ts;setStatus('conectado',`Bin: ${jbBinId.slice(-6)}`);}}catch(e){console.error(e);setStatus('erro','Erro ao salvar');mostrarToast('❌ Erro ao salvar na nuvem');}}
 async function carregarNuvem(silencioso=false){if(!jbApiKey||!jbBinId)return false;try{const res=await fetch(`https://api.jsonbin.io/v3/b/${jbBinId}/latest`,{headers:{'X-Master-Key':jbApiKey}});if(!res.ok)throw new Error(await res.text());const j=await res.json(),dados=j.record;if(dados?.ts&&dados.ts===lastSaveTs)return true;if(dados?.lados){proximoId=dados.proximoId||1;proximoQtId=dados.proximoQtId||1;await carregarDados(dados.lados,dados.quarteiroesData||[]);lastSaveTs=dados.ts||0;if(!silencioso)mostrarToast('☁️ Dados carregados da nuvem!');}return true;}catch(e){console.error(e);if(!silencioso){setStatus('erro','Erro ao carregar');mostrarToast('❌ Erro ao carregar da nuvem');}return false;}}
@@ -428,7 +423,7 @@ async function carregarDados(dadosLados, dadosQts) {
   quarteiroesData.forEach(q=>{try{map.removeLayer(q.polygon);map.removeLayer(q.labelMarker);}catch{}});
   lados=[];quarteiroesData=[];proximoId=1;proximoQtId=1;
   for(const d of dadosLados){if(d.id>=proximoId)proximoId=d.id+1;await adicionarLadoSilencioso(d);}
-  for(const q of (dadosQts||[])){if(q.id>=proximoQtId)proximoQtId=q.id+1;adicionarQuarteirao(q.lat,q.lng,q.largura,q.altura,q.angulo,q.nome,q.cor,q.id);}
+  for(const q of (dadosQts||[])){if(q.id>=proximoQtId)proximoQtId=q.id+1;adicionarQuarteirao(q.lat,q.lng,q.largura,q.altura,q.angulo,q.nome,q.cor,q.id,q.forma||'retangulo');}
   renderCards();renderQtCards();atualizarResumo();atualizarBadge();agendarSave();setTimeout(atualizarEscalaZoom,50);
 }
 
@@ -442,8 +437,6 @@ function atualizarEscalaZoom(){
 map.on('zoomend',atualizarEscalaZoom);
 
 // ─── DRAG SYSTEM ─────────────────────────────────────────────────────────────
-// Usa pointer capture: o elemento que iniciou o drag recebe TODOS os eventos
-// de ponteiro, mesmo quando o mouse sai dele e passa sobre o Leaflet.
 const dica = document.getElementById('dica');
 const dragGhost   = document.getElementById('drag-ghost');
 const dragGhostQt = document.getElementById('drag-ghost-qt');
@@ -477,14 +470,13 @@ function _soltarEm(cx, cy) {
       adicionarLado(latlng.lat, latlng.lng, rua, angulo);
     });
   } else {
-    adicionarQuarteirao(latlng.lat, latlng.lng, 80, 40, mapBearing, 'Quarteirão ' + proximoQtId, '#6a1b9a');
+    adicionarQuarteirao(latlng.lat, latlng.lng, 80, 40, mapBearing, 'Quarteirão ' + proximoQtId, '#6a1b9a', undefined, 'retangulo');
     mudarTab('quarteirao');
   }
 }
 
 function _initDragBtn(btnId, mode, ghostEl, dicaTxt) {
   const btn = document.getElementById(btnId);
-
   btn.addEventListener('pointerdown', function(e) {
     e.preventDefault();
     _dragMode = mode;
@@ -496,22 +488,17 @@ function _initDragBtn(btnId, mode, ghostEl, dicaTxt) {
     map.dragging.disable();
     document.body.style.userSelect = 'none';
     document.body.style.cursor = 'crosshair';
-    // Pointer capture: todos os pointermove/pointerup vêm para este elemento
-    // independente de onde o ponteiro estiver (inclusive sobre o Leaflet)
     btn.setPointerCapture(e.pointerId);
   });
-
   btn.addEventListener('pointermove', function(e) {
     if (_dragMode !== mode) return;
     _moveGhost(e.clientX, e.clientY);
   });
-
   btn.addEventListener('pointerup', function(e) {
     if (_dragMode !== mode) return;
     btn.releasePointerCapture(e.pointerId);
     _soltarEm(e.clientX, e.clientY);
   });
-
   btn.addEventListener('pointercancel', function(e) {
     if (_dragMode !== mode) return;
     _dragMode = null;
@@ -558,21 +545,29 @@ function adicionarLado(lat,lng,rua='Localização marcada',angulo=0){
 }
 
 // ─── QUARTEIRÕES ──────────────────────────────────────────────────────────────
-// Converte metros para graus (aproximado)
 function metrosParaGrausLat(m){return m/111320;}
 function metrosParaGrausLng(m,lat){return m/(111320*Math.cos(lat*Math.PI/180));}
 
-// Gera os 4 vértices do retângulo a partir do centro, largura, altura e ângulo
-function calcVertices(lat,lng,largM,altM,angDeg){
+/**
+ * Calcula os vértices do polígono com suporte a retângulo e triângulo.
+ * - retangulo: 4 cantos centrados
+ * - triangulo: base na parte inferior, vértice no topo (orientado pelo ângulo)
+ */
+function calcVertices(lat,lng,largM,altM,angDeg,forma){
   const angRad=angDeg*Math.PI/180;
-  const hw=largM/2,hh=altM/2;
-  // Cantos no espaço local (largura ao longo do ângulo, altura perpendicular)
-  const corners=[[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]];
+  const hw=largM/2, hh=altM/2;
+  let corners;
+  if(forma==='triangulo'){
+    // Vértice no topo (y negativo = norte antes da rotação), base embaixo
+    corners=[[-hw, hh],[hw, hh],[0,-hh]];
+  } else {
+    // Retângulo padrão
+    corners=[[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]];
+  }
   return corners.map(([x,y])=>{
-    // Rotaciona
     const rx=x*Math.cos(angRad)-y*Math.sin(angRad);
     const ry=x*Math.sin(angRad)+y*Math.cos(angRad);
-    return [lat+metrosParaGrausLat(ry),lng+metrosParaGrausLng(rx,lat)];
+    return [lat+metrosParaGrausLat(ry), lng+metrosParaGrausLng(rx,lat)];
   });
 }
 
@@ -587,13 +582,14 @@ function atualizarLabelQuarteirao(id){
   q.labelMarker.setIcon(L.divIcon({className:'',html:buildQtLabelHtml(id,q.nome,q.cor),iconAnchor:[0,0],iconSize:[1,1]}));
 }
 
-function adicionarQuarteirao(lat,lng,largM,altM,angDeg,nome,cor,forceId){
+function adicionarQuarteirao(lat,lng,largM,altM,angDeg,nome,cor,forceId,forma){
+  forma=forma||'retangulo';
   const id=forceId!==undefined?forceId:proximoQtId++;
-  const vertices=calcVertices(lat,lng,largM,altM,angDeg);
+  const vertices=calcVertices(lat,lng,largM,altM,angDeg,forma);
   const polygon=L.polygon(vertices,{color:cor,fillColor:cor,fillOpacity:0.12,weight:2,dashArray:null}).addTo(map);
   const labelMarker=L.marker([lat,lng],{icon:L.divIcon({className:'',html:buildQtLabelHtml(id,nome,cor),iconAnchor:[0,0],iconSize:[1,1]}),interactive:false}).addTo(map);
   polygon.on('click',()=>{abrirQtCard(id);mudarTab('quarteirao');if(!painelAberto)togglePainel();});
-  const qt={id,lat,lng,largura:largM,altura:altM,angulo:angDeg,nome:nome||'Quarteirão '+id,cor:cor||'#6a1b9a',polygon,labelMarker};
+  const qt={id,lat,lng,largura:largM,altura:altM,angulo:angDeg,nome:nome||'Quarteirão '+id,cor:cor||'#6a1b9a',forma,polygon,labelMarker};
   quarteiroesData.push(qt);
   if(!painelAberto)togglePainel();
   renderQtCards();atualizarBadge();agendarSave();setTimeout(atualizarEscalaZoom,50);
@@ -601,7 +597,7 @@ function adicionarQuarteirao(lat,lng,largM,altM,angDeg,nome,cor,forceId){
 
 function atualizarGeometriaQt(id){
   const q=quarteiroesData.find(x=>x.id===id);if(!q)return;
-  const v=calcVertices(q.lat,q.lng,q.largura,q.altura,q.angulo);
+  const v=calcVertices(q.lat,q.lng,q.largura,q.altura,q.angulo,q.forma||'retangulo');
   q.polygon.setLatLngs(v);
   q.polygon.setStyle({color:q.cor,fillColor:q.cor});
   q.labelMarker.setLatLng([q.lat,q.lng]);
@@ -614,6 +610,20 @@ function removerQuarteirao(id){
   quarteiroesData.splice(idx,1);renderQtCards();atualizarBadge();agendarSave();
 }
 
+// ─── SVG helpers para o seletor de forma ─────────────────────────────────────
+function svgRect(ativo){
+  const c=ativo?'#6a1b9a':'#9e9e9e';
+  return `<svg width="44" height="28" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="40" height="24" rx="3" fill="${c}22" stroke="${c}" stroke-width="2.2"/>
+  </svg>`;
+}
+function svgTri(ativo){
+  const c=ativo?'#6a1b9a':'#9e9e9e';
+  return `<svg width="44" height="28" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="22,2 42,26 2,26" fill="${c}22" stroke="${c}" stroke-width="2.2" stroke-linejoin="round"/>
+  </svg>`;
+}
+
 // ─── RENDER CARDS QUARTEIRÕES ─────────────────────────────────────────────────
 function renderQtCards(){
   const lista=document.getElementById('qts-lista');
@@ -621,42 +631,83 @@ function renderQtCards(){
   if(quarteiroesData.length===0){const p=document.createElement('p');p.style.cssText='font-size:12px;color:var(--muted);font-style:italic;margin-top:6px';p.textContent='Nenhum quarteirão desenhado. Arraste ⬜ para o mapa.';lista.appendChild(p);return;}
   quarteiroesData.forEach(qt=>{
     const card=document.createElement('div');card.className='qt-card';card.id=`qt-card-${qt.id}`;
-    // Header
+    const formaIcon=qt.forma==='triangulo'?'🔺':'⬜';
     const header=document.createElement('div');header.className='qt-card-header';
-    header.innerHTML=`<div class="icone" style="background:${qt.cor}22">⬜</div><div class="info"><div class="nome">#${qt.id} — ${escHtml(qt.nome)}</div><div class="sub">${qt.largura}m × ${qt.altura}m · ${Math.round(qt.angulo)}°</div></div><span class="toggle">⌄</span>`;
+    header.innerHTML=`<div class="icone" style="background:${qt.cor}22">${formaIcon}</div><div class="info"><div class="nome">#${qt.id} — ${escHtml(qt.nome)}</div><div class="sub">${qt.forma==='triangulo'?'Triângulo':'Retângulo'} · ${qt.largura}m × ${qt.altura}m · ${Math.round(qt.angulo)}°</div></div><span class="toggle">⌄</span>`;
     header.addEventListener('click',()=>toggleQtCard(qt.id));
-    // Body
     const body=document.createElement('div');body.className='qt-card-body';
 
-    // Nome
+    // ── Nome ──
     const campoNome=document.createElement('div');campoNome.className='campo';
     campoNome.innerHTML='<label>🏘️ Nome do quarteirão</label>';
     const inNome=document.createElement('input');inNome.type='text';inNome.placeholder='Ex.: Quarteirão Central';inNome.value=qt.nome;
-    inNome.addEventListener('input',function(){qt.nome=this.value;atualizarLabelQuarteirao(qt.id);const nomEl=card.querySelector('.nome');if(nomEl)nomEl.textContent=`#${qt.id} — ${this.value}`;agendarSave();});
+    inNome.addEventListener('input',function(){
+      qt.nome=this.value;atualizarLabelQuarteirao(qt.id);
+      const nomEl=card.querySelector('.nome');if(nomEl)nomEl.textContent=`#${qt.id} — ${this.value}`;
+      agendarSave();
+    });
     campoNome.appendChild(inNome);
 
-    // Cor
+    // ── Seletor de Forma ──
+    const formaDiv=document.createElement('div');formaDiv.className='campo';
+    const formaLbl=document.createElement('label');formaLbl.textContent='🔷 Forma do quarteirão';formaDiv.appendChild(formaLbl);
+    const formaSelector=document.createElement('div');formaSelector.className='forma-selector';
+
+    const btnFRect=document.createElement('button');btnFRect.type='button';
+    const btnFTri=document.createElement('button');btnFTri.type='button';
+
+    function atualizarBotoesForma(f){
+      btnFRect.className='forma-btn'+(f==='retangulo'?' ativo':'');
+      btnFRect.innerHTML=svgRect(f==='retangulo')+'<span>Retângulo</span>';
+      btnFTri.className='forma-btn'+(f==='triangulo'?' ativo':'');
+      btnFTri.innerHTML=svgTri(f==='triangulo')+'<span>Triângulo</span>';
+    }
+
+    function setForma(f){
+      qt.forma=f;
+      atualizarBotoesForma(f);
+      // Atualiza ícone e sub-texto do card header
+      const iconeEl=card.querySelector('.icone');if(iconeEl)iconeEl.textContent=f==='triangulo'?'🔺':'⬜';
+      const subEl=card.querySelector('.sub');if(subEl)subEl.textContent=`${f==='triangulo'?'Triângulo':'Retângulo'} · ${qt.largura}m × ${qt.altura}m · ${Math.round(qt.angulo)}°`;
+      atualizarGeometriaQt(qt.id);agendarSave();
+    }
+
+    atualizarBotoesForma(qt.forma||'retangulo');
+    btnFRect.addEventListener('click',()=>setForma('retangulo'));
+    btnFTri.addEventListener('click',()=>setForma('triangulo'));
+    formaSelector.appendChild(btnFRect);formaSelector.appendChild(btnFTri);
+    formaDiv.appendChild(formaSelector);
+
+    // ── Cor ──
     const campoCor=document.createElement('div');campoCor.className='campo';
     campoCor.innerHTML='<label>🎨 Cor</label>';
     const inCor=document.createElement('input');inCor.type='color';inCor.value=qt.cor;
     inCor.addEventListener('input',function(){qt.cor=this.value;atualizarGeometriaQt(qt.id);agendarSave();});
     campoCor.appendChild(inCor);
 
-    // Largura × Altura
+    // ── Largura × Altura ──
     const dimRow=document.createElement('div');dimRow.className='dim-row';
     const campoLarg=document.createElement('div');campoLarg.className='campo';
     campoLarg.innerHTML='<label>↔ Largura (m)</label>';
     const inLarg=document.createElement('input');inLarg.type='number';inLarg.min='5';inLarg.max='2000';inLarg.step='5';inLarg.value=qt.largura;
-    inLarg.addEventListener('input',function(){qt.largura=parseFloat(this.value)||50;atualizarGeometriaQt(qt.id);const subEl=card.querySelector('.sub');if(subEl)subEl.textContent=`${qt.largura}m × ${qt.altura}m · ${Math.round(qt.angulo)}°`;agendarSave();});
+    inLarg.addEventListener('input',function(){
+      qt.largura=parseFloat(this.value)||50;atualizarGeometriaQt(qt.id);
+      const subEl=card.querySelector('.sub');if(subEl)subEl.textContent=`${qt.forma==='triangulo'?'Triângulo':'Retângulo'} · ${qt.largura}m × ${qt.altura}m · ${Math.round(qt.angulo)}°`;
+      agendarSave();
+    });
     campoLarg.appendChild(inLarg);
     const campoAlt=document.createElement('div');campoAlt.className='campo';
     campoAlt.innerHTML='<label>↕ Altura (m)</label>';
     const inAlt=document.createElement('input');inAlt.type='number';inAlt.min='5';inAlt.max='2000';inAlt.step='5';inAlt.value=qt.altura;
-    inAlt.addEventListener('input',function(){qt.altura=parseFloat(this.value)||30;atualizarGeometriaQt(qt.id);const subEl=card.querySelector('.sub');if(subEl)subEl.textContent=`${qt.largura}m × ${qt.altura}m · ${Math.round(qt.angulo)}°`;agendarSave();});
+    inAlt.addEventListener('input',function(){
+      qt.altura=parseFloat(this.value)||30;atualizarGeometriaQt(qt.id);
+      const subEl=card.querySelector('.sub');if(subEl)subEl.textContent=`${qt.forma==='triangulo'?'Triângulo':'Retângulo'} · ${qt.largura}m × ${qt.altura}m · ${Math.round(qt.angulo)}°`;
+      agendarSave();
+    });
     campoAlt.appendChild(inAlt);
     dimRow.appendChild(campoLarg);dimRow.appendChild(campoAlt);
 
-    // Ângulo
+    // ── Ângulo ──
     const campoRot=document.createElement('div');campoRot.className='campo-rot';
     campoRot.innerHTML='<label>🔄 Ângulo do quarteirão</label>';
     const rotRow=document.createElement('div');rotRow.className='rot-row';
@@ -668,31 +719,40 @@ function renderQtCards(){
     const btnP10=document.createElement('button');btnP10.textContent='↻';btnP10.title='+10°';
     const btnZ=document.createElement('button');btnZ.textContent='0°';btnZ.style.fontSize='10px';btnZ.style.color='var(--azul)';btnZ.style.width='auto';btnZ.style.padding='0 6px';
 
-    function aplicarAngQt(v){v=((Math.round(v)%360)+360)%360;qt.angulo=v;sliderQt.value=v;rvEl.textContent=`${v}°`;atualizarGeometriaQt(qt.id);const subEl=card.querySelector('.sub');if(subEl)subEl.textContent=`${qt.largura}m × ${qt.altura}m · ${v}°`;agendarSave();}
+    function aplicarAngQt(v){
+      v=((Math.round(v)%360)+360)%360;qt.angulo=v;sliderQt.value=v;rvEl.textContent=`${v}°`;
+      atualizarGeometriaQt(qt.id);
+      const subEl=card.querySelector('.sub');if(subEl)subEl.textContent=`${qt.forma==='triangulo'?'Triângulo':'Retângulo'} · ${qt.largura}m × ${qt.altura}m · ${v}°`;
+      agendarSave();
+    }
     btnM10.addEventListener('click',()=>aplicarAngQt(qt.angulo-10));
     btnM1.addEventListener('click',()=>aplicarAngQt(qt.angulo-1));
     btnP1.addEventListener('click',()=>aplicarAngQt(qt.angulo+1));
     btnP10.addEventListener('click',()=>aplicarAngQt(qt.angulo+10));
     btnZ.addEventListener('click',()=>aplicarAngQt(0));
     sliderQt.addEventListener('input',()=>aplicarAngQt(parseFloat(sliderQt.value)));
-
     rotRow.appendChild(btnM10);rotRow.appendChild(btnM1);rotRow.appendChild(sliderQt);rotRow.appendChild(rvEl);rotRow.appendChild(btnP1);rotRow.appendChild(btnP10);rotRow.appendChild(btnZ);
     campoRot.appendChild(rotRow);
 
-    // Botão alinhar com mapa
+    // ── Alinhar com mapa ──
     const btnAlinhar=document.createElement('button');
     btnAlinhar.style.cssText='display:flex;align-items:center;gap:5px;background:rgba(21,101,192,.08);border:1px solid #90caf9;color:#1565c0;border-radius:7px;padding:6px 12px;cursor:pointer;font-family:"Sora",sans-serif;font-size:11px;font-weight:600;width:100%;justify-content:center;margin-bottom:8px;transition:background .15s;';
     btnAlinhar.textContent='🗺️ Alinhar com rotação do mapa';
-    btnAlinhar.title='Define o ângulo do quarteirão igual ao ângulo atual do mapa';
     btnAlinhar.addEventListener('click',()=>aplicarAngQt(mapBearing));
     btnAlinhar.addEventListener('mouseenter',()=>btnAlinhar.style.background='rgba(21,101,192,.15)');
     btnAlinhar.addEventListener('mouseleave',()=>btnAlinhar.style.background='rgba(21,101,192,.08)');
 
-    // Remover
+    // ── Remover ──
     const btnRem=document.createElement('button');btnRem.className='btn-remover-qt';btnRem.textContent='🗑️ Remover quarteirão';
     btnRem.addEventListener('click',()=>removerQuarteirao(qt.id));
 
-    body.appendChild(campoNome);body.appendChild(campoCor);body.appendChild(dimRow);body.appendChild(campoRot);body.appendChild(btnAlinhar);body.appendChild(btnRem);
+    body.appendChild(campoNome);
+    body.appendChild(formaDiv);
+    body.appendChild(campoCor);
+    body.appendChild(dimRow);
+    body.appendChild(campoRot);
+    body.appendChild(btnAlinhar);
+    body.appendChild(btnRem);
     card.appendChild(header);card.appendChild(body);lista.appendChild(card);
   });
 }
@@ -710,19 +770,15 @@ function renderCards(){
     header.innerHTML=`<div class="icone">📍</div><div class="info"><div class="rua" title="${escHtml(lado.rua)}">#${lado.id} — ${escHtml(lado.rua)}</div><div class="sub">${lado.acs?escHtml(lado.acs):'ACS não definida'} · ${lado.pessoas||0} pessoas</div></div><span class="toggle">⌄</span>`;
     header.addEventListener('click',()=>toggleCard(lado.id));
     const body=document.createElement('div');body.className='lado-card-body';
-    // Campo rua
     const cRua=document.createElement('div');cRua.className='campo';cRua.innerHTML='<label>🏘️ Nome da Rua / Localização</label>';
     const iRua=document.createElement('input');iRua.type='text';iRua.placeholder='Ex.: Rua das Flores';iRua.value=lado.rua||'';
     iRua.addEventListener('input',function(){atualizarLado(lado.id,'rua',this.value);});cRua.appendChild(iRua);
-    // Campo acs
     const cAcs=document.createElement('div');cAcs.className='campo';cAcs.innerHTML='<label>👤 Nome da ACS</label>';
     const iAcs=document.createElement('input');iAcs.type='text';iAcs.placeholder='Ex.: Maria da Silva';iAcs.value=lado.acs||'';
     iAcs.addEventListener('input',function(){atualizarLado(lado.id,'acs',this.value);const prev=body.querySelector('.rotacao-preview-label .prev-acs');if(prev){prev.textContent=this.value||`#${lado.id}`;prev.className='prev-acs'+(this.value?'':' vazio');}});cAcs.appendChild(iAcs);
-    // Campo pessoas
     const cPes=document.createElement('div');cPes.className='campo';cPes.innerHTML='<label>👥 Total de pessoas neste lado</label>';
     const iPes=document.createElement('input');iPes.type='number';iPes.min='0';iPes.placeholder='0';iPes.value=lado.pessoas>0?lado.pessoas:'';
     iPes.addEventListener('input',function(){atualizarLado(lado.id,'pessoas',this.value);const prev=body.querySelector('.rotacao-preview-label .prev-qtd');if(prev){const v=parseInt(this.value,10)||0;prev.textContent=v>0?`${v}*`:'–*';}});cPes.appendChild(iPes);
-    // Rotação
     const cRot=document.createElement('div');cRot.className='campo-rotacao';cRot.innerHTML='<label>🔄 Rotação do nome no mapa</label>';
     const preview=document.createElement('div');preview.className='rotacao-preview';
     const prevLabel=document.createElement('div');prevLabel.className='rotacao-preview-label';
@@ -748,7 +804,6 @@ function renderCards(){
     bReset.addEventListener('click',()=>aplicarRotL(0));
     slider.addEventListener('input',()=>aplicarRotL(parseFloat(slider.value)));
     controles.appendChild(bM10);controles.appendChild(bM1);controles.appendChild(wSlider);controles.appendChild(bP1);controles.appendChild(bP10);controles.appendChild(bReset);cRot.appendChild(controles);
-    // Fixar
     const fixarRow=document.createElement('div');fixarRow.className='fixar-row'+(lado.fixado?' ativo':'');fixarRow.title='Quando fixado, o nome não gira com o mapa';
     fixarRow.innerHTML=`<span class="fixar-icon">📌</span><span class="fixar-txt">${lado.fixado?'Nome fixado (não acompanha rotação do mapa)':'Fixar posição do nome'}</span><div class="fixar-toggle"></div>`;
     fixarRow.addEventListener('click',()=>{const nF=!lado.fixado;if(nF){const av=calcAngLabel(lado.angulo||0,lado.rotacaoManual||0,false),v=Math.round(av);lado.rotacaoManual=v;slider.value=String(v);valD.textContent=`${v}°`;prevLabel.style.transform=`rotate(${v}deg)`;}else{lado.rotacaoManual=0;slider.value='0';valD.textContent='0°';prevLabel.style.transform='rotate(0deg)';}fixarRow.classList.toggle('ativo',nF);fixarRow.querySelector('.fixar-txt').textContent=nF?'Nome fixado (não acompanha rotação do mapa)':'Fixar posição do nome';atualizarLado(lado.id,'fixado',nF);});
@@ -785,7 +840,7 @@ function atualizarResumo(){
   nomes.sort((a,b)=>mapa[b]-mapa[a]);
   listaEl.innerHTML=nomes.map(nome=>`<div class="acs-total-row"><span class="nome">👤 ${escHtml(nome)}</span><span class="qtd">${mapa[nome].toLocaleString('pt-BR')}</span></div>`).join('');
 }
-function atualizarBadge(){const total=lados.length+quarteiroesData.length;document.getElementById('badge-lados').textContent=`${total} elemento${total!==1?'s':''}`;;}
+function atualizarBadge(){const total=lados.length+quarteiroesData.length;document.getElementById('badge-lados').textContent=`${total} elemento${total!==1?'s':''}`;}
 
 // ─── RUAS ─────────────────────────────────────────────────────────────────────
 let ruasLayer=null,ruasVisiveis=false,ruasCarregadas=false;
