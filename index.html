@@ -45,7 +45,7 @@
   #resumo{padding:14px 18px;border-bottom:1px solid var(--borda);flex-shrink:0;}
   #resumo h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:10px;}
   #lista-acs{display:flex;flex-direction:column;gap:6px;}
-  .acs-total-row{display:flex;justify-content:space-between;align-items:center;background:var(--verde-bg);border-left:3px solid var(--verde2);padding:7px 10px;border-radius:0 6px 6px 0;transition:all .2s;}
+  .acs-total-row{display:flex;justify-content:space-between;align-items:center;background:var(--verde-bg);border-left:3px solid var(--verde2);padding:7px 10px;border-radius:0 6px 6px 0;}
   .acs-total-row .nome{font-size:13px;font-weight:600;}
   .acs-total-row .qtd{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:var(--verde);background:#fff;padding:2px 10px;border-radius:20px;border:1px solid var(--verde2);}
   #sem-dados{font-size:12px;color:var(--muted);font-style:italic;}
@@ -54,7 +54,6 @@
   #qts-lista{flex:1;overflow-y:auto;padding:12px 18px 24px;display:flex;flex-direction:column;gap:8px;min-height:0;}
   #qts-lista h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:4px;}
   .qt-card{background:var(--cinza);border:1px solid var(--borda);border-radius:10px;flex-shrink:0;overflow:hidden;}
-  .qt-card.ativo-edit{border-color:var(--roxo);}
   .qt-card-header{display:flex;align-items:center;padding:9px 12px;background:#fff;gap:8px;cursor:pointer;user-select:none;}
   .qt-card-header .icone{width:28px;height:28px;background:var(--roxo-bg);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
   .qt-card-header .info{flex:1;min-width:0;}
@@ -78,9 +77,6 @@
   .rot-row .rv{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;min-width:36px;text-align:right;}
   .dim-row{display:flex;gap:8px;}
   .dim-row .campo{flex:1;}
-  .btn-editar-qt{display:flex;align-items:center;gap:5px;background:var(--roxo-bg);border:1px solid var(--roxo);color:var(--roxo);border-radius:7px;padding:7px 12px;cursor:pointer;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;width:100%;justify-content:center;margin-bottom:8px;transition:background .15s;}
-  .btn-editar-qt:hover{background:#e1bee7;}
-  .btn-editar-qt.ativo{background:var(--roxo);color:#fff;}
   .btn-remover-qt{display:flex;align-items:center;gap:5px;background:none;border:none;cursor:pointer;color:var(--vermelho);font-size:11px;font-weight:600;padding:4px 0;transition:opacity .2s;}
   .btn-remover-qt:hover{opacity:.7;}
   .lado-card{background:var(--cinza);border:1px solid var(--borda);border-radius:10px;transition:box-shadow .2s;flex-shrink:0;}
@@ -124,12 +120,10 @@
   #toolbar button{padding:5px 12px;border-radius:8px;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;transition:all .2s;white-space:nowrap;height:32px;display:flex;align-items:center;gap:4px;}
   #drag-handle{display:flex;align-items:center;gap:6px;background:var(--verde);color:#fff;padding:5px 14px;border-radius:8px;cursor:grab;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;user-select:none;white-space:nowrap;height:32px;transition:background .2s,transform .1s;}
   #drag-handle:hover{background:var(--verde2);}
-  #drag-handle:active{cursor:grabbing;transform:scale(.96);}
-  #drag-handle.dragging{background:var(--laranja);opacity:.7;}
+  #drag-handle.dragging{background:var(--laranja);opacity:.85;cursor:crosshair;}
   #drag-qt{display:flex;align-items:center;gap:6px;background:var(--roxo);color:#fff;padding:5px 14px;border-radius:8px;cursor:grab;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;user-select:none;white-space:nowrap;height:32px;transition:background .2s,transform .1s;}
   #drag-qt:hover{background:#8e24aa;}
-  #drag-qt:active{cursor:grabbing;transform:scale(.96);}
-  #drag-qt.dragging{opacity:.7;}
+  #drag-qt.dragging{opacity:.85;cursor:crosshair;}
   #drag-ghost{position:fixed;pointer-events:none;z-index:9999;font-size:28px;display:none;transform:translate(-50%,-100%);filter:drop-shadow(0 3px 6px rgba(0,0,0,.4));}
   #drag-ghost-qt{position:fixed;pointer-events:none;z-index:9999;font-size:22px;display:none;transform:translate(-50%,-100%);filter:drop-shadow(0 3px 6px rgba(0,0,0,.4));}
   #btn-exportar,#btn-limpar,#btn-capturar,#btn-ruas,#btn-satelite{background:var(--cinza);border:1px solid var(--borda);}
@@ -210,15 +204,11 @@
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
   #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e2a38;color:#fff;padding:9px 20px;border-radius:50px;font-size:12px;font-weight:600;z-index:9998;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap;}
   #toast.visivel{opacity:1;}
-  .qt-rot-handle{cursor:grab;transition:transform .1s;}
-  .qt-rot-handle:active{cursor:grabbing;}
-
-  /* ── Seletor de forma ── */
   .forma-selector{display:flex;gap:8px;margin-top:4px;}
   .forma-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px 6px 8px;border:2px solid var(--borda);border-radius:10px;background:var(--cinza);cursor:pointer;font-family:'Sora',sans-serif;font-size:10px;font-weight:700;color:var(--muted);transition:all .18s;line-height:1;user-select:none;}
   .forma-btn:hover{border-color:var(--roxo);background:var(--roxo-bg);color:var(--roxo);}
   .forma-btn.ativo{border-color:var(--roxo);background:var(--roxo-bg);color:var(--roxo);box-shadow:0 0 0 3px rgba(106,27,154,.12);}
-
+  @keyframes spin{to{transform:rotate(360deg)}}
   @media(max-width:700px){
     #painel{width:100%;min-width:100%;position:absolute;bottom:0;left:0;right:0;height:45%;z-index:800;border-left:none;border-top:1px solid var(--borda);}
     #painel.recolhido{transform:translateY(100%);min-width:unset;}
@@ -239,13 +229,13 @@
       <div id="status-nuvem" onclick="abrirConfig()" title="Clique para configurar">
         <div class="dot"></div><span id="status-txt">Sem nuvem</span>
       </div>
-      <div id="dica">🖱️ Clique no mapa para marcar um lado de quadra</div>
+      <div id="dica">📍 Solte no mapa para fixar</div>
       <div id="legenda-asterisco"><strong>*</strong> = número de pessoas cadastradas</div>
       <button id="painel-toggle" onclick="togglePainel()" title="Recolher/expandir painel">
         <span id="toggle-icon-el">▶</span><span class="toggle-label">Painel</span>
       </button>
       <div id="toolbar">
-        <div id="drag-handle" title="Arraste para o mapa para adicionar um lado">
+        <div id="drag-handle" title="Arraste para o mapa para adicionar um lado de quadra">
           <span>📍</span><span>Lado de quadra</span>
         </div>
         <div id="drag-qt" title="Arraste para o mapa para desenhar um quarteirão">
@@ -255,7 +245,7 @@
           <button id="btn-zoom-menos" title="Zoom −">−</button>
           <div style="display:flex;align-items:center;gap:4px;">
             <input id="zoom-range" type="range" min="13" max="19" step="1" value="16" />
-            <span id="zoom-val">16</span>
+            <span id="zoom-val">100%</span>
           </div>
           <button id="btn-zoom-mais" title="Zoom +">+</button>
           <button id="btn-zoom-reset" title="Zoom padrão">⌂</button>
@@ -351,36 +341,30 @@
   </div>
 </div>
 
-<style>
-@keyframes spin{to{transform:rotate(360deg)}}
-</style>
-
 <script>
-// ─── ESTADO GLOBAL ───────────────────────────────────────────────────────────
+// ─── ESTADO GLOBAL ────────────────────────────────────────────────────────────
 let lados = [];
 let quarteiroesData = [];
-let modoAdicionar = false;
 let proximoId = 1;
 let proximoQtId = 1;
 let mapBearing = 0;
 let painelAberto = true;
 
-// ─── UTILS ───────────────────────────────────────────────────────────────────
+// ─── UTILS ────────────────────────────────────────────────────────────────────
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function mostrarToast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('visivel');setTimeout(()=>t.classList.remove('visivel'),dur);}
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
-function mudarTab(tab) {
+function mudarTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('ativo'));
   document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('ativo'));
   document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('ativo');
   document.getElementById(`tab-${tab}`).classList.add('ativo');
-  const resumo = document.getElementById('resumo');
-  resumo.style.display = tab === 'lados' ? '' : 'none';
+  document.getElementById('resumo').style.display=tab==='lados'?'':'none';
 }
 
 // ─── PAINEL ───────────────────────────────────────────────────────────────────
-function togglePainel() {
+function togglePainel(){
   const painel=document.getElementById('painel'),icon=document.getElementById('toggle-icon-el');
   painelAberto=!painelAberto;
   painel.classList.toggle('recolhido',!painelAberto);
@@ -388,7 +372,7 @@ function togglePainel() {
   setTimeout(()=>map.invalidateSize(),340);
 }
 
-// ─── JSONBIN ─────────────────────────────────────────────────────────────────
+// ─── JSONBIN ──────────────────────────────────────────────────────────────────
 const LS_KEY='acs_varjota_cfg';
 let jbApiKey='',jbBinId='',saveTimer=null,pollTimer=null,lastSaveTs=0;
 function carregarConfig(){try{const c=JSON.parse(localStorage.getItem(LS_KEY)||'{}');jbApiKey=c.apiKey||'';jbBinId=c.binId||'';}catch{}}
@@ -406,10 +390,10 @@ document.getElementById('btn-modal-avancar').addEventListener('click',async()=>{
 document.getElementById('btn-modal-pular').addEventListener('click',()=>{document.getElementById('modal-config').classList.add('oculto');setStatus('','Sem nuvem');});
 
 // ─── MAPA ─────────────────────────────────────────────────────────────────────
-const map = L.map('map',{zoomControl:false,rotate:true,rotateControl:false,bearing:0,zoomDelta:1,zoomSnap:0,wheelPxPerZoomLevel:250}).setView([-4.1928215,-40.4677377],16);
-const tileOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19});
-const tileEsriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Tiles © Esri',maxNativeZoom:17,maxZoom:22});
-const tileEsriLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxNativeZoom:19,maxZoom:22,pane:'tilePane',zIndex:300});
+const map=L.map('map',{zoomControl:false,rotate:true,rotateControl:false,bearing:0,zoomDelta:1,zoomSnap:0,wheelPxPerZoomLevel:250}).setView([-4.1928215,-40.4677377],16);
+const tileOSM=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19});
+const tileEsriSat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Tiles © Esri',maxNativeZoom:17,maxZoom:22});
+const tileEsriLabels=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxNativeZoom:19,maxZoom:22,pane:'tilePane',zIndex:300});
 let sateliteAtivo=false;
 tileOSM.addTo(map);
 document.getElementById('btn-satelite').addEventListener('click',()=>{
@@ -418,16 +402,16 @@ document.getElementById('btn-satelite').addEventListener('click',()=>{
 });
 
 // ─── CARREGAR DADOS ───────────────────────────────────────────────────────────
-async function carregarDados(dadosLados, dadosQts) {
+async function carregarDados(dadosLados,dadosQts){
   lados.forEach(l=>{try{map.removeLayer(l.marker);}catch{}});
   quarteiroesData.forEach(q=>{try{map.removeLayer(q.polygon);map.removeLayer(q.labelMarker);}catch{}});
   lados=[];quarteiroesData=[];proximoId=1;proximoQtId=1;
   for(const d of dadosLados){if(d.id>=proximoId)proximoId=d.id+1;await adicionarLadoSilencioso(d);}
-  for(const q of (dadosQts||[])){if(q.id>=proximoQtId)proximoQtId=q.id+1;adicionarQuarteirao(q.lat,q.lng,q.largura,q.altura,q.angulo,q.nome,q.cor,q.id,q.forma||'retangulo');}
+  for(const q of(dadosQts||[])){if(q.id>=proximoQtId)proximoQtId=q.id+1;adicionarQuarteirao(q.lat,q.lng,q.largura,q.altura,q.angulo,q.nome,q.cor,q.id,q.forma||'retangulo');}
   renderCards();renderQtCards();atualizarResumo();atualizarBadge();agendarSave();setTimeout(atualizarEscalaZoom,50);
 }
 
-// ─── ZOOM / ESCALA ────────────────────────────────────────────────────────────
+// ─── ZOOM / ESCALA ─────────────────────────────────────────────────────────────
 function calcZoomScale(zoom){const s=Math.pow(2,(zoom-16)*0.6);return Math.min(3.0,Math.max(0.15,s))*0.5;}
 function atualizarEscalaZoom(){
   const zoom=map.getZoom(),scale=calcZoomScale(zoom),isMini=zoom<14,isMedio=zoom>=14&&zoom<15.5;
@@ -436,88 +420,101 @@ function atualizarEscalaZoom(){
 }
 map.on('zoomend',atualizarEscalaZoom);
 
-// ─── DRAG SYSTEM ─────────────────────────────────────────────────────────────
-const dica = document.getElementById('dica');
-const dragGhost   = document.getElementById('drag-ghost');
-const dragGhostQt = document.getElementById('drag-ghost-qt');
+// ─── DRAG SYSTEM (CORRIGIDO) ──────────────────────────────────────────────────
+const dica=document.getElementById('dica');
+const dragGhost=document.getElementById('drag-ghost');
+const dragGhostQt=document.getElementById('drag-ghost-qt');
 
-let _dragMode = null;
-let _ghostEl  = null;
+let _dragMode=null;
+let _ghostEl=null;
 
-function _moveGhost(cx, cy) {
-  if (!_ghostEl) return;
-  _ghostEl.style.left = cx + 'px';
-  _ghostEl.style.top  = cy + 'px';
+function _moveGhost(cx,cy){
+  if(!_ghostEl)return;
+  _ghostEl.style.left=cx+'px';
+  _ghostEl.style.top=cy+'px';
 }
 
-function _soltarEm(cx, cy) {
-  const mode = _dragMode;
-  _dragMode = null;
-  if (_ghostEl) { _ghostEl.style.display = 'none'; _ghostEl = null; }
+function _cancelDrag(){
+  _dragMode=null;
+  dragGhost.style.display='none';
+  dragGhostQt.style.display='none';
+  _ghostEl=null;
   dica.classList.remove('visivel');
   map.dragging.enable();
-  document.body.style.userSelect = '';
-  document.body.style.cursor = '';
+  document.body.style.userSelect='';
+  document.body.style.cursor='';
+  document.getElementById('drag-handle').classList.remove('dragging');
+  document.getElementById('drag-qt').classList.remove('dragging');
+}
 
-  const mapEl = map.getContainer();
-  const rect  = mapEl.getBoundingClientRect();
-  if (cx < rect.left || cx > rect.right || cy < rect.top || cy > rect.bottom) return;
-
-  const latlng = map.containerPointToLatLng(L.point(cx - rect.left, cy - rect.top));
-
-  if (mode === 'lado') {
-    buscarRuaEAngulo(latlng.lat, latlng.lng).then(({rua, angulo}) => {
-      adicionarLado(latlng.lat, latlng.lng, rua, angulo);
+function _soltarEm(cx,cy){
+  const mode=_dragMode;
+  _cancelDrag();
+  const mapEl=map.getContainer();
+  const rect=mapEl.getBoundingClientRect();
+  if(cx<rect.left||cx>rect.right||cy<rect.top||cy>rect.bottom)return;
+  const latlng=map.containerPointToLatLng(L.point(cx-rect.left,cy-rect.top));
+  if(mode==='lado'){
+    buscarRuaEAngulo(latlng.lat,latlng.lng).then(({rua,angulo})=>{
+      adicionarLado(latlng.lat,latlng.lng,rua,angulo);
     });
-  } else {
-    adicionarQuarteirao(latlng.lat, latlng.lng, 80, 40, mapBearing, 'Quarteirão ' + proximoQtId, '#6a1b9a', undefined, 'retangulo');
+  } else if(mode==='quarteirao'){
+    adicionarQuarteirao(latlng.lat,latlng.lng,80,40,mapBearing,'Quarteirão '+proximoQtId,'#6a1b9a',undefined,'retangulo');
     mudarTab('quarteirao');
   }
 }
 
-function _initDragBtn(btnId, mode, ghostEl, dicaTxt) {
-  const btn = document.getElementById(btnId);
-  btn.addEventListener('pointerdown', function(e) {
+// Listeners no document para capturar movimento e soltura em qualquer lugar
+document.addEventListener('mousemove',(e)=>{if(!_dragMode)return;_moveGhost(e.clientX,e.clientY);});
+document.addEventListener('touchmove',(e)=>{if(!_dragMode)return;const t=e.touches[0];_moveGhost(t.clientX,t.clientY);},{passive:true});
+document.addEventListener('mouseup',(e)=>{if(!_dragMode)return;_soltarEm(e.clientX,e.clientY);});
+document.addEventListener('touchend',(e)=>{if(!_dragMode)return;const t=e.changedTouches[0];_soltarEm(t.clientX,t.clientY);});
+document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&_dragMode)_cancelDrag();});
+
+// Iniciar drag ao pressionar o botão
+function _initDragBtn(btnId,mode,ghostEl,dicaTxt){
+  const btn=document.getElementById(btnId);
+  btn.addEventListener('mousedown',(e)=>{
+    if(e.button!==0)return;
     e.preventDefault();
-    _dragMode = mode;
-    _ghostEl  = ghostEl;
-    ghostEl.style.display = 'block';
-    _moveGhost(e.clientX, e.clientY);
-    dica.textContent = dicaTxt;
+    _dragMode=mode;
+    _ghostEl=ghostEl;
+    ghostEl.style.display='block';
+    _moveGhost(e.clientX,e.clientY);
+    dica.textContent=dicaTxt;
     dica.classList.add('visivel');
     map.dragging.disable();
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'crosshair';
-    btn.setPointerCapture(e.pointerId);
+    document.body.style.userSelect='none';
+    document.body.style.cursor='crosshair';
+    btn.classList.add('dragging');
   });
-  btn.addEventListener('pointermove', function(e) {
-    if (_dragMode !== mode) return;
-    _moveGhost(e.clientX, e.clientY);
-  });
-  btn.addEventListener('pointerup', function(e) {
-    if (_dragMode !== mode) return;
-    btn.releasePointerCapture(e.pointerId);
-    _soltarEm(e.clientX, e.clientY);
-  });
-  btn.addEventListener('pointercancel', function(e) {
-    if (_dragMode !== mode) return;
-    _dragMode = null;
-    ghostEl.style.display = 'none';
-    _ghostEl = null;
-    dica.classList.remove('visivel');
-    map.dragging.enable();
-    document.body.style.userSelect = '';
-    document.body.style.cursor = '';
-  });
+  btn.addEventListener('touchstart',(e)=>{
+    e.preventDefault();
+    const t=e.touches[0];
+    _dragMode=mode;
+    _ghostEl=ghostEl;
+    ghostEl.style.display='block';
+    _moveGhost(t.clientX,t.clientY);
+    dica.textContent=dicaTxt;
+    dica.classList.add('visivel');
+    map.dragging.disable();
+    document.body.style.userSelect='none';
+    btn.classList.add('dragging');
+  },{passive:false});
 }
 
-_initDragBtn('drag-handle', 'lado',       dragGhost,   '📍 Solte no mapa para marcar o lado');
-_initDragBtn('drag-qt',     'quarteirao', dragGhostQt, '⬜ Solte no mapa para desenhar o quarteirão');
+_initDragBtn('drag-handle','lado',dragGhost,'📍 Solte no mapa para marcar o lado');
+_initDragBtn('drag-qt','quarteirao',dragGhostQt,'⬜ Solte no mapa para desenhar o quarteirão');
 
 // ─── GEOCODIFICAÇÃO ───────────────────────────────────────────────────────────
-async function buscarRuaEAngulo(lat,lng){let rua='Localização marcada',angulo=0;try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,{headers:{'Accept-Language':'pt-BR'}});const d=await r.json();rua=d.address?.road||d.address?.neighbourhood||d.display_name?.split(',')[0]||'Local desconhecido';}catch{}try{const delta=0.0003,bbox=`${lat-delta},${lng-delta},${lat+delta},${lng+delta}`,query=`[out:json][timeout:5];way[highway](${bbox});out geom;`;const ov=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`data=${encodeURIComponent(query)}`});const od=await ov.json();let melhorDist=Infinity,melhorAng=0;for(const way of(od.elements||[])){if(!way.geometry||way.geometry.length<2)continue;for(let i=0;i<way.geometry.length-1;i++){const a=way.geometry[i],b=way.geometry[i+1],mx=(a.lon+b.lon)/2,my=(a.lat+b.lat)/2,dx=mx-lng,dy=my-lat,dist=Math.sqrt(dx*dx+dy*dy);if(dist<melhorDist){melhorDist=dist;const dLon=(b.lon-a.lon)*Math.cos(lat*Math.PI/180),dLat=b.lat-a.lat;melhorAng=Math.atan2(dLon,dLat)*180/Math.PI;}}}angulo=melhorAng;}catch{}return{rua,angulo};}
+async function buscarRuaEAngulo(lat,lng){
+  let rua='Localização marcada',angulo=0;
+  try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,{headers:{'Accept-Language':'pt-BR'}});const d=await r.json();rua=d.address?.road||d.address?.neighbourhood||d.display_name?.split(',')[0]||'Local desconhecido';}catch{}
+  try{const delta=0.0003,bbox=`${lat-delta},${lng-delta},${lat+delta},${lng+delta}`,query=`[out:json][timeout:5];way[highway](${bbox});out geom;`;const ov=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`data=${encodeURIComponent(query)}`});const od=await ov.json();let melhorDist=Infinity,melhorAng=0;for(const way of(od.elements||[])){if(!way.geometry||way.geometry.length<2)continue;for(let i=0;i<way.geometry.length-1;i++){const a=way.geometry[i],b=way.geometry[i+1],mx=(a.lon+b.lon)/2,my=(a.lat+b.lat)/2,dx=mx-lng,dy=my-lat,dist=Math.sqrt(dx*dx+dy*dy);if(dist<melhorDist){melhorDist=dist;const dLon=(b.lon-a.lon)*Math.cos(lat*Math.PI/180),dLat=b.lat-a.lat;melhorAng=Math.atan2(dLon,dLat)*180/Math.PI;}}}angulo=melhorAng;}catch{}
+  return{rua,angulo};
+}
 
-// ─── MARCADOR LABEL ───────────────────────────────────────────────────────────
+// ─── MARCADORES ───────────────────────────────────────────────────────────────
 function calcAngLabel(anguloRua,rotacaoManual,fixado){if(fixado)return rotacaoManual||0;let a=(anguloRua-mapBearing+(rotacaoManual||0)+360)%360;if(a>90&&a<=270)a-=180;if(a>270)a-=360;return a;}
 function buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado){const acsLbl=acs||`#${id}`,acsCls=acs?'lbl-acs':'lbl-acs vazio',qtdLbl=pessoas>0?`${pessoas}`:'–',pre=!!(acs||pessoas),ang=calcAngLabel(anguloRua,rotacaoManual||0,fixado);return `<div class="marker-wrapper${pre?' preenchido':''}" id="marker-${id}"><div class="marker-label" style="--ang:${ang}deg"><span class="${acsCls}">${escHtml(acsLbl)}</span><span class="lbl-sep">|</span><span class="lbl-qtd">${escHtml(qtdLbl)}<span class="lbl-ast">*</span></span></div></div>`;}
 function buildIcon(id,acs,pessoas,anguloRua,rotacaoManual,fixado){return L.divIcon({className:'',html:buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado),iconAnchor:[0,0],iconSize:[1,1]});}
@@ -538,8 +535,7 @@ function adicionarLado(lat,lng,rua='Localização marcada',angulo=0){
   marker.bindTooltip(`Lado #${id} — ${rua}`,{permanent:false});
   marker.on('click',()=>abrirCard(id));
   marker.on('dragend',(e)=>{const l=lados.find(x=>x.id===id);if(l){l.lat=e.target.getLatLng().lat;l.lng=e.target.getLatLng().lng;}buscarRuaEAngulo(e.target.getLatLng().lat,e.target.getLatLng().lng).then(({rua:nome,angulo:ang})=>{const l2=lados.find(x=>x.id===id);if(l2){l2.rua=nome;l2.angulo=ang;atualizarCardHeader(id);atualizarIconeMarcador(id);agendarSave();}});});
-  const lado={id,lat,lng,rua,angulo,rotacaoManual:0,fixado:false,acs:'',pessoas:0,marker};
-  lados.push(lado);
+  lados.push({id,lat,lng,rua,angulo,rotacaoManual:0,fixado:false,acs:'',pessoas:0,marker});
   if(!painelAberto)togglePainel();
   renderCards();atualizarResumo();abrirCard(id);atualizarBadge();agendarSave();setTimeout(atualizarEscalaZoom,50);
 }
@@ -547,87 +543,36 @@ function adicionarLado(lat,lng,rua='Localização marcada',angulo=0){
 // ─── QUARTEIRÕES ──────────────────────────────────────────────────────────────
 function metrosParaGrausLat(m){return m/111320;}
 function metrosParaGrausLng(m,lat){return m/(111320*Math.cos(lat*Math.PI/180));}
-
-/**
- * Calcula os vértices do polígono com suporte a retângulo e triângulo.
- * - retangulo: 4 cantos centrados
- * - triangulo: base na parte inferior, vértice no topo (orientado pelo ângulo)
- */
 function calcVertices(lat,lng,largM,altM,angDeg,forma){
-  const angRad=angDeg*Math.PI/180;
-  const hw=largM/2, hh=altM/2;
+  const angRad=angDeg*Math.PI/180,hw=largM/2,hh=altM/2;
   let corners;
-  if(forma==='triangulo'){
-    // Vértice no topo (y negativo = norte antes da rotação), base embaixo
-    corners=[[-hw, hh],[hw, hh],[0,-hh]];
-  } else {
-    // Retângulo padrão
-    corners=[[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]];
-  }
-  return corners.map(([x,y])=>{
-    const rx=x*Math.cos(angRad)-y*Math.sin(angRad);
-    const ry=x*Math.sin(angRad)+y*Math.cos(angRad);
-    return [lat+metrosParaGrausLat(ry), lng+metrosParaGrausLng(rx,lat)];
-  });
+  if(forma==='triangulo'){corners=[[-hw,hh],[hw,hh],[0,-hh]];}
+  else{corners=[[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]];}
+  return corners.map(([x,y])=>{const rx=x*Math.cos(angRad)-y*Math.sin(angRad),ry=x*Math.sin(angRad)+y*Math.cos(angRad);return[lat+metrosParaGrausLat(ry),lng+metrosParaGrausLng(rx,lat)];});
 }
-
-function buildQtLabelHtml(id,nome,cor){
-  const ang=(0-mapBearing+360)%360;
-  let a=ang;if(a>90&&a<=270)a-=180;if(a>270)a-=360;
-  return `<div class="qt-label-wrapper" id="qt-label-${id}"><div class="qt-label-inner" style="--ang:${a}deg;color:${cor};border-color:${cor}">${escHtml(nome||'Quarteirão '+id)}</div></div>`;
-}
-
-function atualizarLabelQuarteirao(id){
-  const q=quarteiroesData.find(x=>x.id===id);if(!q)return;
-  q.labelMarker.setIcon(L.divIcon({className:'',html:buildQtLabelHtml(id,q.nome,q.cor),iconAnchor:[0,0],iconSize:[1,1]}));
-}
-
+function buildQtLabelHtml(id,nome,cor){let a=(0-mapBearing+360)%360;if(a>90&&a<=270)a-=180;if(a>270)a-=360;return `<div class="qt-label-wrapper" id="qt-label-${id}"><div class="qt-label-inner" style="--ang:${a}deg;color:${cor};border-color:${cor}">${escHtml(nome||'Quarteirão '+id)}</div></div>`;}
+function atualizarLabelQuarteirao(id){const q=quarteiroesData.find(x=>x.id===id);if(!q)return;q.labelMarker.setIcon(L.divIcon({className:'',html:buildQtLabelHtml(id,q.nome,q.cor),iconAnchor:[0,0],iconSize:[1,1]}));}
 function adicionarQuarteirao(lat,lng,largM,altM,angDeg,nome,cor,forceId,forma){
   forma=forma||'retangulo';
   const id=forceId!==undefined?forceId:proximoQtId++;
   const vertices=calcVertices(lat,lng,largM,altM,angDeg,forma);
-  const polygon=L.polygon(vertices,{color:cor,fillColor:cor,fillOpacity:0.12,weight:2,dashArray:null}).addTo(map);
+  const polygon=L.polygon(vertices,{color:cor,fillColor:cor,fillOpacity:0.12,weight:2}).addTo(map);
   const labelMarker=L.marker([lat,lng],{icon:L.divIcon({className:'',html:buildQtLabelHtml(id,nome,cor),iconAnchor:[0,0],iconSize:[1,1]}),interactive:false}).addTo(map);
   polygon.on('click',()=>{abrirQtCard(id);mudarTab('quarteirao');if(!painelAberto)togglePainel();});
-  const qt={id,lat,lng,largura:largM,altura:altM,angulo:angDeg,nome:nome||'Quarteirão '+id,cor:cor||'#6a1b9a',forma,polygon,labelMarker};
-  quarteiroesData.push(qt);
+  quarteiroesData.push({id,lat,lng,largura:largM,altura:altM,angulo:angDeg,nome:nome||'Quarteirão '+id,cor:cor||'#6a1b9a',forma,polygon,labelMarker});
   if(!painelAberto)togglePainel();
   renderQtCards();atualizarBadge();agendarSave();setTimeout(atualizarEscalaZoom,50);
 }
+function atualizarGeometriaQt(id){const q=quarteiroesData.find(x=>x.id===id);if(!q)return;q.polygon.setLatLngs(calcVertices(q.lat,q.lng,q.largura,q.altura,q.angulo,q.forma||'retangulo'));q.polygon.setStyle({color:q.cor,fillColor:q.cor});q.labelMarker.setLatLng([q.lat,q.lng]);atualizarLabelQuarteirao(id);}
+function removerQuarteirao(id){const idx=quarteiroesData.findIndex(x=>x.id===id);if(idx===-1)return;map.removeLayer(quarteiroesData[idx].polygon);map.removeLayer(quarteiroesData[idx].labelMarker);quarteiroesData.splice(idx,1);renderQtCards();atualizarBadge();agendarSave();}
 
-function atualizarGeometriaQt(id){
-  const q=quarteiroesData.find(x=>x.id===id);if(!q)return;
-  const v=calcVertices(q.lat,q.lng,q.largura,q.altura,q.angulo,q.forma||'retangulo');
-  q.polygon.setLatLngs(v);
-  q.polygon.setStyle({color:q.cor,fillColor:q.cor});
-  q.labelMarker.setLatLng([q.lat,q.lng]);
-  atualizarLabelQuarteirao(id);
-}
-
-function removerQuarteirao(id){
-  const idx=quarteiroesData.findIndex(x=>x.id===id);if(idx===-1)return;
-  map.removeLayer(quarteiroesData[idx].polygon);map.removeLayer(quarteiroesData[idx].labelMarker);
-  quarteiroesData.splice(idx,1);renderQtCards();atualizarBadge();agendarSave();
-}
-
-// ─── SVG helpers para o seletor de forma ─────────────────────────────────────
-function svgRect(ativo){
-  const c=ativo?'#6a1b9a':'#9e9e9e';
-  return `<svg width="44" height="28" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="2" width="40" height="24" rx="3" fill="${c}22" stroke="${c}" stroke-width="2.2"/>
-  </svg>`;
-}
-function svgTri(ativo){
-  const c=ativo?'#6a1b9a':'#9e9e9e';
-  return `<svg width="44" height="28" viewBox="0 0 44 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <polygon points="22,2 42,26 2,26" fill="${c}22" stroke="${c}" stroke-width="2.2" stroke-linejoin="round"/>
-  </svg>`;
-}
+// ─── SVG FORMAS ───────────────────────────────────────────────────────────────
+function svgRect(a){const c=a?'#6a1b9a':'#9e9e9e';return `<svg width="44" height="28" viewBox="0 0 44 28" fill="none"><rect x="2" y="2" width="40" height="24" rx="3" fill="${c}22" stroke="${c}" stroke-width="2.2"/></svg>`;}
+function svgTri(a){const c=a?'#6a1b9a':'#9e9e9e';return `<svg width="44" height="28" viewBox="0 0 44 28" fill="none"><polygon points="22,2 42,26 2,26" fill="${c}22" stroke="${c}" stroke-width="2.2" stroke-linejoin="round"/></svg>`;}
 
 // ─── RENDER CARDS QUARTEIRÕES ─────────────────────────────────────────────────
 function renderQtCards(){
-  const lista=document.getElementById('qts-lista');
-  const h3=lista.querySelector('h3');lista.innerHTML='';lista.appendChild(h3);
+  const lista=document.getElementById('qts-lista'),h3=lista.querySelector('h3');lista.innerHTML='';lista.appendChild(h3);
   if(quarteiroesData.length===0){const p=document.createElement('p');p.style.cssText='font-size:12px;color:var(--muted);font-style:italic;margin-top:6px';p.textContent='Nenhum quarteirão desenhado. Arraste ⬜ para o mapa.';lista.appendChild(p);return;}
   quarteiroesData.forEach(qt=>{
     const card=document.createElement('div');card.className='qt-card';card.id=`qt-card-${qt.id}`;
@@ -636,127 +581,63 @@ function renderQtCards(){
     header.innerHTML=`<div class="icone" style="background:${qt.cor}22">${formaIcon}</div><div class="info"><div class="nome">#${qt.id} — ${escHtml(qt.nome)}</div><div class="sub">${qt.forma==='triangulo'?'Triângulo':'Retângulo'} · ${qt.largura}m × ${qt.altura}m · ${Math.round(qt.angulo)}°</div></div><span class="toggle">⌄</span>`;
     header.addEventListener('click',()=>toggleQtCard(qt.id));
     const body=document.createElement('div');body.className='qt-card-body';
-
-    // ── Nome ──
-    const campoNome=document.createElement('div');campoNome.className='campo';
-    campoNome.innerHTML='<label>🏘️ Nome do quarteirão</label>';
-    const inNome=document.createElement('input');inNome.type='text';inNome.placeholder='Ex.: Quarteirão Central';inNome.value=qt.nome;
-    inNome.addEventListener('input',function(){
-      qt.nome=this.value;atualizarLabelQuarteirao(qt.id);
-      const nomEl=card.querySelector('.nome');if(nomEl)nomEl.textContent=`#${qt.id} — ${this.value}`;
-      agendarSave();
-    });
-    campoNome.appendChild(inNome);
-
-    // ── Seletor de Forma ──
-    const formaDiv=document.createElement('div');formaDiv.className='campo';
-    const formaLbl=document.createElement('label');formaLbl.textContent='🔷 Forma do quarteirão';formaDiv.appendChild(formaLbl);
-    const formaSelector=document.createElement('div');formaSelector.className='forma-selector';
-
-    const btnFRect=document.createElement('button');btnFRect.type='button';
-    const btnFTri=document.createElement('button');btnFTri.type='button';
-
-    function atualizarBotoesForma(f){
-      btnFRect.className='forma-btn'+(f==='retangulo'?' ativo':'');
-      btnFRect.innerHTML=svgRect(f==='retangulo')+'<span>Retângulo</span>';
-      btnFTri.className='forma-btn'+(f==='triangulo'?' ativo':'');
-      btnFTri.innerHTML=svgTri(f==='triangulo')+'<span>Triângulo</span>';
-    }
-
-    function setForma(f){
-      qt.forma=f;
-      atualizarBotoesForma(f);
-      // Atualiza ícone e sub-texto do card header
-      const iconeEl=card.querySelector('.icone');if(iconeEl)iconeEl.textContent=f==='triangulo'?'🔺':'⬜';
-      const subEl=card.querySelector('.sub');if(subEl)subEl.textContent=`${f==='triangulo'?'Triângulo':'Retângulo'} · ${qt.largura}m × ${qt.altura}m · ${Math.round(qt.angulo)}°`;
-      atualizarGeometriaQt(qt.id);agendarSave();
-    }
-
-    atualizarBotoesForma(qt.forma||'retangulo');
-    btnFRect.addEventListener('click',()=>setForma('retangulo'));
-    btnFTri.addEventListener('click',()=>setForma('triangulo'));
-    formaSelector.appendChild(btnFRect);formaSelector.appendChild(btnFTri);
-    formaDiv.appendChild(formaSelector);
-
-    // ── Cor ──
-    const campoCor=document.createElement('div');campoCor.className='campo';
-    campoCor.innerHTML='<label>🎨 Cor</label>';
-    const inCor=document.createElement('input');inCor.type='color';inCor.value=qt.cor;
-    inCor.addEventListener('input',function(){qt.cor=this.value;atualizarGeometriaQt(qt.id);agendarSave();});
-    campoCor.appendChild(inCor);
-
-    // ── Largura × Altura ──
-    const dimRow=document.createElement('div');dimRow.className='dim-row';
-    const campoLarg=document.createElement('div');campoLarg.className='campo';
-    campoLarg.innerHTML='<label>↔ Largura (m)</label>';
-    const inLarg=document.createElement('input');inLarg.type='number';inLarg.min='5';inLarg.max='2000';inLarg.step='5';inLarg.value=qt.largura;
-    inLarg.addEventListener('input',function(){
-      qt.largura=parseFloat(this.value)||50;atualizarGeometriaQt(qt.id);
-      const subEl=card.querySelector('.sub');if(subEl)subEl.textContent=`${qt.forma==='triangulo'?'Triângulo':'Retângulo'} · ${qt.largura}m × ${qt.altura}m · ${Math.round(qt.angulo)}°`;
-      agendarSave();
-    });
-    campoLarg.appendChild(inLarg);
-    const campoAlt=document.createElement('div');campoAlt.className='campo';
-    campoAlt.innerHTML='<label>↕ Altura (m)</label>';
-    const inAlt=document.createElement('input');inAlt.type='number';inAlt.min='5';inAlt.max='2000';inAlt.step='5';inAlt.value=qt.altura;
-    inAlt.addEventListener('input',function(){
-      qt.altura=parseFloat(this.value)||30;atualizarGeometriaQt(qt.id);
-      const subEl=card.querySelector('.sub');if(subEl)subEl.textContent=`${qt.forma==='triangulo'?'Triângulo':'Retângulo'} · ${qt.largura}m × ${qt.altura}m · ${Math.round(qt.angulo)}°`;
-      agendarSave();
-    });
-    campoAlt.appendChild(inAlt);
-    dimRow.appendChild(campoLarg);dimRow.appendChild(campoAlt);
-
-    // ── Ângulo ──
-    const campoRot=document.createElement('div');campoRot.className='campo-rot';
-    campoRot.innerHTML='<label>🔄 Ângulo do quarteirão</label>';
-    const rotRow=document.createElement('div');rotRow.className='rot-row';
-    const btnM10=document.createElement('button');btnM10.textContent='↺';btnM10.title='-10°';
-    const btnM1=document.createElement('button');btnM1.textContent='−';btnM1.title='-1°';btnM1.style.fontSize='15px';
-    const sliderQt=document.createElement('input');sliderQt.type='range';sliderQt.min='0';sliderQt.max='359';sliderQt.step='1';sliderQt.value=String(((qt.angulo%360)+360)%360);
+    // Nome
+    const cNome=document.createElement('div');cNome.className='campo';cNome.innerHTML='<label>🏘️ Nome do quarteirão</label>';
+    const iNome=document.createElement('input');iNome.type='text';iNome.placeholder='Ex.: Quarteirão Central';iNome.value=qt.nome;
+    iNome.addEventListener('input',function(){qt.nome=this.value;atualizarLabelQuarteirao(qt.id);const n=card.querySelector('.nome');if(n)n.textContent=`#${qt.id} — ${this.value}`;agendarSave();});
+    cNome.appendChild(iNome);
+    // Forma
+    const fDiv=document.createElement('div');fDiv.className='campo';fDiv.innerHTML='<label>🔷 Forma do quarteirão</label>';
+    const fSel=document.createElement('div');fSel.className='forma-selector';
+    const bRect=document.createElement('button');bRect.type='button';
+    const bTri=document.createElement('button');bTri.type='button';
+    function updFormaBtn(f){bRect.className='forma-btn'+(f==='retangulo'?' ativo':'');bRect.innerHTML=svgRect(f==='retangulo')+'<span>Retângulo</span>';bTri.className='forma-btn'+(f==='triangulo'?' ativo':'');bTri.innerHTML=svgTri(f==='triangulo')+'<span>Triângulo</span>';}
+    function setForma(f){qt.forma=f;updFormaBtn(f);const ic=card.querySelector('.icone');if(ic)ic.textContent=f==='triangulo'?'🔺':'⬜';const sub=card.querySelector('.sub');if(sub)sub.textContent=`${f==='triangulo'?'Triângulo':'Retângulo'} · ${qt.largura}m × ${qt.altura}m · ${Math.round(qt.angulo)}°`;atualizarGeometriaQt(qt.id);agendarSave();}
+    updFormaBtn(qt.forma||'retangulo');
+    bRect.addEventListener('click',()=>setForma('retangulo'));bTri.addEventListener('click',()=>setForma('triangulo'));
+    fSel.appendChild(bRect);fSel.appendChild(bTri);fDiv.appendChild(fSel);
+    // Cor
+    const cCor=document.createElement('div');cCor.className='campo';cCor.innerHTML='<label>🎨 Cor</label>';
+    const iCor=document.createElement('input');iCor.type='color';iCor.value=qt.cor;
+    iCor.addEventListener('input',function(){qt.cor=this.value;atualizarGeometriaQt(qt.id);agendarSave();});
+    cCor.appendChild(iCor);
+    // Dimensões
+    const dRow=document.createElement('div');dRow.className='dim-row';
+    const cLarg=document.createElement('div');cLarg.className='campo';cLarg.innerHTML='<label>↔ Largura (m)</label>';
+    const iLarg=document.createElement('input');iLarg.type='number';iLarg.min='5';iLarg.max='2000';iLarg.step='5';iLarg.value=qt.largura;
+    iLarg.addEventListener('input',function(){qt.largura=parseFloat(this.value)||50;atualizarGeometriaQt(qt.id);const sub=card.querySelector('.sub');if(sub)sub.textContent=`${qt.forma==='triangulo'?'Triângulo':'Retângulo'} · ${qt.largura}m × ${qt.altura}m · ${Math.round(qt.angulo)}°`;agendarSave();});
+    cLarg.appendChild(iLarg);
+    const cAlt=document.createElement('div');cAlt.className='campo';cAlt.innerHTML='<label>↕ Altura (m)</label>';
+    const iAlt=document.createElement('input');iAlt.type='number';iAlt.min='5';iAlt.max='2000';iAlt.step='5';iAlt.value=qt.altura;
+    iAlt.addEventListener('input',function(){qt.altura=parseFloat(this.value)||30;atualizarGeometriaQt(qt.id);const sub=card.querySelector('.sub');if(sub)sub.textContent=`${qt.forma==='triangulo'?'Triângulo':'Retângulo'} · ${qt.largura}m × ${qt.altura}m · ${Math.round(qt.angulo)}°`;agendarSave();});
+    cAlt.appendChild(iAlt);
+    dRow.appendChild(cLarg);dRow.appendChild(cAlt);
+    // Ângulo
+    const cRot=document.createElement('div');cRot.className='campo-rot';cRot.innerHTML='<label>🔄 Ângulo do quarteirão</label>';
+    const rRow=document.createElement('div');rRow.className='rot-row';
+    const bm10=document.createElement('button');bm10.textContent='↺';
+    const bm1=document.createElement('button');bm1.textContent='−';bm1.style.fontSize='15px';
+    const slQt=document.createElement('input');slQt.type='range';slQt.min='0';slQt.max='359';slQt.step='1';slQt.value=String(((qt.angulo%360)+360)%360);
     const rvEl=document.createElement('span');rvEl.className='rv';rvEl.textContent=`${Math.round(qt.angulo)}°`;
-    const btnP1=document.createElement('button');btnP1.textContent='+';btnP1.title='+1°';btnP1.style.fontSize='15px';
-    const btnP10=document.createElement('button');btnP10.textContent='↻';btnP10.title='+10°';
-    const btnZ=document.createElement('button');btnZ.textContent='0°';btnZ.style.fontSize='10px';btnZ.style.color='var(--azul)';btnZ.style.width='auto';btnZ.style.padding='0 6px';
-
-    function aplicarAngQt(v){
-      v=((Math.round(v)%360)+360)%360;qt.angulo=v;sliderQt.value=v;rvEl.textContent=`${v}°`;
-      atualizarGeometriaQt(qt.id);
-      const subEl=card.querySelector('.sub');if(subEl)subEl.textContent=`${qt.forma==='triangulo'?'Triângulo':'Retângulo'} · ${qt.largura}m × ${qt.altura}m · ${v}°`;
-      agendarSave();
-    }
-    btnM10.addEventListener('click',()=>aplicarAngQt(qt.angulo-10));
-    btnM1.addEventListener('click',()=>aplicarAngQt(qt.angulo-1));
-    btnP1.addEventListener('click',()=>aplicarAngQt(qt.angulo+1));
-    btnP10.addEventListener('click',()=>aplicarAngQt(qt.angulo+10));
-    btnZ.addEventListener('click',()=>aplicarAngQt(0));
-    sliderQt.addEventListener('input',()=>aplicarAngQt(parseFloat(sliderQt.value)));
-    rotRow.appendChild(btnM10);rotRow.appendChild(btnM1);rotRow.appendChild(sliderQt);rotRow.appendChild(rvEl);rotRow.appendChild(btnP1);rotRow.appendChild(btnP10);rotRow.appendChild(btnZ);
-    campoRot.appendChild(rotRow);
-
-    // ── Alinhar com mapa ──
-    const btnAlinhar=document.createElement('button');
-    btnAlinhar.style.cssText='display:flex;align-items:center;gap:5px;background:rgba(21,101,192,.08);border:1px solid #90caf9;color:#1565c0;border-radius:7px;padding:6px 12px;cursor:pointer;font-family:"Sora",sans-serif;font-size:11px;font-weight:600;width:100%;justify-content:center;margin-bottom:8px;transition:background .15s;';
-    btnAlinhar.textContent='🗺️ Alinhar com rotação do mapa';
-    btnAlinhar.addEventListener('click',()=>aplicarAngQt(mapBearing));
-    btnAlinhar.addEventListener('mouseenter',()=>btnAlinhar.style.background='rgba(21,101,192,.15)');
-    btnAlinhar.addEventListener('mouseleave',()=>btnAlinhar.style.background='rgba(21,101,192,.08)');
-
-    // ── Remover ──
-    const btnRem=document.createElement('button');btnRem.className='btn-remover-qt';btnRem.textContent='🗑️ Remover quarteirão';
-    btnRem.addEventListener('click',()=>removerQuarteirao(qt.id));
-
-    body.appendChild(campoNome);
-    body.appendChild(formaDiv);
-    body.appendChild(campoCor);
-    body.appendChild(dimRow);
-    body.appendChild(campoRot);
-    body.appendChild(btnAlinhar);
-    body.appendChild(btnRem);
+    const bp1=document.createElement('button');bp1.textContent='+';bp1.style.fontSize='15px';
+    const bp10=document.createElement('button');bp10.textContent='↻';
+    const bzero=document.createElement('button');bzero.textContent='0°';bzero.style.cssText='font-size:10px;color:var(--azul);width:auto;padding:0 6px;';
+    function aplicarAngQt(v){v=((Math.round(v)%360)+360)%360;qt.angulo=v;slQt.value=v;rvEl.textContent=`${v}°`;atualizarGeometriaQt(qt.id);const sub=card.querySelector('.sub');if(sub)sub.textContent=`${qt.forma==='triangulo'?'Triângulo':'Retângulo'} · ${qt.largura}m × ${qt.altura}m · ${v}°`;agendarSave();}
+    bm10.addEventListener('click',()=>aplicarAngQt(qt.angulo-10));bm1.addEventListener('click',()=>aplicarAngQt(qt.angulo-1));bp1.addEventListener('click',()=>aplicarAngQt(qt.angulo+1));bp10.addEventListener('click',()=>aplicarAngQt(qt.angulo+10));bzero.addEventListener('click',()=>aplicarAngQt(0));slQt.addEventListener('input',()=>aplicarAngQt(parseFloat(slQt.value)));
+    rRow.appendChild(bm10);rRow.appendChild(bm1);rRow.appendChild(slQt);rRow.appendChild(rvEl);rRow.appendChild(bp1);rRow.appendChild(bp10);rRow.appendChild(bzero);cRot.appendChild(rRow);
+    // Alinhar com mapa
+    const bAlin=document.createElement('button');
+    bAlin.style.cssText='display:flex;align-items:center;gap:5px;background:rgba(21,101,192,.08);border:1px solid #90caf9;color:#1565c0;border-radius:7px;padding:6px 12px;cursor:pointer;font-family:"Sora",sans-serif;font-size:11px;font-weight:600;width:100%;justify-content:center;margin-bottom:8px;transition:background .15s;';
+    bAlin.textContent='🗺️ Alinhar com rotação do mapa';
+    bAlin.addEventListener('click',()=>aplicarAngQt(mapBearing));
+    bAlin.addEventListener('mouseenter',()=>bAlin.style.background='rgba(21,101,192,.15)');
+    bAlin.addEventListener('mouseleave',()=>bAlin.style.background='rgba(21,101,192,.08)');
+    // Remover
+    const bRem=document.createElement('button');bRem.className='btn-remover-qt';bRem.textContent='🗑️ Remover quarteirão';bRem.addEventListener('click',()=>removerQuarteirao(qt.id));
+    body.appendChild(cNome);body.appendChild(fDiv);body.appendChild(cCor);body.appendChild(dRow);body.appendChild(cRot);body.appendChild(bAlin);body.appendChild(bRem);
     card.appendChild(header);card.appendChild(body);lista.appendChild(card);
   });
 }
-
 function toggleQtCard(id){const c=document.getElementById(`qt-card-${id}`);if(c)c.classList.toggle('aberto');}
 function abrirQtCard(id){const c=document.getElementById(`qt-card-${id}`);if(c){c.classList.add('aberto');setTimeout(()=>c.scrollIntoView({behavior:'smooth',block:'nearest'}),50);}}
 
@@ -797,12 +678,7 @@ function renderCards(){
     const bP10=document.createElement('button');bP10.textContent='↻';
     const bReset=document.createElement('button');bReset.textContent='0°';bReset.className='btn-rot-snap';
     function aplicarRotL(val){let v=Math.round(val);v=Math.max(-180,Math.min(180,v));slider.value=String(v);valD.textContent=`${v}°`;prevLabel.style.transform=`rotate(${v}deg)`;atualizarLado(lado.id,'rotacaoManual',v);}
-    bM10.addEventListener('click',()=>aplicarRotL((lado.rotacaoManual||0)-10));
-    bM1.addEventListener('click',()=>aplicarRotL((lado.rotacaoManual||0)-1));
-    bP1.addEventListener('click',()=>aplicarRotL((lado.rotacaoManual||0)+1));
-    bP10.addEventListener('click',()=>aplicarRotL((lado.rotacaoManual||0)+10));
-    bReset.addEventListener('click',()=>aplicarRotL(0));
-    slider.addEventListener('input',()=>aplicarRotL(parseFloat(slider.value)));
+    bM10.addEventListener('click',()=>aplicarRotL((lado.rotacaoManual||0)-10));bM1.addEventListener('click',()=>aplicarRotL((lado.rotacaoManual||0)-1));bP1.addEventListener('click',()=>aplicarRotL((lado.rotacaoManual||0)+1));bP10.addEventListener('click',()=>aplicarRotL((lado.rotacaoManual||0)+10));bReset.addEventListener('click',()=>aplicarRotL(0));slider.addEventListener('input',()=>aplicarRotL(parseFloat(slider.value)));
     controles.appendChild(bM10);controles.appendChild(bM1);controles.appendChild(wSlider);controles.appendChild(bP1);controles.appendChild(bP10);controles.appendChild(bReset);cRot.appendChild(controles);
     const fixarRow=document.createElement('div');fixarRow.className='fixar-row'+(lado.fixado?' ativo':'');fixarRow.title='Quando fixado, o nome não gira com o mapa';
     fixarRow.innerHTML=`<span class="fixar-icon">📌</span><span class="fixar-txt">${lado.fixado?'Nome fixado (não acompanha rotação do mapa)':'Fixar posição do nome'}</span><div class="fixar-toggle"></div>`;
@@ -887,16 +763,78 @@ document.getElementById('btn-exportar').addEventListener('click',()=>{
 
 // ─── CAPTURAR MAPA ────────────────────────────────────────────────────────────
 let _canvasMapaSemRodape=null;
+
+function montarCanvasFinal(mapaCanvas,nomeDoc){
+  const totalPessoas=document.getElementById('total-num').textContent;
+  const dataAtual=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const rodapeAltura=40;
+  const finalCanvas=document.createElement('canvas');
+  finalCanvas.width=mapaCanvas.width;
+  finalCanvas.height=mapaCanvas.height+rodapeAltura*2;
+  const ctx=finalCanvas.getContext('2d');
+  ctx.fillStyle='#1a7f4b';
+  ctx.fillRect(0,mapaCanvas.height,finalCanvas.width,rodapeAltura*2);
+  ctx.drawImage(mapaCanvas,0,0);
+  const titulo=nomeDoc?`Mapa ACS — ${nomeDoc} — Varjota/CE`:'Mapa ACS — Varjota/CE';
+  ctx.fillStyle='#ffffff';
+  ctx.font='bold 28px Sora, sans-serif';
+  ctx.textBaseline='middle';
+  ctx.fillText(titulo,30,mapaCanvas.height+rodapeAltura*0.7);
+  ctx.font='24px Sora, sans-serif';
+  ctx.fillStyle='rgba(255,255,255,0.8)';
+  ctx.fillText(`Total: ${totalPessoas} pessoas  ·  Gerado em ${dataAtual}  ·  * = nº de pessoas`,30,mapaCanvas.height+rodapeAltura*1.5);
+  return finalCanvas;
+}
+
 document.getElementById('btn-capturar').addEventListener('click',async()=>{
-  const btn=document.getElementById('btn-capturar');if(btn.classList.contains('capturando'))return;btn.classList.add('capturando');btn.textContent='⏳ Processando…';
+  const btn=document.getElementById('btn-capturar');if(btn.classList.contains('capturando'))return;
+  btn.classList.add('capturando');btn.textContent='⏳ Processando…';
   const toolbar=document.getElementById('toolbar'),statusNuvem=document.getElementById('status-nuvem'),dicaEl=document.getElementById('dica'),legendaAst=document.getElementById('legenda-asterisco'),painelToggle=document.getElementById('painel-toggle');
   toolbar.style.display='none';statusNuvem.style.display='none';dicaEl.style.display='none';legendaAst.style.display='none';painelToggle.style.visibility='hidden';
-  try{const mapEl=document.getElementById('map'),canvas=await html2canvas(mapEl,{useCORS:true,allowTaint:true,logging:false,scale:2,backgroundColor:'#f4f6f9'});_canvasMapaSemRodape=canvas;const previewFinal=montarCanvasFinal(canvas,'');const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=previewFinal.toDataURL('image/png');img.style.maxWidth='100%';img.style.maxHeight='220px';img.style.display='block';wrap.appendChild(img);const dataAtual=new Date().toISOString().slice(0,10);document.getElementById('input-nome-doc').value='';document.getElementById('input-nome-arquivo').value=`mapa_acs_varjota_${dataAtual}`;document.getElementById('modal-salvar').classList.remove('oculto');setTimeout(()=>document.getElementById('input-nome-doc').focus(),100);}catch(e){console.error(e);mostrarToast('❌ Erro ao capturar o mapa.');}finally{toolbar.style.display='';statusNuvem.style.display='';legendaAst.style.display='';painelToggle.style.visibility='';btn.classList.remove('capturando');btn.textContent='🖼️ Salvar Mapa';}
+  try{
+    const mapEl=document.getElementById('map');
+    const canvas=await html2canvas(mapEl,{useCORS:true,allowTaint:true,logging:false,scale:2,backgroundColor:'#f4f6f9'});
+    _canvasMapaSemRodape=canvas;
+    // Preview com nome vazio
+    const previewFinal=montarCanvasFinal(canvas,'');
+    const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';
+    const img=document.createElement('img');img.src=previewFinal.toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';
+    wrap.appendChild(img);
+    const dataAtual=new Date().toISOString().slice(0,10);
+    document.getElementById('input-nome-doc').value='';
+    document.getElementById('input-nome-arquivo').value=`mapa_acs_varjota_${dataAtual}`;
+    document.getElementById('modal-salvar').classList.remove('oculto');
+    setTimeout(()=>document.getElementById('input-nome-doc').focus(),100);
+  }catch(e){console.error(e);mostrarToast('❌ Erro ao capturar o mapa.');}
+  finally{toolbar.style.display='';statusNuvem.style.display='';legendaAst.style.display='';painelToggle.style.visibility='';btn.classList.remove('capturando');btn.textContent='🖼️ Salvar Mapa';}
 });
-function montarCanvasFinal(mapaCanvas,nomeDoc){const totalPessoas=document.getElementById('total-num').textContent,dataAtual=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}),rodapeAltura=40,finalCanvas=document.createElement('canvas');finalCanvas.width=mapaCanvas.width;finalCanvas.height=mapaCanvas.height+rodapeAltura*2;const ctx=finalCanvas.getContext('2d');ctx.fillStyle='#1a7f4b';ctx.fillRect(0,mapaCanvas.height,finalCanvas.width,rodapeAltura*2);ctx.drawImage(mapaCanvas,0,0);const titulo=nomeDoc?`Mapa ACS — ${nomeDoc} — Varjota/CE`:'Mapa ACS — Varjota/CE';ctx.fillStyle='#ffffff';ctx.font='bold 28px Sora, sans-serif';ctx.textBaseline='middle';ctx.fillText(titulo,30,mapaCanvas.height+rodapeAltura*0.7);ctx.font='24px Sora, sans-serif';ctx.fillStyle='rgba(255,255,255,0.8)';ctx.fillText(`Total: ${totalPessoas} pessoas  ·  Gerado em ${dataAtual}  ·  * = nº de pessoas`,30,mapaCanvas.height+rodapeAltura*1.5);return finalCanvas;}
-document.getElementById('input-nome-doc').addEventListener('input',()=>{if(!_canvasMapaSemRodape)return;const nomeDoc=document.getElementById('input-nome-doc').value.trim(),preview=montarCanvasFinal(_canvasMapaSemRodape,nomeDoc),wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=preview.toDataURL('image/png');img.style.maxWidth='100%';img.style.maxHeight='220px';img.style.display='block';wrap.appendChild(img);});
-document.getElementById('btn-confirmar-salvar').addEventListener('click',()=>{if(!_canvasMapaSemRodape)return;const nomeDoc=document.getElementById('input-nome-doc').value.trim(),finalCanvas=montarCanvasFinal(_canvasMapaSemRodape,nomeDoc);let nomeArq=(document.getElementById('input-nome-arquivo').value||'mapa_acs_varjota').trim().replace(/\.png$/i,'');const link=document.createElement('a');link.download=`${nomeArq}.png`;link.href=finalCanvas.toDataURL('image/png');link.click();document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;mostrarToast('✅ Imagem salva com sucesso!');});
-document.getElementById('btn-cancelar-salvar').addEventListener('click',()=>{document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;});
+
+// Atualiza preview ao digitar o nome do documento
+document.getElementById('input-nome-doc').addEventListener('input',()=>{
+  if(!_canvasMapaSemRodape)return;
+  const nomeDoc=document.getElementById('input-nome-doc').value.trim();
+  const preview=montarCanvasFinal(_canvasMapaSemRodape,nomeDoc);
+  const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';
+  const img=document.createElement('img');img.src=preview.toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';
+  wrap.appendChild(img);
+});
+
+// Confirmar: monta o canvas final com o nome já digitado e faz o download
+document.getElementById('btn-confirmar-salvar').addEventListener('click',()=>{
+  if(!_canvasMapaSemRodape)return;
+  const nomeDoc=document.getElementById('input-nome-doc').value.trim();
+  const finalCanvas=montarCanvasFinal(_canvasMapaSemRodape,nomeDoc);
+  let nomeArq=(document.getElementById('input-nome-arquivo').value||'mapa_acs_varjota').trim().replace(/\.png$/i,'');
+  const link=document.createElement('a');link.download=`${nomeArq}.png`;link.href=finalCanvas.toDataURL('image/png');link.click();
+  document.getElementById('modal-salvar').classList.add('oculto');
+  _canvasMapaSemRodape=null;
+  mostrarToast('✅ Imagem salva com sucesso!');
+});
+
+document.getElementById('btn-cancelar-salvar').addEventListener('click',()=>{
+  document.getElementById('modal-salvar').classList.add('oculto');
+  _canvasMapaSemRodape=null;
+});
 
 // ─── LIMPAR TUDO ──────────────────────────────────────────────────────────────
 document.getElementById('btn-limpar').addEventListener('click',()=>{
@@ -910,8 +848,13 @@ document.getElementById('btn-limpar').addEventListener('click',()=>{
 
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
 carregarConfig();
-if(jbApiKey&&jbBinId){setStatus('salvando','Carregando…');carregarNuvem(false).then(ok=>{if(ok){setStatus('conectado',`Bin: ${jbBinId.slice(-6)}`);iniciarPolling();}else setStatus('erro','Erro ao conectar');});}
-else{renderCards();renderQtCards();atualizarResumo();if(!jbApiKey)setTimeout(()=>document.getElementById('modal-config').classList.remove('oculto'),600);}
+if(jbApiKey&&jbBinId){
+  setStatus('salvando','Carregando…');
+  carregarNuvem(false).then(ok=>{if(ok){setStatus('conectado',`Bin: ${jbBinId.slice(-6)}`);iniciarPolling();}else setStatus('erro','Erro ao conectar');});
+}else{
+  renderCards();renderQtCards();atualizarResumo();
+  if(!jbApiKey)setTimeout(()=>document.getElementById('modal-config').classList.remove('oculto'),600);
+}
 map.whenReady(()=>atualizarEscalaZoom());
 </script>
 </body>
