@@ -441,32 +441,90 @@ function atualizarEscalaZoom(){
 }
 map.on('zoomend',atualizarEscalaZoom);
 
-// ─── DRAG LADO ────────────────────────────────────────────────────────────────
-const dragHandle=document.getElementById('drag-handle'),dragGhost=document.getElementById('drag-ghost'),dica=document.getElementById('dica');
-let isDraggingNew=false;
-function moveGhost(cx,cy){dragGhost.style.left=cx+'px';dragGhost.style.top=cy+'px';}
-dragHandle.addEventListener('mousedown',(e)=>{e.preventDefault();isDraggingNew=true;dragHandle.classList.add('dragging');map.dragging.disable();dragGhost.style.display='block';moveGhost(e.clientX,e.clientY);dica.textContent='📍 Solte para fixar o marcador';dica.classList.add('visivel');});
-document.addEventListener('mousemove',(e)=>{if(isDraggingNew)moveGhost(e.clientX,e.clientY);});
-document.addEventListener('mouseup',async(e)=>{if(!isDraggingNew)return;isDraggingNew=false;dragHandle.classList.remove('dragging');dragGhost.style.display='none';map.dragging.enable();dica.classList.remove('visivel');const mapEl=map.getContainer(),rect=mapEl.getBoundingClientRect();if(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)return;const point=L.point(e.clientX-rect.left,e.clientY-rect.top),latlng=map.containerPointToLatLng(point);const{rua,angulo}=await buscarRuaEAngulo(latlng.lat,latlng.lng);adicionarLado(latlng.lat,latlng.lng,rua,angulo);});
+// ─── DRAG SYSTEM (overlay-based, funciona sobre o Leaflet) ───────────────────
+const dica=document.getElementById('dica');
+const dragGhost=document.getElementById('drag-ghost');
+const dragGhostQt=document.getElementById('drag-ghost-qt');
 
-// ─── DRAG QUARTEIRÃO ──────────────────────────────────────────────────────────
-const dragQt=document.getElementById('drag-qt'),dragGhostQt=document.getElementById('drag-ghost-qt');
-let isDraggingQt=false;
-function moveGhostQt(cx,cy){dragGhostQt.style.left=cx+'px';dragGhostQt.style.top=cy+'px';}
-dragQt.addEventListener('mousedown',(e)=>{e.preventDefault();isDraggingQt=true;dragQt.classList.add('dragging');map.dragging.disable();dragGhostQt.style.display='block';moveGhostQt(e.clientX,e.clientY);dica.textContent='⬜ Solte para desenhar o quarteirão';dica.classList.add('visivel');});
-document.addEventListener('mousemove',(e)=>{if(isDraggingQt)moveGhostQt(e.clientX,e.clientY);});
-document.addEventListener('mouseup',(e)=>{
-  if(!isDraggingQt)return;isDraggingQt=false;dragQt.classList.remove('dragging');dragGhostQt.style.display='none';map.dragging.enable();dica.classList.remove('visivel');
+// Overlay transparente que cobre tudo durante o drag — impede o Leaflet de
+// interceptar os eventos do mouse
+const dragOverlay=document.createElement('div');
+dragOverlay.style.cssText='position:fixed;inset:0;z-index:9990;display:none;cursor:crosshair;';
+document.body.appendChild(dragOverlay);
+
+let _dragMode=null; // 'lado' | 'quarteirao'
+let _ghostEl=null;
+
+function _startDrag(mode,ghostEl,dicaTxt,e){
+  e.preventDefault();
+  _dragMode=mode;
+  _ghostEl=ghostEl;
+  ghostEl.style.display='block';
+  _moveGhost(e.clientX,e.clientY);
+  dragOverlay.style.display='block';
+  dica.textContent=dicaTxt;
+  dica.classList.add('visivel');
+  map.dragging.disable();
+  const handle=mode==='lado'?document.getElementById('drag-handle'):document.getElementById('drag-qt');
+  handle.classList.add('dragging');
+}
+
+function _moveGhost(cx,cy){
+  if(!_ghostEl)return;
+  _ghostEl.style.left=cx+'px';
+  _ghostEl.style.top=cy+'px';
+}
+
+function _endDrag(cx,cy){
+  if(!_dragMode)return;
+  const mode=_dragMode;
+  _dragMode=null;
+  dragOverlay.style.display='none';
+  if(_ghostEl){_ghostEl.style.display='none';_ghostEl=null;}
+  dica.classList.remove('visivel');
+  map.dragging.enable();
+  document.getElementById('drag-handle').classList.remove('dragging');
+  document.getElementById('drag-qt').classList.remove('dragging');
+
+  // Descobre se o ponto está dentro do mapa
   const mapEl=map.getContainer(),rect=mapEl.getBoundingClientRect();
-  if(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)return;
-  const point=L.point(e.clientX-rect.left,e.clientY-rect.top),latlng=map.containerPointToLatLng(point);
-  // Calcula dimensões padrão em metros (60x30m) convertendo para graus
-  const zoom=map.getZoom();
-  const metersPerPixel=156543.03392*Math.cos(latlng.lat*Math.PI/180)/Math.pow(2,zoom);
-  const largM=80,altM=40;
-  adicionarQuarteirao(latlng.lat,latlng.lng,largM,altM,mapBearing,'Quarteirão '+proximoQtId,'#6a1b9a');
-  mudarTab('quarteirao');
+  if(cx<rect.left||cx>rect.right||cy<rect.top||cy>rect.bottom)return;
+
+  const point=L.point(cx-rect.left,cy-rect.top);
+  const latlng=map.containerPointToLatLng(point);
+
+  if(mode==='lado'){
+    buscarRuaEAngulo(latlng.lat,latlng.lng).then(({rua,angulo})=>{
+      adicionarLado(latlng.lat,latlng.lng,rua,angulo);
+    });
+  } else {
+    adicionarQuarteirao(latlng.lat,latlng.lng,80,40,mapBearing,'Quarteirão '+proximoQtId,'#6a1b9a');
+    mudarTab('quarteirao');
+  }
+}
+
+// Listeners no overlay (captura tudo, incluindo área do Leaflet)
+dragOverlay.addEventListener('mousemove',(e)=>_moveGhost(e.clientX,e.clientY));
+dragOverlay.addEventListener('mouseup',(e)=>{e.preventDefault();_endDrag(e.clientX,e.clientY);});
+
+// Fallback no document (quando soltar fora do overlay / fora do mapa)
+document.addEventListener('mousemove',(e)=>{if(_dragMode)_moveGhost(e.clientX,e.clientY);});
+document.addEventListener('mouseup',(e)=>{if(_dragMode)_endDrag(e.clientX,e.clientY);});
+
+// Início dos drags
+document.getElementById('drag-handle').addEventListener('mousedown',(e)=>{
+  _startDrag('lado',dragGhost,'📍 Solte onde quer marcar o lado',e);
 });
+document.getElementById('drag-qt').addEventListener('mousedown',(e)=>{
+  _startDrag('quarteirao',dragGhostQt,'⬜ Solte onde quer desenhar o quarteirão',e);
+});
+
+// Touch support
+function _touchPos(e){const t=e.changedTouches[0];return{cx:t.clientX,cy:t.clientY};}
+document.getElementById('drag-handle').addEventListener('touchstart',(e)=>{const{cx,cy}=_touchPos(e);_startDrag('lado',dragGhost,'📍 Solte onde quer marcar o lado',{preventDefault:()=>{},clientX:cx,clientY:cy});},{passive:false});
+document.getElementById('drag-qt').addEventListener('touchstart',(e)=>{const{cx,cy}=_touchPos(e);_startDrag('quarteirao',dragGhostQt,'⬜ Solte onde quer desenhar o quarteirão',{preventDefault:()=>{},clientX:cx,clientY:cy});},{passive:false});
+document.addEventListener('touchmove',(e)=>{if(!_dragMode)return;const{cx,cy}=_touchPos(e);_moveGhost(cx,cy);},{passive:true});
+document.addEventListener('touchend',(e)=>{if(!_dragMode)return;const{cx,cy}=_touchPos(e);_endDrag(cx,cy);});
 
 // ─── GEOCODIFICAÇÃO ───────────────────────────────────────────────────────────
 async function buscarRuaEAngulo(lat,lng){let rua='Localização marcada',angulo=0;try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,{headers:{'Accept-Language':'pt-BR'}});const d=await r.json();rua=d.address?.road||d.address?.neighbourhood||d.display_name?.split(',')[0]||'Local desconhecido';}catch{}try{const delta=0.0003,bbox=`${lat-delta},${lng-delta},${lat+delta},${lng+delta}`,query=`[out:json][timeout:5];way[highway](${bbox});out geom;`;const ov=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`data=${encodeURIComponent(query)}`});const od=await ov.json();let melhorDist=Infinity,melhorAng=0;for(const way of(od.elements||[])){if(!way.geometry||way.geometry.length<2)continue;for(let i=0;i<way.geometry.length-1;i++){const a=way.geometry[i],b=way.geometry[i+1],mx=(a.lon+b.lon)/2,my=(a.lat+b.lat)/2,dx=mx-lng,dy=my-lat,dist=Math.sqrt(dx*dx+dy*dy);if(dist<melhorDist){melhorDist=dist;const dLon=(b.lon-a.lon)*Math.cos(lat*Math.PI/180),dLat=b.lat-a.lat;melhorAng=Math.atan2(dLon,dLat)*180/Math.PI;}}}angulo=melhorAng;}catch{}return{rua,angulo};}
