@@ -362,7 +362,7 @@ let jbApiKey='',jbBinId='',saveTimer=null,pollTimer=null,lastSaveTs=0;
 function carregarConfig(){try{const c=JSON.parse(localStorage.getItem(LS_KEY)||'{}');jbApiKey=c.apiKey||'';jbBinId=c.binId||'';}catch{}}
 function salvarConfig(){localStorage.setItem(LS_KEY,JSON.stringify({apiKey:jbApiKey,binId:jbBinId}));}
 function setStatus(e,t){const el=document.getElementById('status-nuvem'),tx=document.getElementById('status-txt');el.className='';el.classList.add(e);tx.textContent=t;}
-function serializarLados(){return lados.map(l=>({id:l.id,lat:l.lat,lng:l.lng,rua:l.rua,angulo:l.angulo||0,rotacaoManual:l.rotacaoManual||0,fixado:!!l.fixado,acs:l.acs,pessoas:l.pessoas}));}
+function serializarLados(){return lados.map(l=>({id:l.id,lat:l.lat,lng:l.lng,rua:l.rua,angulo:l.angulo||0,rotacaoManual:l.rotacaoManual||0,fixado:!!l.fixado,acs:l.acs,pessoas:l.pessoas,corTexto:l.corTexto||'#1a7f4b',corFundo:l.corFundo||'#ffffff'}));}
 function serializarQts(){return quarteiroesData.map(q=>({id:q.id,lat:q.lat,lng:q.lng,largura:q.largura,altura:q.altura,angulo:q.angulo,cor:q.cor,forma:q.forma,nlados:q.nlados||resolverNLados(q.forma),vertices:q.vertices||null}));}
 function agendarSave(){if(!jbApiKey)return;clearTimeout(saveTimer);setStatus('salvando','Salvando…');saveTimer=setTimeout(salvarNuvem,1200);}
 async function salvarNuvem(){if(!jbApiKey)return;const payload={lados:serializarLados(),quarteiroesData:serializarQts(),proximoId,proximoQtId,ts:Date.now()};try{let res;if(!jbBinId){res=await fetch('https://api.jsonbin.io/v3/b',{method:'POST',headers:{'Content-Type':'application/json','X-Master-Key':jbApiKey,'X-Bin-Name':'acs-varjota'},body:JSON.stringify(payload)});const j=await res.json();if(j.metadata?.id){jbBinId=j.metadata.id;salvarConfig();setStatus('conectado',`Bin: ${jbBinId.slice(-6)}`);mostrarToast('✅ Bin criado!');}else throw new Error(JSON.stringify(j));}else{res=await fetch(`https://api.jsonbin.io/v3/b/${jbBinId}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':jbApiKey},body:JSON.stringify(payload)});if(!res.ok)throw new Error(await res.text());lastSaveTs=payload.ts;setStatus('conectado',`Bin: ${jbBinId.slice(-6)}`);}}catch(e){console.error(e);setStatus('erro','Erro ao salvar');mostrarToast('❌ Erro ao salvar');}}
@@ -439,11 +439,13 @@ async function buscarRuaEAngulo(lat,lng){
 
 // ─── MARCADORES (LADOS) ───────────────────────────────────────────────────────
 function calcAngLabel(anguloRua,rotacaoManual,fixado){if(fixado)return rotacaoManual||0;let a=(anguloRua-mapBearing+(rotacaoManual||0)+360)%360;if(a>90&&a<=270)a-=180;if(a>270)a-=360;return a;}
-function buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado){
+function buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo){
   const acsLbl=acs||`#${id}`,acsCls=acs?'lbl-acs':'lbl-acs vazio',qtdLbl=pessoas>0?`${pessoas}`:'–',ang=calcAngLabel(anguloRua,rotacaoManual||0,fixado);
-  return `<div class="marker-wrapper" id="marker-${id}"><div class="marker-label" style="--ang:${ang}deg"><span class="${acsCls}">${escHtml(acsLbl)}</span><span class="lbl-sep">|</span><span class="lbl-qtd">${escHtml(qtdLbl)}<span class="lbl-ast">*</span></span></div></div>`;
+  const ct=corTexto||'#1a7f4b',cf=corFundo||'rgba(255,255,255,0.92)';
+  const bordaCor=corFundo&&corFundo!=='#ffffff'?corFundo+'55':'rgba(0,0,0,0.10)';
+  return `<div class="marker-wrapper" id="marker-${id}"><div class="marker-label" style="--ang:${ang}deg;background:${cf};border-color:${bordaCor}"><span class="${acsCls}" style="color:${ct}">${escHtml(acsLbl)}</span><span class="lbl-sep">|</span><span class="lbl-qtd">${escHtml(qtdLbl)}<span class="lbl-ast" style="color:${ct}">*</span></span></div></div>`;
 }
-function buildIcon(id,acs,pessoas,anguloRua,rotacaoManual,fixado){return L.divIcon({className:'',html:buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado),iconSize:[ICON_W,ICON_H],iconAnchor:[ICON_W/2,ICON_H/2]});}
+function buildIcon(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo){return L.divIcon({className:'',html:buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo),iconSize:[ICON_W,ICON_H],iconAnchor:[ICON_W/2,ICON_H/2]});}
 function atualizarTodosOsIcones(){lados.forEach(l=>atualizarIconeMarcador(l.id));}
 
 function _criarMarker(id,lat,lng,icon){
@@ -456,18 +458,18 @@ function _criarMarker(id,lat,lng,icon){
 }
 
 async function adicionarLadoSilencioso(d){
-  const id=d.id,ar=d.angulo||0,rm=d.rotacaoManual||0,fx=!!d.fixado;
-  const marker=_criarMarker(id,d.lat,d.lng,buildIcon(id,d.acs||'',d.pessoas||0,ar,rm,fx));
+  const id=d.id,ar=d.angulo||0,rm=d.rotacaoManual||0,fx=!!d.fixado,ct=d.corTexto||'#1a7f4b',cf=d.corFundo||'#ffffff';
+  const marker=_criarMarker(id,d.lat,d.lng,buildIcon(id,d.acs||'',d.pessoas||0,ar,rm,fx,ct,cf));
   marker.bindTooltip(`Lado #${id} — ${d.rua}`,{permanent:false});
   marker.on('dragend',(e)=>{const l=lados.find(x=>x.id===id);if(l){l.lat=e.target.getLatLng().lat;l.lng=e.target.getLatLng().lng;}buscarRuaEAngulo(e.target.getLatLng().lat,e.target.getLatLng().lng).then(({rua,angulo})=>{const l2=lados.find(x=>x.id===id);if(l2){l2.rua=rua;l2.angulo=angulo;atualizarCardHeader(id);atualizarIconeMarcador(id);agendarSave();}});});
-  lados.push({id,lat:d.lat,lng:d.lng,rua:d.rua,angulo:ar,rotacaoManual:rm,fixado:fx,acs:d.acs||'',pessoas:d.pessoas||0,marker});
+  lados.push({id,lat:d.lat,lng:d.lng,rua:d.rua,angulo:ar,rotacaoManual:rm,fixado:fx,acs:d.acs||'',pessoas:d.pessoas||0,corTexto:ct,corFundo:cf,marker});
 }
 function adicionarLado(lat,lng,rua='Localização marcada',angulo=0){
   const id=proximoId++;
-  const marker=_criarMarker(id,lat,lng,buildIcon(id,'',0,angulo,0,false));
+  const marker=_criarMarker(id,lat,lng,buildIcon(id,'',0,angulo,0,false,'#1a7f4b','#ffffff'));
   marker.bindTooltip(`Lado #${id} — ${rua}`,{permanent:false});
   marker.on('dragend',(e)=>{const l=lados.find(x=>x.id===id);if(l){l.lat=e.target.getLatLng().lat;l.lng=e.target.getLatLng().lng;}buscarRuaEAngulo(e.target.getLatLng().lat,e.target.getLatLng().lng).then(({rua:nome,angulo:ang})=>{const l2=lados.find(x=>x.id===id);if(l2){l2.rua=nome;l2.angulo=ang;atualizarCardHeader(id);atualizarIconeMarcador(id);agendarSave();}});});
-  lados.push({id,lat,lng,rua,angulo,rotacaoManual:0,fixado:false,acs:'',pessoas:0,marker});
+  lados.push({id,lat,lng,rua,angulo,rotacaoManual:0,fixado:false,acs:'',pessoas:0,corTexto:'#1a7f4b',corFundo:'#ffffff',marker});
   if(!painelAberto)togglePainel();renderCards();atualizarResumo();abrirCard(id);atualizarBadge();agendarSave();setTimeout(atualizarEscalaZoom,50);
 }
 
@@ -858,8 +860,40 @@ function renderCards(){
     fixarRow.innerHTML=`<span>📌</span><span class="fixar-txt">${lado.fixado?'Nome fixado':'Fixar posição do nome'}</span><div class="fixar-toggle"></div>`;
     fixarRow.addEventListener('click',()=>{const nF=!lado.fixado;if(nF){const av=calcAngLabel(lado.angulo||0,lado.rotacaoManual||0,false),v=Math.round(av);lado.rotacaoManual=v;slider.value=String(v);valD.textContent=`${v}°`;prevLabel.style.transform=`rotate(${v}deg)`;}else{lado.rotacaoManual=0;slider.value='0';valD.textContent='0°';prevLabel.style.transform='rotate(0deg)';}fixarRow.classList.toggle('ativo',nF);fixarRow.querySelector('.fixar-txt').textContent=nF?'Nome fixado':'Fixar posição do nome';atualizarLado(lado.id,'fixado',nF);});
     cRot.appendChild(fixarRow);
+    // Cores do label
+    const cCores=document.createElement('div');cCores.className='campo';
+    cCores.innerHTML='<label>🎨 Cores do marcador</label>';
+    const coresRow=document.createElement('div');coresRow.style.cssText='display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--borda);border-radius:8px;padding:8px 10px;';
+    // Cor do texto
+    const lblCT=document.createElement('label');lblCT.style.cssText='font-size:10px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;flex:1;';
+    lblCT.textContent='Texto';
+    const iCorTexto=document.createElement('input');iCorTexto.type='color';iCorTexto.value=lado.corTexto||'#1a7f4b';iCorTexto.style.cssText='width:36px;height:28px;padding:2px;border:1px solid var(--borda);border-radius:5px;cursor:pointer;';
+    iCorTexto.addEventListener('input',function(){atualizarLado(lado.id,'corTexto',this.value);});
+    lblCT.appendChild(iCorTexto);
+    // Cor do fundo
+    const lblCF=document.createElement('label');lblCF.style.cssText='font-size:10px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;flex:1;';
+    lblCF.textContent='Fundo';
+    const iCorFundo=document.createElement('input');iCorFundo.type='color';iCorFundo.value=lado.corFundo||'#ffffff';iCorFundo.style.cssText='width:36px;height:28px;padding:2px;border:1px solid var(--borda);border-radius:5px;cursor:pointer;';
+    iCorFundo.addEventListener('input',function(){atualizarLado(lado.id,'corFundo',this.value);});
+    lblCF.appendChild(iCorFundo);
+    // Preview do label
+    const prevCor=document.createElement('div');prevCor.style.cssText='flex:2;display:flex;justify-content:center;align-items:center;';
+    function atualizarPrevCor(){
+      const ct=iCorTexto.value,cf=iCorFundo.value;
+      const acsT=lado.acs||('#'+lado.id),qtdT=lado.pessoas>0?`${lado.pessoas}*`:'–*';
+      prevCor.innerHTML=`<div style="background:${cf};border:1px solid ${cf==='#ffffff'?'rgba(0,0,0,0.1)':ct+'55'};border-radius:5px;padding:2px 8px;font-size:11px;font-weight:600;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15)"><span style="color:${ct};font-weight:700">${escHtml(acsT)}</span><span style="color:rgba(0,0,0,.2);margin:0 3px;font-size:10px">|</span><span style="font-family:monospace;color:#1e2a38">${escHtml(qtdT)}</span></div>`;
+    }
+    atualizarPrevCor();
+    iCorTexto.addEventListener('input',atualizarPrevCor);
+    iCorFundo.addEventListener('input',atualizarPrevCor);
+    // Botão reset
+    const bResetCor=document.createElement('button');bResetCor.type='button';bResetCor.title='Resetar cores padrão';bResetCor.style.cssText='background:none;border:1px solid var(--borda);border-radius:6px;padding:4px 7px;cursor:pointer;font-size:12px;color:var(--muted);';bResetCor.textContent='↺';
+    bResetCor.addEventListener('click',()=>{iCorTexto.value='#1a7f4b';iCorFundo.value='#ffffff';atualizarLado(lado.id,'corTexto','#1a7f4b');atualizarLado(lado.id,'corFundo','#ffffff');atualizarPrevCor();});
+    coresRow.appendChild(lblCT);coresRow.appendChild(lblCF);coresRow.appendChild(prevCor);coresRow.appendChild(bResetCor);
+    cCores.appendChild(coresRow);
+
     const btnRem=document.createElement('button');btnRem.className='btn-remover';btnRem.textContent='🗑️ Remover este lado';btnRem.addEventListener('click',()=>removerLado(lado.id));
-    body.appendChild(cRua);body.appendChild(cAcs);body.appendChild(cPes);body.appendChild(cRot);body.appendChild(btnRem);
+    body.appendChild(cRua);body.appendChild(cAcs);body.appendChild(cPes);body.appendChild(cCores);body.appendChild(cRot);body.appendChild(btnRem);
     card.appendChild(hdr);card.appendChild(body);lista.appendChild(card);
   });
 }
@@ -869,11 +903,12 @@ function atualizarCardHeader(id){const l=lados.find(x=>x.id===id);if(!l)return;c
 function atualizarLado(id,campo,valor){
   const l=lados.find(x=>x.id===id);if(!l)return;
   if(campo==='pessoas')l.pessoas=parseInt(valor,10)||0;else if(campo==='rotacaoManual')l.rotacaoManual=Number(valor)||0;else if(campo==='fixado')l.fixado=!!valor;else l[campo]=valor;
+  if(campo==='corTexto'||campo==='corFundo'){atualizarIconeMarcador(id);agendarSave();return;}
   const c=document.getElementById(`card-${id}`);if(c){const s=c.querySelector('.sub');if(s)s.textContent=`${l.acs||'ACS não definida'} · ${l.pessoas||0} pessoas`;const r=c.querySelector('.rua');if(r){r.title=l.rua;r.textContent=`#${l.id} — ${l.rua}`;}c.classList.toggle('preenchido',!!(l.acs||l.pessoas));}
   atualizarIconeMarcador(id);atualizarResumo();agendarSave();
 }
 function removerLado(id){const i=lados.findIndex(x=>x.id===id);if(i===-1)return;map.removeLayer(lados[i].marker);lados.splice(i,1);renderCards();atualizarResumo();atualizarBadge();}
-function atualizarIconeMarcador(id){const l=lados.find(x=>x.id===id);if(!l)return;l.marker.setIcon(buildIcon(id,l.acs,l.pessoas,l.angulo||0,l.rotacaoManual||0,l.fixado));}
+function atualizarIconeMarcador(id){const l=lados.find(x=>x.id===id);if(!l)return;l.marker.setIcon(buildIcon(id,l.acs,l.pessoas,l.angulo||0,l.rotacaoManual||0,l.fixado,l.corTexto,l.corFundo));}
 
 // ─── RESUMO ───────────────────────────────────────────────────────────────────
 function atualizarResumo(){
@@ -926,7 +961,7 @@ map.on('zoomend',sincronizarZoom);
 
 // ─── EXPORTAR ─────────────────────────────────────────────────────────────────
 document.getElementById('btn-exportar').addEventListener('click',()=>{
-  const dados={lados:lados.map(l=>({id:l.id,rua:l.rua,lat:l.lat,lng:l.lng,acs:l.acs,pessoas:l.pessoas,rotacaoManual:l.rotacaoManual||0,fixado:!!l.fixado})),quarteiroesData:serializarQts()};
+  const dados={lados:lados.map(l=>({id:l.id,rua:l.rua,lat:l.lat,lng:l.lng,acs:l.acs,pessoas:l.pessoas,rotacaoManual:l.rotacaoManual||0,fixado:!!l.fixado,corTexto:l.corTexto||'#1a7f4b',corFundo:l.corFundo||'#ffffff'})),quarteiroesData:serializarQts()};
   const blob=new Blob([JSON.stringify(dados,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`acs_varjota_${new Date().toISOString().slice(0,10)}.json`;a.click();
 });
 
@@ -1031,11 +1066,12 @@ async function capturarMapaCanvas(){
     // sombra suave
     ctx.shadowColor='rgba(0,0,0,0.15)';ctx.shadowBlur=3*S;
     roundRect(ctx,bx,by,pw,ph,rad);
-    ctx.fillStyle='rgba(255,255,255,0.93)';ctx.fill();
+    const corF=l.corFundo||'#ffffff';ctx.fillStyle=corF;ctx.fill();
     ctx.shadowBlur=0;
     ctx.strokeStyle='rgba(0,0,0,0.10)';ctx.lineWidth=S;
     roundRect(ctx,bx,by,pw,ph,rad);ctx.stroke();
-    // texto ACS em verde
+    // texto com cores do lado
+    const corT=l.corTexto||'#1a7f4b';
     const sepIdx=texto.indexOf(' | ');
     if(sepIdx>=0){
       const acsPart=texto.slice(0,sepIdx);
@@ -1043,7 +1079,7 @@ async function capturarMapaCanvas(){
       const qtdPart=texto.slice(sepIdx+3);
       let cx=x - tw/2;
       ctx.textAlign='left';
-      ctx.fillStyle='#1a7f4b';ctx.font=`700 ${fontSize}px Sora,sans-serif`;
+      ctx.fillStyle=corT;ctx.font=`700 ${fontSize}px Sora,sans-serif`;
       ctx.fillText(acsPart,cx,y);cx+=ctx.measureText(acsPart).width;
       ctx.fillStyle='rgba(0,0,0,0.2)';ctx.font=`400 ${fontSize*0.9}px Sora,sans-serif`;
       ctx.fillText(sepPart,cx,y);cx+=ctx.measureText(sepPart).width;
@@ -1051,7 +1087,7 @@ async function capturarMapaCanvas(){
       ctx.fillText(qtdPart,cx,y);
       ctx.textAlign='center';
     }else{
-      ctx.fillStyle='#1a7f4b';
+      ctx.fillStyle=corT;
       ctx.fillText(texto,x,y);
     }
   });
