@@ -158,7 +158,6 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 .marker-wrapper{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:move;}
 .marker-wrapper.mini .marker-label{display:none;}
 .marker-wrapper.medio .lbl-qtd,.marker-wrapper.medio .lbl-sep{display:none;}
-/* ── CARD NOME ACS: REDUZIDO 30% ── */
 .marker-label{display:block;background:rgba(255,255,255,0.92);border-radius:5px;padding:1px 6px;font-size:8px;font-weight:600;font-family:'Sora',sans-serif;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.18);border:1px solid rgba(0,0,0,.10);line-height:1.6;text-align:center;pointer-events:none;transform:rotate(var(--ang,0deg));transform-origin:center center;user-select:none;}
 .marker-label .lbl-acs{display:inline;color:#1a7f4b;font-size:8px;font-weight:700;}
 .marker-label .lbl-acs.vazio{color:rgba(0,0,0,.35);font-style:italic;}
@@ -321,7 +320,6 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 <script>
 // ─── ESTADO ───────────────────────────────────────────────────────────────────
 let lados=[],quarteiroesData=[],proximoId=1,proximoQtId=1,mapBearing=0,painelAberto=true;
-// ── ÍCONE REDUZIDO 30%: 120×40 → 84×28 ──
 const ICON_W=84,ICON_H=28;
 let _handleGroup=null,_handleQtId=null;
 
@@ -774,16 +772,50 @@ function hexParaRgb(hex){hex=(hex||'#6a1b9a').replace('#','');if(hex.length===3)
 async function fetchImgBlob(src){try{const res=await fetch(src,{mode:'cors'});if(!res.ok)throw new Error();const blob=await res.blob();const url=URL.createObjectURL(blob);return await new Promise(ok=>{const img=new Image();img.onload=()=>{URL.revokeObjectURL(url);ok(img);};img.onerror=()=>{URL.revokeObjectURL(url);ok(null);};img.src=url;});}catch{return null;}}
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
 
+// ─── HELPER: rotacionar ponto de container para coordenadas de tela ───────────
+// latLngToContainerPoint devolve coordenadas no espaço não-rotacionado.
+// O leaflet-rotate aplica CSS rotate(-bearing) ao map pane, então precisamos
+// girar cada ponto em torno do centro do canvas para obter a posição real na tela.
+function containerParaTela(px, py, W, H, S) {
+  const ang = -mapBearing * Math.PI / 180;
+  const cx = W * S / 2, cy = H * S / 2;
+  const dx = px * S - cx, dy = py * S - cy;
+  return [
+    cx + dx * Math.cos(ang) - dy * Math.sin(ang),
+    cy + dx * Math.sin(ang) + dy * Math.cos(ang)
+  ];
+}
+
 async function capturarMapaCanvas(){
   const S=2;const mapEl=document.getElementById('map');const W=mapEl.offsetWidth,H=mapEl.offsetHeight;const fc=document.createElement('canvas');fc.width=W*S;fc.height=H*S;const ctx=fc.getContext('2d');const mr=mapEl.getBoundingClientRect();
   ctx.fillStyle='#e8e0d8';ctx.fillRect(0,0,fc.width,fc.height);
+
+  // ── tiles (getBoundingClientRect já retorna posição de tela, já rotacionada) ──
   const tileEls=[...mapEl.querySelectorAll('.leaflet-tile-pane img.leaflet-tile')];
   await Promise.all(tileEls.map(async el=>{if(!el.src)return;const img=await fetchImgBlob(el.src);if(!img)return;const r=el.getBoundingClientRect();ctx.drawImage(img,(r.left-mr.left)*S,(r.top-mr.top)*S,r.width*S,r.height*S);}));
-  quarteiroesData.forEach(q=>{const verts=obterVerticesQt(q);if(!verts||verts.length<3)return;const n=verts.length;const pts=verts.map(v=>{const p=map.latLngToContainerPoint(L.latLng(v[0],v[1]));return[p.x*S,p.y*S];});ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<n;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();const {r,g,b}=hexParaRgb(q.cor);ctx.fillStyle=`rgba(${r},${g},${b},0.18)`;ctx.fill();const coresLados=q.coresLados||(Array.from({length:n},()=>q.cor||'#6a1b9a'));ctx.lineWidth=2.5*S;ctx.lineJoin='round';pts.forEach((p,i)=>{const next=pts[(i+1)%n];ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(next[0],next[1]);ctx.strokeStyle=coresLados[i]||q.cor||'#6a1b9a';ctx.stroke();});});
-  // ── fontSize reduzido 30%: 11*S → 8*S ──
+
+  // ── quarteirões: converter vértices para espaço de tela aplicando rotação ──
+  quarteiroesData.forEach(q=>{
+    const verts=obterVerticesQt(q);if(!verts||verts.length<3)return;
+    const n=verts.length;
+    const pts=verts.map(v=>{
+      const p=map.latLngToContainerPoint(L.latLng(v[0],v[1]));
+      return containerParaTela(p.x,p.y,W,H,S);
+    });
+    ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<n;i++)ctx.lineTo(pts[i][0],pts[i][1]);
+    ctx.closePath();
+    const {r,g,b}=hexParaRgb(q.cor);ctx.fillStyle=`rgba(${r},${g},${b},0.18)`;ctx.fill();
+    const coresLados=q.coresLados||(Array.from({length:n},()=>q.cor||'#6a1b9a'));
+    ctx.lineWidth=2.5*S;ctx.lineJoin='round';
+    pts.forEach((p,i)=>{const next=pts[(i+1)%n];ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(next[0],next[1]);ctx.strokeStyle=coresLados[i]||q.cor||'#6a1b9a';ctx.stroke();});
+  });
+
+  // ── labels dos lados: posição de tela via containerParaTela ──
   const fontSize=8*S;ctx.font=`600 ${fontSize}px Sora,sans-serif`;ctx.textBaseline='middle';ctx.textAlign='center';
   lados.forEach(l=>{
-    const p=map.latLngToContainerPoint(L.latLng(l.lat,l.lng));const x=p.x*S,y=p.y*S;
+    const p=map.latLngToContainerPoint(L.latLng(l.lat,l.lng));
+    const [x,y]=containerParaTela(p.x,p.y,W,H,S);
     const acsLabel=l.acs||('#'+l.id),qtdLabel=l.pessoas>0?`${l.pessoas}*`:'–*',texto=`${acsLabel} | ${qtdLabel}`;
     const tw=ctx.measureText(texto).width,ph=fontSize*1.6,pw=tw+14*S,rad=4*S,bx=x-pw/2,by=y-ph/2;
     const op=l.opacidadeFundo!==undefined?l.opacidadeFundo:1;
@@ -792,7 +824,7 @@ async function capturarMapaCanvas(){
     roundRect(ctx,bx,by,pw,ph,rad);ctx.fillStyle=`rgba(${r},${g},${b},${op})`;ctx.fill();ctx.shadowBlur=0;
     ctx.strokeStyle='rgba(0,0,0,0.10)';ctx.lineWidth=S;roundRect(ctx,bx,by,pw,ph,rad);ctx.stroke();
     const corT=l.corTexto||'#1a7f4b';const sepIdx=texto.indexOf(' | ');
-    if(sepIdx>=0){const acsPart=texto.slice(0,sepIdx),sepPart=' | ',qtdPart=texto.slice(sepIdx+3);let cx=x-tw/2;ctx.textAlign='left';ctx.fillStyle=corT;ctx.font=`700 ${fontSize}px Sora,sans-serif`;ctx.fillText(acsPart,cx,y);cx+=ctx.measureText(acsPart).width;ctx.fillStyle='rgba(0,0,0,0.2)';ctx.font=`400 ${fontSize*0.9}px Sora,sans-serif`;ctx.fillText(sepPart,cx,y);cx+=ctx.measureText(sepPart).width;ctx.fillStyle='#1e2a38';ctx.font=`700 ${fontSize}px "JetBrains Mono",monospace`;ctx.fillText(qtdPart,cx,y);ctx.textAlign='center';}
+    if(sepIdx>=0){const acsPart=texto.slice(0,sepIdx),sepPart=' | ',qtdPart=texto.slice(sepIdx+3);let cx2=x-tw/2;ctx.textAlign='left';ctx.fillStyle=corT;ctx.font=`700 ${fontSize}px Sora,sans-serif`;ctx.fillText(acsPart,cx2,y);cx2+=ctx.measureText(acsPart).width;ctx.fillStyle='rgba(0,0,0,0.2)';ctx.font=`400 ${fontSize*0.9}px Sora,sans-serif`;ctx.fillText(sepPart,cx2,y);cx2+=ctx.measureText(sepPart).width;ctx.fillStyle='#1e2a38';ctx.font=`700 ${fontSize}px "JetBrains Mono",monospace`;ctx.fillText(qtdPart,cx2,y);ctx.textAlign='center';}
     else{ctx.fillStyle=corT;ctx.fillText(texto,x,y);}
   });
   ctx.shadowBlur=0;return fc;
