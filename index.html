@@ -935,78 +935,141 @@ let _canvasMapaSemRodape=null;
 function montarCanvasFinal(mapaCanvas,nomeDoc){
   const totalPessoas=document.getElementById('total-num').textContent,dataAtual=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}),rh=40,fc=document.createElement('canvas');fc.width=mapaCanvas.width;fc.height=mapaCanvas.height+rh*2;const ctx=fc.getContext('2d');ctx.fillStyle='#1a7f4b';ctx.fillRect(0,mapaCanvas.height,fc.width,rh*2);ctx.drawImage(mapaCanvas,0,0);const titulo=nomeDoc?`Mapa ACS — ${nomeDoc} — Varjota/CE`:'Mapa ACS — Varjota/CE';ctx.fillStyle='#ffffff';ctx.font='bold 28px Sora, sans-serif';ctx.textBaseline='middle';ctx.fillText(titulo,30,mapaCanvas.height+rh*0.7);ctx.font='24px Sora, sans-serif';ctx.fillStyle='rgba(255,255,255,0.8)';ctx.fillText(`Total: ${totalPessoas} pessoas  ·  Gerado em ${dataAtual}  ·  * = nº de pessoas`,30,mapaCanvas.height+rh*1.5);return fc;
 }
-// ── Converte cor hex/rgba para componentes ─────────────────────────────────
-function parseCor(cor){
-  const d=document.createElement('div');d.style.color=cor;document.body.appendChild(d);
-  const c=getComputedStyle(d).color;document.body.removeChild(d);
-  const m=c.match(/[\d.]+/g)||[106,27,154,1];
-  return{r:+m[0],g:+m[1],b:+m[2],a:m[3]!==undefined?+m[3]:1};
-}
-function corComAlpha(cor,alpha){
-  const {r,g,b}=parseCor(cor);return `rgba(${r},${g},${b},${alpha})`;
+// ── Captura nativa sem html2canvas (evita tainted canvas) ─────────────────
+
+function hexParaRgb(hex){
+  hex=(hex||'#6a1b9a').replace('#','');
+  if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');
+  const n=parseInt(hex,16)||0;
+  return{r:(n>>16)&255,g:(n>>8)&255,b:n&255};
 }
 
-// ── Desenha todos os quarteirões sobre o canvas ────────────────────────────
-function desenharQuarteiroesNoCanvas(ctx, escala){
-  escala=escala||1;
+// Carrega imagem de qualquer URL como blob (sem taint)
+async function fetchImgBlob(src){
+  try{
+    const res=await fetch(src,{mode:'cors'});
+    if(!res.ok)throw new Error();
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    return await new Promise(ok=>{
+      const img=new Image();
+      img.onload=()=>{URL.revokeObjectURL(url);ok(img);};
+      img.onerror=()=>{URL.revokeObjectURL(url);ok(null);};
+      img.src=url;
+    });
+  }catch{return null;}
+}
+
+// Polígono arredondado para labels
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+async function capturarMapaCanvas(){
+  const S=2; // escala para nitidez
+  const mapEl=document.getElementById('map');
+  const W=mapEl.offsetWidth, H=mapEl.offsetHeight;
+  const fc=document.createElement('canvas');
+  fc.width=W*S; fc.height=H*S;
+  const ctx=fc.getContext('2d');
+  const mr=mapEl.getBoundingClientRect();
+
+  // ── 1. Fundo ──────────────────────────────────────────────────────────────
+  ctx.fillStyle='#e8e0d8';
+  ctx.fillRect(0,0,fc.width,fc.height);
+
+  // ── 2. Tiles via fetch/blob (sem taint) ──────────────────────────────────
+  const tileEls=[...mapEl.querySelectorAll('.leaflet-tile-pane img.leaflet-tile')];
+  await Promise.all(tileEls.map(async el=>{
+    if(!el.src)return;
+    const img=await fetchImgBlob(el.src);
+    if(!img)return;
+    const r=el.getBoundingClientRect();
+    ctx.drawImage(img,(r.left-mr.left)*S,(r.top-mr.top)*S,r.width*S,r.height*S);
+  }));
+
+  // ── 3. Quarteirões (redesenhados com coordenadas do mapa) ─────────────────
   quarteiroesData.forEach(q=>{
     const verts=obterVerticesQt(q);
     if(!verts||verts.length<3)return;
     const pts=verts.map(v=>{
       const p=map.latLngToContainerPoint(L.latLng(v[0],v[1]));
-      return{x:p.x*escala,y:p.y*escala};
+      return[p.x*S,p.y*S];
     });
     ctx.beginPath();
-    ctx.moveTo(pts[0].x,pts[0].y);
-    for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);
+    ctx.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
     ctx.closePath();
-    const cor=q.cor||'#6a1b9a';
-    ctx.fillStyle=corComAlpha(cor,0.18);
+    const {r,g,b}=hexParaRgb(q.cor);
+    ctx.fillStyle=`rgba(${r},${g},${b},0.18)`;
     ctx.fill();
-    ctx.strokeStyle=cor;
-    ctx.lineWidth=2.5*escala;
+    ctx.strokeStyle=q.cor||'#6a1b9a';
+    ctx.lineWidth=2.5*S;
+    ctx.lineJoin='round';
     ctx.stroke();
   });
-}
 
-// ── Captura: html2canvas (tiles+marcadores) + polígonos redesenhados ───────
-async function capturarMapaCanvas(){
-  const SCALE=2;
-  const mapEl=document.getElementById('map');
-
-  // html2canvas captura tiles + marcadores (allowTaint permite tiles cross-origin)
-  const base=await html2canvas(mapEl,{
-    useCORS:true,
-    allowTaint:true,
-    logging:false,
-    scale:SCALE,
-    backgroundColor:'#e8e0d8',
-    ignoreElements:el=>{
-      // ignora o painel-toggle e qualquer elemento fora do mapa
-      return el.id==='painel-toggle';
+  // ── 4. Marcadores (labels de ACS) ────────────────────────────────────────
+  const fontSize=11*S;
+  ctx.font=`600 ${fontSize}px Sora,sans-serif`;
+  ctx.textBaseline='middle';
+  ctx.textAlign='center';
+  lados.forEach(l=>{
+    const p=map.latLngToContainerPoint(L.latLng(l.lat,l.lng));
+    const x=p.x*S, y=p.y*S;
+    const acsLabel=l.acs||('#'+l.id);
+    const qtdLabel=l.pessoas>0?`${l.pessoas}*`:'–*';
+    const texto=`${acsLabel} | ${qtdLabel}`;
+    const tw=ctx.measureText(texto).width;
+    const ph=fontSize*1.6, pw=tw+14*S, rad=4*S;
+    const bx=x-pw/2, by=y-ph/2;
+    // sombra suave
+    ctx.shadowColor='rgba(0,0,0,0.15)';ctx.shadowBlur=3*S;
+    roundRect(ctx,bx,by,pw,ph,rad);
+    ctx.fillStyle='rgba(255,255,255,0.93)';ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.strokeStyle='rgba(0,0,0,0.10)';ctx.lineWidth=S;
+    roundRect(ctx,bx,by,pw,ph,rad);ctx.stroke();
+    // texto ACS em verde
+    const sepIdx=texto.indexOf(' | ');
+    if(sepIdx>=0){
+      const acsPart=texto.slice(0,sepIdx);
+      const sepPart=' | ';
+      const qtdPart=texto.slice(sepIdx+3);
+      let cx=x - tw/2;
+      ctx.textAlign='left';
+      ctx.fillStyle='#1a7f4b';ctx.font=`700 ${fontSize}px Sora,sans-serif`;
+      ctx.fillText(acsPart,cx,y);cx+=ctx.measureText(acsPart).width;
+      ctx.fillStyle='rgba(0,0,0,0.2)';ctx.font=`400 ${fontSize*0.9}px Sora,sans-serif`;
+      ctx.fillText(sepPart,cx,y);cx+=ctx.measureText(sepPart).width;
+      ctx.fillStyle='#1e2a38';ctx.font=`700 ${fontSize}px "JetBrains Mono",monospace`;
+      ctx.fillText(qtdPart,cx,y);
+      ctx.textAlign='center';
+    }else{
+      ctx.fillStyle='#1a7f4b';
+      ctx.fillText(texto,x,y);
     }
   });
 
-  // Cria canvas final e copia base
-  const fc=document.createElement('canvas');
-  fc.width=base.width;fc.height=base.height;
-  const ctx=fc.getContext('2d');
-  ctx.drawImage(base,0,0);
-
-  // Redesenha polígonos manualmente por cima (garante que aparecem)
-  desenharQuarteiroesNoCanvas(ctx,SCALE);
-
+  ctx.shadowBlur=0;
   return fc;
 }
 
 document.getElementById('btn-capturar').addEventListener('click',async()=>{
-  const btn=document.getElementById('btn-capturar');if(btn.classList.contains('capturando'))return;
+  const btn=document.getElementById('btn-capturar');
+  if(btn.classList.contains('capturando'))return;
   btn.classList.add('capturando');btn.textContent='⏳ Processando…';
   const toolbar=document.getElementById('toolbar'),sn=document.getElementById('status-nuvem');
   const dicaEl=document.getElementById('dica'),la=document.getElementById('legenda-asterisco'),pt=document.getElementById('painel-toggle');
-  toolbar.style.display='none';sn.style.display='none';dicaEl.style.display='none';la.style.display='none';pt.style.visibility='hidden';
+  toolbar.style.display='none';sn.style.display='none';
+  dicaEl.style.display='none';la.style.display='none';pt.style.visibility='hidden';
   const handlesBkp=_handleQtId;if(handlesBkp!==null)esconderHandles();
-  await new Promise(r=>setTimeout(r,100));
+  await new Promise(r=>setTimeout(r,150));
   try{
     const canvas=await capturarMapaCanvas();
     _canvasMapaSemRodape=canvas;
@@ -1021,14 +1084,14 @@ document.getElementById('btn-capturar').addEventListener('click',async()=>{
     setTimeout(()=>document.getElementById('input-nome-doc').focus(),100);
   }catch(e){
     console.error(e);
-    mostrarToast('❌ Erro ao capturar: '+e.message);
-  }
-  finally{
+    mostrarToast('❌ '+e.message);
+  }finally{
     toolbar.style.display='';sn.style.display='';la.style.display='';
     pt.style.visibility='';btn.classList.remove('capturando');btn.textContent='🖼️ Salvar Mapa';
     if(handlesBkp!==null)mostrarHandles(handlesBkp);
   }
 });
+
 document.getElementById('input-nome-doc').addEventListener('input',()=>{if(!_canvasMapaSemRodape)return;const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim()).toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);});
 document.getElementById('btn-confirmar-salvar').addEventListener('click',()=>{if(!_canvasMapaSemRodape)return;const fc=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim());const nome=(document.getElementById('input-nome-arquivo').value||'mapa_acs_varjota').trim().replace(/\.png$/i,'');const a=document.createElement('a');a.download=`${nome}.png`;a.href=fc.toDataURL('image/png');a.click();document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;mostrarToast('✅ Imagem salva!');});
 document.getElementById('btn-cancelar-salvar').addEventListener('click',()=>{document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;});
