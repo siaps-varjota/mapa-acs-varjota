@@ -97,9 +97,9 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 .campo-rotacao{margin-bottom:10px;}
 .campo-rotacao label{font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px;}
 .rotacao-controles{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--borda);border-radius:8px;padding:5px 8px;}
-.rotacao-controles button{width:28px;height:28px;border:1px solid var(--borda);border-radius:6px;background:var(--cinza);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;}
+.rotacao-controles button{width:28px;height:28px;border:1px solid var(--borda);border-radius:6px;background:var(--cinza);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;font-family:'Sora',sans-serif;font-weight:600;}
 .rotacao-controles button:hover{background:var(--borda);}
-.rotacao-controles button.btn-rot-snap{font-size:10px;font-family:'Sora',sans-serif;font-weight:700;color:var(--azul);width:auto;padding:0 8px;}
+.rotacao-controles button.btn-rot-snap{font-size:10px!important;color:var(--azul)!important;width:auto!important;padding:0 8px!important;}
 .rotacao-controles .rot-input-wrap{flex:1;display:flex;align-items:center;gap:4px;}
 .rotacao-controles input[type="range"]{flex:1;height:4px;accent-color:var(--verde2);}
 .rotacao-controles .rot-val{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;min-width:32px;text-align:right;}
@@ -158,12 +158,13 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 .marker-wrapper{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:move;}
 .marker-wrapper.mini .marker-label{display:none;}
 .marker-wrapper.medio .lbl-qtd,.marker-wrapper.medio .lbl-sep{display:none;}
-.marker-label{display:block;background:rgba(255,255,255,0.92);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:600;font-family:'Sora',sans-serif;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.18);border:1px solid rgba(0,0,0,.10);line-height:1.6;text-align:center;pointer-events:none;transform:rotate(var(--ang,0deg));transform-origin:center center;user-select:none;}
-.marker-label .lbl-acs{display:inline;color:#1a7f4b;font-size:11px;font-weight:700;}
+/* ── CARD NOME ACS: REDUZIDO 30% ── */
+.marker-label{display:block;background:rgba(255,255,255,0.92);border-radius:5px;padding:1px 6px;font-size:8px;font-weight:600;font-family:'Sora',sans-serif;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.18);border:1px solid rgba(0,0,0,.10);line-height:1.6;text-align:center;pointer-events:none;transform:rotate(var(--ang,0deg));transform-origin:center center;user-select:none;}
+.marker-label .lbl-acs{display:inline;color:#1a7f4b;font-size:8px;font-weight:700;}
 .marker-label .lbl-acs.vazio{color:rgba(0,0,0,.35);font-style:italic;}
-.marker-label .lbl-sep{display:inline;color:rgba(0,0,0,.15);font-size:10px;margin:0 4px;}
-.marker-label .lbl-qtd{display:inline;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#1e2a38;letter-spacing:.3px;}
-.marker-label .lbl-ast{display:inline;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#25b36a;vertical-align:super;line-height:0;}
+.marker-label .lbl-sep{display:inline;color:rgba(0,0,0,.15);font-size:7px;margin:0 3px;}
+.marker-label .lbl-qtd{display:inline;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;color:#1e2a38;letter-spacing:.3px;}
+.marker-label .lbl-ast{display:inline;font-family:'JetBrains Mono',monospace;font-size:7px;font-weight:700;color:#25b36a;vertical-align:super;line-height:0;}
 .leaflet-marker-icon{background:transparent!important;border:none!important;}
 .qt-vertex-handle path{cursor:crosshair!important;}
 .leaflet-interactive.qt-vertex-handle{cursor:crosshair!important;}
@@ -206,7 +207,6 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e2a38;color:#fff;padding:9px 20px;border-radius:50px;font-size:12px;font-weight:600;z-index:9998;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap;}
 #toast.visivel{opacity:1;}
-/* Xadrez para visualizar transparência */
 .xadrez-bg{background-image:linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%);background-size:8px 8px;background-position:0 0,0 4px,4px -4px,-4px 0;}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:700px){
@@ -321,7 +321,8 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 <script>
 // ─── ESTADO ───────────────────────────────────────────────────────────────────
 let lados=[],quarteiroesData=[],proximoId=1,proximoQtId=1,mapBearing=0,painelAberto=true;
-const ICON_W=120,ICON_H=40;
+// ── ÍCONE REDUZIDO 30%: 120×40 → 84×28 ──
+const ICON_W=84,ICON_H=28;
 let _handleGroup=null,_handleQtId=null;
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
@@ -351,7 +352,7 @@ function carregarConfig(){try{const c=JSON.parse(localStorage.getItem(LS_KEY)||'
 function salvarConfig(){localStorage.setItem(LS_KEY,JSON.stringify({apiKey:jbApiKey,binId:jbBinId}));}
 function setStatus(e,t){const el=document.getElementById('status-nuvem'),tx=document.getElementById('status-txt');el.className='';el.classList.add(e);tx.textContent=t;}
 
-// ─── SERIALIZAÇÃO (com opacidadeFundo) ───────────────────────────────────────
+// ─── SERIALIZAÇÃO ─────────────────────────────────────────────────────────────
 function serializarLados(){return lados.map(l=>({id:l.id,lat:l.lat,lng:l.lng,rua:l.rua,angulo:l.angulo||0,rotacaoManual:l.rotacaoManual||0,fixado:!!l.fixado,acs:l.acs,pessoas:l.pessoas,corTexto:l.corTexto||'#1a7f4b',corFundo:l.corFundo||'#ffffff',opacidadeFundo:l.opacidadeFundo!==undefined?l.opacidadeFundo:1}));}
 function serializarQts(){return quarteiroesData.map(q=>({id:q.id,lat:q.lat,lng:q.lng,largura:q.largura,altura:q.altura,angulo:q.angulo,cor:q.cor,forma:q.forma,nlados:q.nlados||resolverNLados(q.forma),vertices:q.vertices||null,coresLados:q.coresLados||null}));}
 function agendarSave(){if(!jbApiKey)return;clearTimeout(saveTimer);setStatus('salvando','Salvando…');saveTimer=setTimeout(salvarNuvem,1200);}
@@ -427,7 +428,7 @@ async function buscarRuaEAngulo(lat,lng){
   return{rua,angulo};
 }
 
-// ─── HELPER: hex para componentes rgb ────────────────────────────────────────
+// ─── HELPER: hex → rgba ───────────────────────────────────────────────────────
 function hexParaRgbObj(hex){
   hex=(hex||'#ffffff').replace('#','');
   if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');
@@ -662,32 +663,22 @@ function renderCards(){
     fixarRow.addEventListener('click',()=>{const nF=!lado.fixado;if(nF){const av=calcAngLabel(lado.angulo||0,lado.rotacaoManual||0,false),v=Math.round(av);lado.rotacaoManual=v;slider.value=String(v);valD.textContent=`${v}°`;prevLabel.style.transform=`rotate(${v}deg)`;}else{lado.rotacaoManual=0;slider.value='0';valD.textContent='0°';prevLabel.style.transform='rotate(0deg)';}fixarRow.classList.toggle('ativo',nF);fixarRow.querySelector('.fixar-txt').textContent=nF?'Nome fixado':'Fixar posição do nome';atualizarLado(lado.id,'fixado',nF);});
     cRot.appendChild(fixarRow);
 
-    // ── CORES DO MARCADOR (com opacidade do fundo) ──────────────────────────
     const cCores=document.createElement('div');cCores.className='campo';cCores.innerHTML='<label>🎨 Cores do marcador</label>';
     const coresRow=document.createElement('div');coresRow.style.cssText='display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;background:#fff;border:1px solid var(--borda);border-radius:8px;padding:8px 10px;';
-
-    // Cor do texto
     const lblCT=document.createElement('label');lblCT.style.cssText='font-size:10px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;';lblCT.textContent='Texto';
     const iCorTexto=document.createElement('input');iCorTexto.type='color';iCorTexto.value=lado.corTexto||'#1a7f4b';iCorTexto.style.cssText='width:36px;height:28px;padding:2px;border:1px solid var(--borda);border-radius:5px;cursor:pointer;';iCorTexto.addEventListener('input',function(){atualizarLado(lado.id,'corTexto',this.value);atualizarPrevCor();});lblCT.appendChild(iCorTexto);
-
-    // Cor do fundo
     const lblCF=document.createElement('label');lblCF.style.cssText='font-size:10px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;';lblCF.textContent='Fundo';
     const iCorFundo=document.createElement('input');iCorFundo.type='color';iCorFundo.value=lado.corFundo||'#ffffff';iCorFundo.style.cssText='width:36px;height:28px;padding:2px;border:1px solid var(--borda);border-radius:5px;cursor:pointer;';iCorFundo.addEventListener('input',function(){atualizarLado(lado.id,'corFundo',this.value);atualizarPrevCor();});lblCF.appendChild(iCorFundo);
-
-    // Opacidade do fundo
     const lblOp=document.createElement('label');lblOp.style.cssText='font-size:10px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:80px;';lblOp.textContent='Opacidade fundo';
     const iOpWrap=document.createElement('div');iOpWrap.style.cssText='display:flex;align-items:center;gap:4px;width:100%;';
     const iOp=document.createElement('input');iOp.type='range';iOp.min='0';iOp.max='1';iOp.step='0.05';iOp.value=String(lado.opacidadeFundo!==undefined?lado.opacidadeFundo:1);iOp.style.cssText='flex:1;height:4px;accent-color:var(--roxo);';
     const iOpVal=document.createElement('span');iOpVal.style.cssText='font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:600;min-width:30px;text-align:right;color:var(--muted);';iOpVal.textContent=Math.round((lado.opacidadeFundo!==undefined?lado.opacidadeFundo:1)*100)+'%';
     iOp.addEventListener('input',function(){lado.opacidadeFundo=parseFloat(this.value);iOpVal.textContent=Math.round(lado.opacidadeFundo*100)+'%';atualizarLado(lado.id,'opacidadeFundo',lado.opacidadeFundo);atualizarPrevCor();});
     iOpWrap.appendChild(iOp);iOpWrap.appendChild(iOpVal);lblOp.appendChild(iOpWrap);
-
-    // Preview
     const prevCorWrap=document.createElement('div');prevCorWrap.style.cssText='width:100%;display:flex;align-items:center;gap:6px;margin-top:2px;';
     const prevCorXadrez=document.createElement('div');prevCorXadrez.className='xadrez-bg';prevCorXadrez.style.cssText='flex:1;height:28px;border-radius:5px;overflow:hidden;border:1px solid var(--borda);display:flex;align-items:center;justify-content:center;';
     const prevCor=document.createElement('div');prevCor.style.cssText='width:100%;height:100%;display:flex;align-items:center;justify-content:center;';
     prevCorXadrez.appendChild(prevCor);
-
     function atualizarPrevCor(){
       const ct=iCorTexto.value,cfHex=iCorFundo.value;const op=lado.opacidadeFundo!==undefined?lado.opacidadeFundo:1;
       const cf=hexOpacidadeParaRgba(cfHex,op);
@@ -695,14 +686,10 @@ function renderCards(){
       prevCor.innerHTML=`<div style="background:${cf};padding:2px 8px;font-size:11px;font-weight:600;white-space:nowrap;border-radius:3px;"><span style="color:${ct};font-weight:700">${escHtml(acsT)}</span><span style="color:rgba(0,0,0,.2);margin:0 3px;font-size:10px">|</span><span style="font-family:monospace;color:#1e2a38">${escHtml(qtdT)}</span></div>`;
     }
     atualizarPrevCor();
-
-    // Botão reset
     const bResetCor=document.createElement('button');bResetCor.type='button';bResetCor.title='Resetar cores padrão';bResetCor.style.cssText='background:none;border:1px solid var(--borda);border-radius:6px;padding:4px 7px;cursor:pointer;font-size:12px;color:var(--muted);align-self:flex-end;';bResetCor.textContent='↺';
     bResetCor.addEventListener('click',()=>{iCorTexto.value='#1a7f4b';iCorFundo.value='#ffffff';iOp.value='1';iOpVal.textContent='100%';lado.opacidadeFundo=1;atualizarLado(lado.id,'corTexto','#1a7f4b');atualizarLado(lado.id,'corFundo','#ffffff');atualizarLado(lado.id,'opacidadeFundo',1);atualizarPrevCor();});
-
     coresRow.appendChild(lblCT);coresRow.appendChild(lblCF);coresRow.appendChild(bResetCor);coresRow.appendChild(lblOp);coresRow.appendChild(prevCorWrap);prevCorWrap.appendChild(prevCorXadrez);
     cCores.appendChild(coresRow);
-
     const btnRem=document.createElement('button');btnRem.className='btn-remover';btnRem.textContent='🗑️ Remover este lado';btnRem.addEventListener('click',()=>removerLado(lado.id));
     body.appendChild(cRua);body.appendChild(cAcs);body.appendChild(cPes);body.appendChild(cCores);body.appendChild(cRot);body.appendChild(btnRem);
     card.appendChild(hdr);card.appendChild(body);lista.appendChild(card);
@@ -793,7 +780,8 @@ async function capturarMapaCanvas(){
   const tileEls=[...mapEl.querySelectorAll('.leaflet-tile-pane img.leaflet-tile')];
   await Promise.all(tileEls.map(async el=>{if(!el.src)return;const img=await fetchImgBlob(el.src);if(!img)return;const r=el.getBoundingClientRect();ctx.drawImage(img,(r.left-mr.left)*S,(r.top-mr.top)*S,r.width*S,r.height*S);}));
   quarteiroesData.forEach(q=>{const verts=obterVerticesQt(q);if(!verts||verts.length<3)return;const n=verts.length;const pts=verts.map(v=>{const p=map.latLngToContainerPoint(L.latLng(v[0],v[1]));return[p.x*S,p.y*S];});ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<n;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();const {r,g,b}=hexParaRgb(q.cor);ctx.fillStyle=`rgba(${r},${g},${b},0.18)`;ctx.fill();const coresLados=q.coresLados||(Array.from({length:n},()=>q.cor||'#6a1b9a'));ctx.lineWidth=2.5*S;ctx.lineJoin='round';pts.forEach((p,i)=>{const next=pts[(i+1)%n];ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(next[0],next[1]);ctx.strokeStyle=coresLados[i]||q.cor||'#6a1b9a';ctx.stroke();});});
-  const fontSize=11*S;ctx.font=`600 ${fontSize}px Sora,sans-serif`;ctx.textBaseline='middle';ctx.textAlign='center';
+  // ── fontSize reduzido 30%: 11*S → 8*S ──
+  const fontSize=8*S;ctx.font=`600 ${fontSize}px Sora,sans-serif`;ctx.textBaseline='middle';ctx.textAlign='center';
   lados.forEach(l=>{
     const p=map.latLngToContainerPoint(L.latLng(l.lat,l.lng));const x=p.x*S,y=p.y*S;
     const acsLabel=l.acs||('#'+l.id),qtdLabel=l.pessoas>0?`${l.pessoas}*`:'–*',texto=`${acsLabel} | ${qtdLabel}`;
