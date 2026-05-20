@@ -669,7 +669,8 @@ function adicionarQuarteirao(lat,lng,lM,aM,angDeg,cor,forceId,nlados,verticesIni
   const forma=nlados; // forma agora é o número de lados
   const verts=verticesIniciais||calcVertices(lat,lng,lM,aM,angDeg,forma);
   const polygon=L.polygon(verts,{
-    color:cor,fillColor:cor,fillOpacity:0.15,weight:2.5,interactive:true
+    color:cor,fillColor:cor,fillOpacity:0.15,weight:2.5,interactive:true,
+    renderer:L.canvas()
   }).addTo(map);
   polygon.getElement&&setTimeout(()=>{if(polygon.getElement())polygon.getElement().style.cursor='grab';},100);
 
@@ -935,13 +936,88 @@ let _canvasMapaSemRodape=null;
 function montarCanvasFinal(mapaCanvas,nomeDoc){
   const totalPessoas=document.getElementById('total-num').textContent,dataAtual=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}),rh=40,fc=document.createElement('canvas');fc.width=mapaCanvas.width;fc.height=mapaCanvas.height+rh*2;const ctx=fc.getContext('2d');ctx.fillStyle='#1a7f4b';ctx.fillRect(0,mapaCanvas.height,fc.width,rh*2);ctx.drawImage(mapaCanvas,0,0);const titulo=nomeDoc?`Mapa ACS — ${nomeDoc} — Varjota/CE`:'Mapa ACS — Varjota/CE';ctx.fillStyle='#ffffff';ctx.font='bold 28px Sora, sans-serif';ctx.textBaseline='middle';ctx.fillText(titulo,30,mapaCanvas.height+rh*0.7);ctx.font='24px Sora, sans-serif';ctx.fillStyle='rgba(255,255,255,0.8)';ctx.fillText(`Total: ${totalPessoas} pessoas  ·  Gerado em ${dataAtual}  ·  * = nº de pessoas`,30,mapaCanvas.height+rh*1.5);return fc;
 }
+// ── Captura composta: tiles (CORS) + canvas overlay do Leaflet + marcadores ──
+async function capturarMapaCanvas(){
+  const mapEl=document.getElementById('map');
+  const W=mapEl.offsetWidth,H=mapEl.offsetHeight;
+  const fc=document.createElement('canvas');fc.width=W*2;fc.height=H*2;
+  const ctx=fc.getContext('2d');ctx.scale(2,2);
+  ctx.fillStyle='#e8e0d8';ctx.fillRect(0,0,W,H);
+
+  // 1. Tiles: todos os <img> dentro do mapa
+  const tileImgs=[...mapEl.querySelectorAll('.leaflet-tile-pane img')];
+  await Promise.allSettled(tileImgs.map(img=>new Promise(res=>{
+    if(img.complete){res();return;}
+    img.onload=img.onerror=res;
+  })));
+  for(const img of tileImgs){
+    if(!img.complete||!img.naturalWidth)continue;
+    const r=img.getBoundingClientRect(),mr=mapEl.getBoundingClientRect();
+    const x=r.left-mr.left,y=r.top-mr.top;
+    try{ctx.drawImage(img,x,y,r.width,r.height);}catch(e){}
+  }
+
+  // 2. Canvas overlay do Leaflet (onde os polígonos são desenhados com renderer Canvas)
+  const leafletCanvases=[...mapEl.querySelectorAll('canvas')];
+  for(const c of leafletCanvases){
+    const r=c.getBoundingClientRect(),mr=mapEl.getBoundingClientRect();
+    const x=r.left-mr.left,y=r.top-mr.top;
+    try{ctx.drawImage(c,x,y,r.width,r.height);}catch(e){}
+  }
+
+  // 3. SVG overlay (marcadores de pin, ruas, etc.)
+  const svgEls=[...mapEl.querySelectorAll('.leaflet-overlay-pane svg, .leaflet-marker-pane svg')];
+  for(const svgEl of svgEls){
+    const r=svgEl.getBoundingClientRect(),mr=mapEl.getBoundingClientRect();
+    const x=r.left-mr.left,y=r.top-mr.top;
+    try{
+      const clone=svgEl.cloneNode(true);
+      clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+      const blob=new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'});
+      const url=URL.createObjectURL(blob);
+      await new Promise((res,rej)=>{
+        const i=new Image();i.onload=()=>{ctx.drawImage(i,x,y,r.width,r.height);URL.revokeObjectURL(url);res();};
+        i.onerror=()=>{URL.revokeObjectURL(url);res();};i.src=url;
+      });
+    }catch(e){}
+  }
+
+  // 4. Marcadores (divIcon — HTML) via html2canvas só dos panes de marcadores
+  const markerPane=mapEl.querySelector('.leaflet-marker-pane');
+  if(markerPane&&markerPane.children.length){
+    try{
+      const mc=await html2canvas(markerPane,{backgroundColor:null,scale:2,logging:false,useCORS:true});
+      const mr2=mapEl.getBoundingClientRect(),mpr=markerPane.getBoundingClientRect();
+      ctx.save();ctx.scale(0.5,0.5);
+      ctx.drawImage(mc,
+        (mpr.left-mr2.left)*2,(mpr.top-mr2.top)*2,
+        mc.width,mc.height
+      );
+      ctx.restore();
+    }catch(e){}
+  }
+
+  ctx.setTransform(1,0,0,1,0,0);
+  return fc;
+}
+
 document.getElementById('btn-capturar').addEventListener('click',async()=>{
   const btn=document.getElementById('btn-capturar');if(btn.classList.contains('capturando'))return;btn.classList.add('capturando');btn.textContent='⏳ Processando…';
   const toolbar=document.getElementById('toolbar'),sn=document.getElementById('status-nuvem'),dicaEl=document.getElementById('dica'),la=document.getElementById('legenda-asterisco'),pt=document.getElementById('painel-toggle');
   toolbar.style.display='none';sn.style.display='none';dicaEl.style.display='none';la.style.display='none';pt.style.visibility='hidden';
-  // Esconde handles temporariamente
   const handlesBkp=_handleQtId;if(handlesBkp!==null)esconderHandles();
-  try{const canvas=await html2canvas(document.getElementById('map'),{useCORS:true,allowTaint:true,logging:false,scale:2,backgroundColor:'#f4f6f9'});_canvasMapaSemRodape=canvas;const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(canvas,'').toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);document.getElementById('input-nome-doc').value='';document.getElementById('input-nome-arquivo').value=`mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;document.getElementById('modal-salvar').classList.remove('oculto');setTimeout(()=>document.getElementById('input-nome-doc').focus(),100);}catch(e){console.error(e);mostrarToast('❌ Erro ao capturar o mapa.');}
+  await new Promise(r=>setTimeout(r,80)); // deixa o DOM atualizar
+  try{
+    const canvas=await capturarMapaCanvas();
+    _canvasMapaSemRodape=canvas;
+    const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';
+    const img=document.createElement('img');img.src=montarCanvasFinal(canvas,'').toDataURL('image/png');
+    img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);
+    document.getElementById('input-nome-doc').value='';
+    document.getElementById('input-nome-arquivo').value=`mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;
+    document.getElementById('modal-salvar').classList.remove('oculto');
+    setTimeout(()=>document.getElementById('input-nome-doc').focus(),100);
+  }catch(e){console.error(e);mostrarToast('❌ Erro ao capturar o mapa.');}
   finally{toolbar.style.display='';sn.style.display='';la.style.display='';pt.style.visibility='';btn.classList.remove('capturando');btn.textContent='🖼️ Salvar Mapa';if(handlesBkp!==null)mostrarHandles(handlesBkp);}
 });
 document.getElementById('input-nome-doc').addEventListener('input',()=>{if(!_canvasMapaSemRodape)return;const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim()).toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);});
