@@ -363,7 +363,7 @@ function carregarConfig(){try{const c=JSON.parse(localStorage.getItem(LS_KEY)||'
 function salvarConfig(){localStorage.setItem(LS_KEY,JSON.stringify({apiKey:jbApiKey,binId:jbBinId}));}
 function setStatus(e,t){const el=document.getElementById('status-nuvem'),tx=document.getElementById('status-txt');el.className='';el.classList.add(e);tx.textContent=t;}
 function serializarLados(){return lados.map(l=>({id:l.id,lat:l.lat,lng:l.lng,rua:l.rua,angulo:l.angulo||0,rotacaoManual:l.rotacaoManual||0,fixado:!!l.fixado,acs:l.acs,pessoas:l.pessoas,corTexto:l.corTexto||'#1a7f4b',corFundo:l.corFundo||'#ffffff'}));}
-function serializarQts(){return quarteiroesData.map(q=>({id:q.id,lat:q.lat,lng:q.lng,largura:q.largura,altura:q.altura,angulo:q.angulo,cor:q.cor,forma:q.forma,nlados:q.nlados||resolverNLados(q.forma),vertices:q.vertices||null}));}
+function serializarQts(){return quarteiroesData.map(q=>({id:q.id,lat:q.lat,lng:q.lng,largura:q.largura,altura:q.altura,angulo:q.angulo,cor:q.cor,forma:q.forma,nlados:q.nlados||resolverNLados(q.forma),vertices:q.vertices||null,coresLados:q.coresLados||null}));}
 function agendarSave(){if(!jbApiKey)return;clearTimeout(saveTimer);setStatus('salvando','Salvando…');saveTimer=setTimeout(salvarNuvem,1200);}
 async function salvarNuvem(){if(!jbApiKey)return;const payload={lados:serializarLados(),quarteiroesData:serializarQts(),proximoId,proximoQtId,ts:Date.now()};try{let res;if(!jbBinId){res=await fetch('https://api.jsonbin.io/v3/b',{method:'POST',headers:{'Content-Type':'application/json','X-Master-Key':jbApiKey,'X-Bin-Name':'acs-varjota'},body:JSON.stringify(payload)});const j=await res.json();if(j.metadata?.id){jbBinId=j.metadata.id;salvarConfig();setStatus('conectado',`Bin: ${jbBinId.slice(-6)}`);mostrarToast('✅ Bin criado!');}else throw new Error(JSON.stringify(j));}else{res=await fetch(`https://api.jsonbin.io/v3/b/${jbBinId}`,{method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':jbApiKey},body:JSON.stringify(payload)});if(!res.ok)throw new Error(await res.text());lastSaveTs=payload.ts;setStatus('conectado',`Bin: ${jbBinId.slice(-6)}`);}}catch(e){console.error(e);setStatus('erro','Erro ao salvar');mostrarToast('❌ Erro ao salvar');}}
 async function carregarNuvem(silencioso=false){if(!jbApiKey||!jbBinId)return false;try{const res=await fetch(`https://api.jsonbin.io/v3/b/${jbBinId}/latest`,{headers:{'X-Master-Key':jbApiKey}});if(!res.ok)throw new Error();const j=await res.json(),d=j.record;if(d?.ts&&d.ts===lastSaveTs)return true;if(d?.lados){proximoId=d.proximoId||1;proximoQtId=d.proximoQtId||1;await carregarDados(d.lados,d.quarteiroesData||[]);lastSaveTs=d.ts||0;if(!silencioso)mostrarToast('☁️ Dados carregados!');}return true;}catch(e){console.error(e);if(!silencioso){setStatus('erro','Erro ao carregar');mostrarToast('❌ Erro ao carregar');}return false;}}
@@ -386,10 +386,10 @@ document.getElementById('btn-satelite').addEventListener('click',()=>{if(satelit
 async function carregarDados(dadosLados,dadosQts){
   esconderHandles();
   lados.forEach(l=>{try{map.removeLayer(l.marker);}catch{}});
-  quarteiroesData.forEach(q=>{try{map.removeLayer(q.polygon);}catch{}});
+  quarteiroesData.forEach(q=>{try{map.removeLayer(q.polygon);}catch{};(q.linhas||[]).forEach(l=>{try{map.removeLayer(l);}catch{}});});
   lados=[];quarteiroesData=[];proximoId=1;proximoQtId=1;
   for(const d of dadosLados){if(d.id>=proximoId)proximoId=d.id+1;await adicionarLadoSilencioso(d);}
-  for(const q of(dadosQts||[])){if(q.id>=proximoQtId)proximoQtId=q.id+1;adicionarQuarteirao(q.lat,q.lng,q.largura,q.altura,q.angulo,q.cor,q.id,q.nlados||resolverNLados(q.forma||'retangulo'),q.vertices||null);}
+  for(const q of(dadosQts||[])){if(q.id>=proximoQtId)proximoQtId=q.id+1;adicionarQuarteirao(q.lat,q.lng,q.largura,q.altura,q.angulo,q.cor,q.id,q.nlados||resolverNLados(q.forma||'retangulo'),q.vertices||null,q.coresLados||null);}
   renderCards();renderQtCards();atualizarResumo();atualizarBadge();agendarSave();setTimeout(atualizarEscalaZoom,50);
 }
 
@@ -414,7 +414,7 @@ function _soltarEm(cx,cy){
   if(cx<rect.left||cx>rect.right||cy<rect.top||cy>rect.bottom)return;
   const latlng=map.containerPointToLatLng(L.point(cx-rect.left,cy-rect.top));
   if(mode==='lado'){buscarRuaEAngulo(latlng.lat,latlng.lng).then(({rua,angulo})=>adicionarLado(latlng.lat,latlng.lng,rua,angulo));}
-  else if(mode==='quarteirao'){adicionarQuarteirao(latlng.lat,latlng.lng,80,40,mapBearing,'#6a1b9a',undefined,4,null);mudarTab('quarteirao');}
+  else if(mode==='quarteirao'){adicionarQuarteirao(latlng.lat,latlng.lng,80,40,mapBearing,'#6a1b9a',undefined,4,null,null);mudarTab('quarteirao');}
 }
 document.addEventListener('mousemove',(e)=>{if(!_dragMode)return;_moveGhost(e.clientX,e.clientY);});
 document.addEventListener('touchmove',(e)=>{if(!_dragMode)return;const t=e.touches[0];_moveGhost(t.clientX,t.clientY);},{passive:true});
@@ -636,12 +636,13 @@ function ativarDragQuarteirao(q){
     q.lat=_startQLatLng.lat+dLat;
     q.lng=_startQLatLng.lng+dLng;
     if(_startVerts){
-      // translada vértices livres
       q.vertices=_startVerts.map(v=>[v[0]+dLat,v[1]+dLng]);
       q.polygon.setLatLngs(q.vertices);
     }else{
       q.polygon.setLatLngs(calcVertices(q.lat,q.lng,q.largura,q.altura,q.angulo,q.forma||4));
     }
+    // move linhas individuais junto com o polígono
+    {const vv=obterVerticesQt(q);const nn=vv.length;(q.linhas||[]).forEach((l,i)=>{if(i<nn)l.setLatLngs([vv[i],vv[(i+1)%nn]]);});}
     // atualiza handles em tempo real se estiverem visíveis
     if(_handleQtId===q.id&&_handleGroup){
       _handleGroup.eachLayer(h=>{
@@ -662,20 +663,25 @@ function ativarDragQuarteirao(q){
     if(sub&&!q.vertices)sub.textContent=`${q.lat.toFixed(5)}, ${q.lng.toFixed(5)}`;
     // atualiza handles
     if(_handleQtId===q.id)mostrarHandles(q.id);
+    atualizarGeometriaQt(q.id);
     agendarSave();
   });
 }
 
-function adicionarQuarteirao(lat,lng,lM,aM,angDeg,cor,forceId,nlados,verticesIniciais){
+function adicionarQuarteirao(lat,lng,lM,aM,angDeg,cor,forceId,nlados,verticesIniciais,coresLadosIniciais){
   nlados=Math.max(3,parseInt(nlados)||4);cor=cor||'#6a1b9a';const id=forceId!==undefined?forceId:proximoQtId++;
-  const forma=nlados; // forma agora é o número de lados
+  const forma=nlados;
   const verts=verticesIniciais||calcVertices(lat,lng,lM,aM,angDeg,forma);
+  // Polígono de fundo (só fill, sem borda)
   const polygon=L.polygon(verts,{
-    color:cor,fillColor:cor,fillOpacity:0.15,weight:2.5,interactive:true,
+    color:'transparent',fillColor:cor,fillOpacity:0.15,weight:0,interactive:true,
   }).addTo(map);
   polygon.getElement&&setTimeout(()=>{if(polygon.getElement())polygon.getElement().style.cursor='grab';},100);
 
-  const qt={id,lat,lng,largura:lM,altura:aM,angulo:angDeg,cor,forma,nlados,polygon,vertices:verticesIniciais||null};
+  const coresLados=coresLadosIniciais||(Array.from({length:nlados},()=>cor));
+  const qt={id,lat,lng,largura:lM,altura:aM,angulo:angDeg,cor,forma,nlados,polygon,vertices:verticesIniciais||null,coresLados,linhas:[]};
+  // Cria polylines individuais por lado
+  qt.linhas=criarLinhasLado(qt,verts);
   quarteiroesData.push(qt);
 
   polygon.on('click',function(e){
@@ -691,19 +697,39 @@ function adicionarQuarteirao(lat,lng,lM,aM,angDeg,cor,forceId,nlados,verticesIni
 
 function atualizarGeometriaQt(id){
   const q=quarteiroesData.find(x=>x.id===id);if(!q)return;
-  if(q.vertices){
-    q.polygon.setLatLngs(q.vertices);
-  }else{
-    q.polygon.setLatLngs(calcVertices(q.lat,q.lng,q.largura,q.altura,q.angulo,q.forma||4));
-  }
-  q.polygon.setStyle({color:q.cor,fillColor:q.cor});
+  const verts=obterVerticesQt(q);
+  // Atualiza polígono de fundo (fill)
+  q.polygon.setLatLngs(verts);
+  q.polygon.setStyle({color:'transparent',fillColor:q.cor,fillOpacity:0.15,weight:0});
+  // Atualiza/recria polylines de borda individuais
+  if(q.linhas){q.linhas.forEach(l=>{try{map.removeLayer(l);}catch{}});}
+  q.linhas=criarLinhasLado(q,verts);
   if(_handleQtId===id)mostrarHandles(id);
+}
+
+function criarLinhasLado(q,verts){
+  verts=verts||obterVerticesQt(q);
+  const n=verts.length;
+  const coresLados=q.coresLados||(Array.from({length:n},()=>q.cor||'#6a1b9a'));
+  // garante tamanho certo
+  while(coresLados.length<n)coresLados.push(q.cor||'#6a1b9a');
+  q.coresLados=coresLados;
+  return verts.map((v,i)=>{
+    const next=verts[(i+1)%n];
+    const linha=L.polyline([v,next],{
+      color:coresLados[i],weight:2.5,interactive:false,
+      bubblingMouseEvents:false
+    }).addTo(map);
+    return linha;
+  });
 }
 
 function removerQuarteirao(id){
   if(id===_handleQtId)esconderHandles();
   const i=quarteiroesData.findIndex(x=>x.id===id);if(i===-1)return;
-  map.removeLayer(quarteiroesData[i].polygon);quarteiroesData.splice(i,1);renderQtCards();atualizarBadge();agendarSave();
+  map.removeLayer(quarteiroesData[i].polygon);
+  (quarteiroesData[i].linhas||[]).forEach(l=>{try{map.removeLayer(l);}catch{}});
+  quarteiroesData.splice(i,1);renderQtCards();atualizarBadge();agendarSave();
 }
 function nomeForma(n){
   const nomes={3:'Triângulo',4:'Quadrilátero',5:'Pentágono',6:'Hexágono',7:'Heptágono',8:'Octógono',9:'Eneágono',10:'Decágono'};
@@ -814,6 +840,44 @@ function renderQtCards(){
     function apAng(v){if(qt.vertices)return;v=((Math.round(v)%360)+360)%360;qt.angulo=v;slQt.value=v;rv.textContent=`${v}°`;atualizarGeometriaQt(qt.id);const sub2=card.querySelector('.sub2');if(sub2&&!qt.vertices)sub2.textContent=`Arraste no mapa para mover · ${v}°`;agendarSave();}
     bm10.addEventListener('click',()=>apAng(qt.angulo-10));bm1.addEventListener('click',()=>apAng(qt.angulo-1));bp1.addEventListener('click',()=>apAng(qt.angulo+1));bp10.addEventListener('click',()=>apAng(qt.angulo+10));bz.addEventListener('click',()=>apAng(0));slQt.addEventListener('input',()=>apAng(parseFloat(slQt.value)));
     rRow.appendChild(bm10);rRow.appendChild(bm1);rRow.appendChild(slQt);rRow.appendChild(rv);rRow.appendChild(bp1);rRow.appendChild(bp10);rRow.appendChild(bz);cRot.appendChild(rRow);
+
+    // Cores por lado
+    const cCoresLados=document.createElement('div');cCoresLados.className='campo';
+    cCoresLados.innerHTML='<label>🎨 Cor de cada lado</label>';
+    const coresLadosWrap=document.createElement('div');
+    coresLadosWrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:#fff;border:1px solid var(--borda);border-radius:8px;';
+    function renderCoresLados(){
+      coresLadosWrap.innerHTML='';
+      const n=qt.nlados||resolverNLados(qt.forma);
+      if(!qt.coresLados||qt.coresLados.length!==n)qt.coresLados=Array.from({length:n},()=>qt.cor||'#6a1b9a');
+      qt.coresLados.forEach((cor,i)=>{
+        const wrap=document.createElement('label');
+        wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;font-weight:700;color:var(--muted);cursor:pointer;min-width:36px;';
+        wrap.textContent='Lado '+(i+1);
+        const inp=document.createElement('input');inp.type='color';inp.value=cor;
+        inp.style.cssText='width:32px;height:26px;padding:1px;border:1px solid var(--borda);border-radius:5px;cursor:pointer;';
+        inp.addEventListener('input',function(){
+          qt.coresLados[i]=this.value;
+          if(qt.linhas&&qt.linhas[i])qt.linhas[i].setStyle({color:this.value});
+          agendarSave();
+        });
+        wrap.appendChild(inp);coresLadosWrap.appendChild(wrap);
+      });
+      // Botão "Todos igual"
+      const bTodos=document.createElement('button');bTodos.type='button';
+      bTodos.style.cssText='font-size:9px;font-weight:700;color:var(--azul);background:rgba(21,101,192,.07);border:1px solid #90caf9;border-radius:6px;padding:3px 7px;cursor:pointer;align-self:flex-end;font-family:"Sora",sans-serif;white-space:nowrap;';
+      bTodos.textContent='= Todos iguais';
+      bTodos.addEventListener('click',()=>{
+        const primeira=qt.coresLados[0]||qt.cor;
+        qt.coresLados=qt.coresLados.map(()=>primeira);
+        (qt.linhas||[]).forEach(l=>l.setStyle({color:primeira}));
+        renderCoresLados();agendarSave();
+      });
+      coresLadosWrap.appendChild(bTodos);
+    }
+    renderCoresLados();
+    cCoresLados.appendChild(coresLadosWrap);
+    body.appendChild(cCoresLados);
 
     // Alinhar com mapa
     const bAl=document.createElement('button');bAl.style.cssText='display:flex;align-items:center;gap:5px;background:rgba(21,101,192,.08);border:1px solid #90caf9;color:#1565c0;border-radius:7px;padding:6px 12px;cursor:pointer;font-family:"Sora",sans-serif;font-size:11px;font-weight:600;width:100%;justify-content:center;margin-bottom:4px;';bAl.textContent='🗺️ Alinhar com rotação do mapa';bAl.addEventListener('click',()=>apAng(mapBearing));
@@ -1028,25 +1092,35 @@ async function capturarMapaCanvas(){
     ctx.drawImage(img,(r.left-mr.left)*S,(r.top-mr.top)*S,r.width*S,r.height*S);
   }));
 
-  // ── 3. Quarteirões (redesenhados com coordenadas do mapa) ─────────────────
+  // ── 3. Quarteirões — fill + cada lado com sua cor ───────────────────────────
   quarteiroesData.forEach(q=>{
     const verts=obterVerticesQt(q);
     if(!verts||verts.length<3)return;
+    const n=verts.length;
     const pts=verts.map(v=>{
       const p=map.latLngToContainerPoint(L.latLng(v[0],v[1]));
       return[p.x*S,p.y*S];
     });
+    // fill
     ctx.beginPath();
     ctx.moveTo(pts[0][0],pts[0][1]);
-    for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
+    for(let i=1;i<n;i++)ctx.lineTo(pts[i][0],pts[i][1]);
     ctx.closePath();
     const {r,g,b}=hexParaRgb(q.cor);
     ctx.fillStyle=`rgba(${r},${g},${b},0.18)`;
     ctx.fill();
-    ctx.strokeStyle=q.cor||'#6a1b9a';
+    // cada lado com sua cor
+    const coresLados=q.coresLados||(Array.from({length:n},()=>q.cor||'#6a1b9a'));
     ctx.lineWidth=2.5*S;
     ctx.lineJoin='round';
-    ctx.stroke();
+    pts.forEach((p,i)=>{
+      const next=pts[(i+1)%n];
+      ctx.beginPath();
+      ctx.moveTo(p[0],p[1]);
+      ctx.lineTo(next[0],next[1]);
+      ctx.strokeStyle=coresLados[i]||q.cor||'#6a1b9a';
+      ctx.stroke();
+    });
   });
 
   // ── 4. Marcadores (labels de ACS) ────────────────────────────────────────
@@ -1136,7 +1210,7 @@ document.getElementById('btn-cancelar-salvar').addEventListener('click',()=>{doc
 document.getElementById('btn-limpar').addEventListener('click',()=>{
   if(!lados.length&&!quarteiroesData.length)return;if(!confirm('Deseja remover todos os elementos?'))return;
   esconderHandles();
-  lados.forEach(l=>map.removeLayer(l.marker));quarteiroesData.forEach(q=>map.removeLayer(q.polygon));
+  lados.forEach(l=>map.removeLayer(l.marker));quarteiroesData.forEach(q=>{map.removeLayer(q.polygon);(q.linhas||[]).forEach(l=>{try{map.removeLayer(l);}catch{}});});
   lados=[];quarteiroesData=[];proximoId=1;proximoQtId=1;renderCards();renderQtCards();atualizarResumo();atualizarBadge();agendarSave();
 });
 
