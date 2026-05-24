@@ -468,10 +468,11 @@ function hexOpacidadeParaRgba(hex,op){const {r,g,b}=hexParaRgbObj(hex);return `r
 
 // ─── MARCADORES (LADOS) ───────────────────────────────────────────────────────
   function calcAngLabel(anguloRua,rotacaoManual,fixado){
-  if(fixado){
-    // cancela a rotação que o leaflet-rotate aplica ao pane inteiro
-    return ((rotacaoManual||0)-mapBearing+360)%360;
-  }
+  let a=((anguloRua+(rotacaoManual||0))+360)%360;
+  if(a>90&&a<=270)a-=180;
+  if(a>270)a-=360;
+  return a;
+}
   let a=(anguloRua-mapBearing+(rotacaoManual||0)+360)%360;
   if(a>90&&a<=270)a-=180;
   if(a>270)a-=360;
