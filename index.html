@@ -467,14 +467,23 @@ function hexParaRgbObj(hex){hex=(hex||'#ffffff').replace('#','');if(hex.length==
 function hexOpacidadeParaRgba(hex,op){const {r,g,b}=hexParaRgbObj(hex);return `rgba(${r},${g},${b},${op})`;}
 
 // ─── MARCADORES (LADOS) ───────────────────────────────────────────────────────
-  function calcAngLabel(anguloRua,rotacaoManual,fixado){if(fixado)return rotacaoManual||0;let a=(anguloRua-mapBearing+(rotacaoManual||0)+360)%360;if(a>90&&a<=270)a-=180;if(a>270)a-=360;return a;}  
+  function calcAngLabel(anguloRua,rotacaoManual,fixado){
+  if(fixado){
+    // cancela a rotação que o leaflet-rotate aplica ao pane inteiro
+    return ((rotacaoManual||0)-mapBearing+360)%360;
+  }
+  let a=(anguloRua-mapBearing+(rotacaoManual||0)+360)%360;
+  if(a>90&&a<=270)a-=180;
+  if(a>270)a-=360;
+  return a;
+ }
   function buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo){
   const acsLbl=acs||`#${id}`,acsCls=acs?'lbl-acs':'lbl-acs vazio',qtdLbl=pessoas>0?`${pessoas}`:'–',ang=calcAngLabel(anguloRua,rotacaoManual||0,fixado);
   const ct=corTexto||'#1a7f4b';const op=opacidadeFundo!==undefined?opacidadeFundo:1;const hexFundo=corFundo||'#ffffff';const cf=hexOpacidadeParaRgba(hexFundo,op);const bordaCor=op<0.1?'rgba(0,0,0,0.15)':(corFundo&&corFundo!=='#ffffff'?hexFundo+'55':'rgba(0,0,0,0.10)');
   return `<div class="marker-wrapper" id="marker-${id}"><div class="marker-label" style="--ang:${ang}deg;background:${cf};border-color:${bordaCor}"><span class="${acsCls}" style="color:${ct}">${escHtml(acsLbl)}</span><span class="lbl-sep">|</span><span class="lbl-qtd">${escHtml(qtdLbl)}<span class="lbl-ast" style="color:${ct}">*</span></span></div></div>`;
 }
 function buildIcon(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo){return L.divIcon({className:'',html:buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo),iconSize:[ICON_W,ICON_H],iconAnchor:[ICON_W/2,ICON_H/2]});}
-function atualizarTodosOsIcones(){lados.forEach(l=>{if(!l.fixado)atualizarIconeMarcador(l.id);});}
+function atualizarTodosOsIcones(){lados.forEach(l=>atualizarIconeMarcador(l.id));}
 function _criarMarker(id,lat,lng,icon){
   const marker=L.marker([lat,lng],{icon,draggable:true,autoPan:false}).addTo(map);
   let _hasDragged=false;
