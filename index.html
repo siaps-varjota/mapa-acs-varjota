@@ -467,7 +467,13 @@ function hexParaRgbObj(hex){hex=(hex||'#ffffff').replace('#','');if(hex.length==
 function hexOpacidadeParaRgba(hex,op){const {r,g,b}=hexParaRgbObj(hex);return `rgba(${r},${g},${b},${op})`;}
 
 // ─── MARCADORES (LADOS) ───────────────────────────────────────────────────────
-function calcAngLabel(anguloRua,rotacaoManual,fixado){if(fixado)return rotacaoManual||0;let a=(anguloRua-mapBearing+(rotacaoManual||0)+360)%360;if(a>90&&a<=270)a-=180;if(a>270)a-=360;return a;}
+function calcAngLabel(anguloRua,rotacaoManual,fixado){
+  if(fixado) return (rotacaoManual||0) - mapBearing;
+  let a=(anguloRua-mapBearing+(rotacaoManual||0)+360)%360;
+  if(a>90&&a<=270)a-=180;
+  if(a>270)a-=360;
+  return a;
+}
 function buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo){
   const acsLbl=acs||`#${id}`,acsCls=acs?'lbl-acs':'lbl-acs vazio',qtdLbl=pessoas>0?`${pessoas}`:'–',ang=calcAngLabel(anguloRua,rotacaoManual||0,fixado);
   const ct=corTexto||'#1a7f4b';const op=opacidadeFundo!==undefined?opacidadeFundo:1;const hexFundo=corFundo||'#ffffff';const cf=hexOpacidadeParaRgba(hexFundo,op);const bordaCor=op<0.1?'rgba(0,0,0,0.15)':(corFundo&&corFundo!=='#ffffff'?hexFundo+'55':'rgba(0,0,0,0.10)');
