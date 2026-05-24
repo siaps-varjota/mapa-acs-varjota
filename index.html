@@ -368,39 +368,27 @@ document.getElementById('btn-modal-pular').addEventListener('click',()=>{documen
 const map=L.map('map',{zoomControl:false,rotate:true,rotateControl:false,bearing:0,zoomDelta:1,zoomSnap:0,wheelPxPerZoomLevel:250}).setView([-4.1928215,-40.4677377],16);
 
 // ── CAMADAS DE TILE ──────────────────────────────────────────────────────────
-// Google Maps — Ruas (padrão)
 const tileGoogle=L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
-// Google Maps — Satélite puro
 const tileGoogleSat=L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
-// Google Maps — Híbrido (satélite + ruas + POIs)
 const tileGoogleHybrid=L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
-// OSM — fallback
 const tileOSM=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19});
-
-// Inicia com Google Ruas
 tileGoogle.addTo(map);
-let modoAtual='google'; // 'google' | 'satelite' | 'hibrido' | 'osm'
+let modoAtual='google';
 
 function limparTileAtivo(){
   [tileGoogle,tileGoogleSat,tileGoogleHybrid,tileOSM].forEach(t=>{if(map.hasLayer(t))map.removeLayer(t);});
   ['btn-satelite','btn-hibrido','btn-ruas'].forEach(id=>document.getElementById(id).classList.remove('ativo'));
 }
-
-// Satélite puro
 document.getElementById('btn-satelite').addEventListener('click',()=>{
   if(modoAtual==='satelite'){limparTileAtivo();tileGoogle.addTo(map);modoAtual='google';return;}
   limparTileAtivo();tileGoogleSat.addTo(map);modoAtual='satelite';
   const b=document.getElementById('btn-satelite');b.textContent='🛰️ Satélite ✓';b.classList.add('ativo');
 });
-
-// Híbrido (satélite + nomes do Google)
 document.getElementById('btn-hibrido').addEventListener('click',()=>{
   if(modoAtual==='hibrido'){limparTileAtivo();tileGoogle.addTo(map);modoAtual='google';return;}
   limparTileAtivo();tileGoogleHybrid.addTo(map);modoAtual='hibrido';
   const b=document.getElementById('btn-hibrido');b.textContent='🗺️ Híbrido ✓';b.classList.add('ativo');
 });
-
-// OSM (fallback)
 document.getElementById('btn-ruas').addEventListener('click',()=>{
   if(modoAtual==='osm'){limparTileAtivo();tileGoogle.addTo(map);modoAtual='google';document.getElementById('btn-ruas').textContent='🛣️ Ruas OSM';return;}
   limparTileAtivo();tileOSM.addTo(map);modoAtual='osm';
@@ -489,18 +477,36 @@ function _criarMarker(id,lat,lng,icon){
   marker.on('click',()=>{if(_hasDragged)return;abrirCard(id);if(!painelAberto)togglePainel();mudarTab('lados');});
   return marker;
 }
+
+// ─── CORREÇÃO: dragend captura latLng imediatamente e persiste antes do fetch ─
 async function adicionarLadoSilencioso(d){
   const id=d.id,ar=d.angulo||0,rm=d.rotacaoManual||0,fx=!!d.fixado,ct=d.corTexto||'#1a7f4b',cf=d.corFundo||'#ffffff',op=d.opacidadeFundo!==undefined?d.opacidadeFundo:1;
   const marker=_criarMarker(id,d.lat,d.lng,buildIcon(id,d.acs||'',d.pessoas||0,ar,rm,fx,ct,cf,op));
   marker.bindTooltip(`Lado #${id} — ${d.rua}`,{permanent:false});
-  marker.on('dragend',(e)=>{const l=lados.find(x=>x.id===id);if(l){l.lat=e.target.getLatLng().lat;l.lng=e.target.getLatLng().lng;}buscarRuaEAngulo(e.target.getLatLng().lat,e.target.getLatLng().lng).then(({rua,angulo})=>{const l2=lados.find(x=>x.id===id);if(l2){l2.rua=rua;l2.angulo=angulo;atualizarCardHeader(id);atualizarIconeMarcador(id);agendarSave();}});});
+  marker.on('dragend',(e)=>{
+    const _ll=e.target.getLatLng();
+    const l=lados.find(x=>x.id===id);
+    if(l){l.lat=_ll.lat;l.lng=_ll.lng;agendarSave();}
+    buscarRuaEAngulo(_ll.lat,_ll.lng).then(({rua,angulo})=>{
+      const l2=lados.find(x=>x.id===id);
+      if(l2){l2.rua=rua;l2.angulo=angulo;atualizarCardHeader(id);atualizarIconeMarcador(id);agendarSave();}
+    });
+  });
   lados.push({id,lat:d.lat,lng:d.lng,rua:d.rua,angulo:ar,rotacaoManual:rm,fixado:fx,acs:d.acs||'',pessoas:d.pessoas||0,corTexto:ct,corFundo:cf,opacidadeFundo:op,marker});
 }
 function adicionarLado(lat,lng,rua='Localização marcada',angulo=0){
   const id=proximoId++;
   const marker=_criarMarker(id,lat,lng,buildIcon(id,'',0,angulo,0,false,'#1a7f4b','#ffffff',1));
   marker.bindTooltip(`Lado #${id} — ${rua}`,{permanent:false});
-  marker.on('dragend',(e)=>{const l=lados.find(x=>x.id===id);if(l){l.lat=e.target.getLatLng().lat;l.lng=e.target.getLatLng().lng;}buscarRuaEAngulo(e.target.getLatLng().lat,e.target.getLatLng().lng).then(({rua:nome,angulo:ang})=>{const l2=lados.find(x=>x.id===id);if(l2){l2.rua=nome;l2.angulo=ang;atualizarCardHeader(id);atualizarIconeMarcador(id);agendarSave();}});});
+  marker.on('dragend',(e)=>{
+    const _ll=e.target.getLatLng();
+    const l=lados.find(x=>x.id===id);
+    if(l){l.lat=_ll.lat;l.lng=_ll.lng;agendarSave();}
+    buscarRuaEAngulo(_ll.lat,_ll.lng).then(({rua:nome,angulo:ang})=>{
+      const l2=lados.find(x=>x.id===id);
+      if(l2){l2.rua=nome;l2.angulo=ang;atualizarCardHeader(id);atualizarIconeMarcador(id);agendarSave();}
+    });
+  });
   lados.push({id,lat,lng,rua,angulo,rotacaoManual:0,fixado:false,acs:'',pessoas:0,corTexto:'#1a7f4b',corFundo:'#ffffff',opacidadeFundo:1,marker});
   if(!painelAberto)togglePainel();renderCards();atualizarResumo();abrirCard(id);atualizarBadge();agendarSave();setTimeout(atualizarEscalaZoom,50);
 }
