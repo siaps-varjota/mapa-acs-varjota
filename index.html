@@ -454,14 +454,31 @@ async function buscarRuaEAngulo(lat,lng){
 function hexParaRgbObj(hex){hex=(hex||'#ffffff').replace('#','');if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');const n=parseInt(hex,16)||0;return{r:(n>>16)&255,g:(n>>8)&255,b:n&255};}
 function hexOpacidadeParaRgba(hex,op){const {r,g,b}=hexParaRgbObj(hex);return `rgba(${r},${g},${b},${op})`;}
 
-// ─── MARCADORES (LADOS) ───────────────────────────────────────────────────────
-function calcAngLabel(anguloRua,rotacaoManual,fixado){
-  if(fixado) return (rotacaoManual||0) - mapBearing;
-  let a=(anguloRua-mapBearing+(rotacaoManual||0)+360)%360;
-  if(a>90&&a<=270)a-=180;
-  if(a>270)a-=360;
+// ─── CÁLCULO DO ÂNGULO DO LABEL ───────────────────────────────────────────────
+// CORRIGIDO: Dois modos distintos com comportamento claro e estável:
+//
+// fixado=false → label acompanha a orientação da rua no mundo real.
+//   O CSS rotate() é relativo à TELA. Para o label ficar paralelo à rua:
+//   ang_tela = anguloRua (norte geográfico) - mapBearing (rotação da tela) + rotacaoManual
+//   Normaliza para [-90°, +90°] para evitar texto de cabeça para baixo.
+//
+// fixado=true → label tem ângulo FIXO na tela, não muda com a rotação do mapa.
+//   O rotacaoManual armazena o ângulo de tela capturado no momento do "fixar".
+//   Retornamos ele diretamente, sem subtrair mapBearing.
+function calcAngLabel(anguloRua, rotacaoManual, fixado){
+  // ── MODO FIXADO: ângulo absoluto na tela, imune à rotação do mapa ──────────
+  if(fixado) return (rotacaoManual||0);
+
+  // ── MODO LIVRE: acompanha a rua no mundo real ─────────────────────────────
+  // Transforma ângulo-mundo → ângulo-tela subtraindo o bearing atual do mapa
+  let a = (anguloRua - mapBearing + (rotacaoManual||0) + 360) % 360;
+  // Evita texto invertido: se >90° e <=270°, gira 180°
+  if(a > 90 && a <= 270) a -= 180;
+  // Normaliza para range limpo
+  if(a > 270) a -= 360;
   return a;
 }
+
 function buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo){
   const acsLbl=acs||`#${id}`,acsCls=acs?'lbl-acs':'lbl-acs vazio',qtdLbl=pessoas>0?`${pessoas}`:'–',ang=calcAngLabel(anguloRua,rotacaoManual||0,fixado);
   const ct=corTexto||'#1a7f4b';const op=opacidadeFundo!==undefined?opacidadeFundo:1;const hexFundo=corFundo||'#ffffff';const cf=hexOpacidadeParaRgba(hexFundo,op);const bordaCor=op<0.1?'rgba(0,0,0,0.15)':(corFundo&&corFundo!=='#ffffff'?hexFundo+'55':'rgba(0,0,0,0.10)');
@@ -478,7 +495,6 @@ function _criarMarker(id,lat,lng,icon){
   return marker;
 }
 
-// ─── CORREÇÃO: dragend captura latLng imediatamente e persiste antes do fetch ─
 async function adicionarLadoSilencioso(d){
   const id=d.id,ar=d.angulo||0,rm=d.rotacaoManual||0,fx=!!d.fixado,ct=d.corTexto||'#1a7f4b',cf=d.corFundo||'#ffffff',op=d.opacidadeFundo!==undefined?d.opacidadeFundo:1;
   const marker=_criarMarker(id,d.lat,d.lng,buildIcon(id,d.acs||'',d.pessoas||0,ar,rm,fx,ct,cf,op));
@@ -494,6 +510,7 @@ async function adicionarLadoSilencioso(d){
   });
   lados.push({id,lat:d.lat,lng:d.lng,rua:d.rua,angulo:ar,rotacaoManual:rm,fixado:fx,acs:d.acs||'',pessoas:d.pessoas||0,corTexto:ct,corFundo:cf,opacidadeFundo:op,marker});
 }
+
 function adicionarLado(lat,lng,rua='Localização marcada',angulo=0){
   const id=proximoId++;
   const marker=_criarMarker(id,lat,lng,buildIcon(id,'',0,angulo,0,false,'#1a7f4b','#ffffff',1));
@@ -638,17 +655,77 @@ function renderCards(){
     const cRua=document.createElement('div');cRua.className='campo';cRua.innerHTML='<label>🏘️ Nome da Rua</label>';const iRua=document.createElement('input');iRua.type='text';iRua.placeholder='Ex.: Rua das Flores';iRua.value=lado.rua||'';iRua.addEventListener('input',function(){atualizarLado(lado.id,'rua',this.value);});cRua.appendChild(iRua);
     const cAcs=document.createElement('div');cAcs.className='campo';cAcs.innerHTML='<label>👤 Nome da ACS</label>';const iAcs=document.createElement('input');iAcs.type='text';iAcs.placeholder='Ex.: Maria da Silva';iAcs.value=lado.acs||'';iAcs.addEventListener('input',function(){atualizarLado(lado.id,'acs',this.value);const prev=body.querySelector('.prev-acs');if(prev){prev.textContent=this.value||`#${lado.id}`;prev.className='prev-acs'+(this.value?'':' vazio');}});cAcs.appendChild(iAcs);
     const cPes=document.createElement('div');cPes.className='campo';cPes.innerHTML='<label>👥 Total de pessoas</label>';const iPes=document.createElement('input');iPes.type='number';iPes.min='0';iPes.placeholder='0';iPes.value=lado.pessoas>0?lado.pessoas:'';iPes.addEventListener('input',function(){atualizarLado(lado.id,'pessoas',this.value);const prev=body.querySelector('.prev-qtd');if(prev){const v=parseInt(this.value,10)||0;prev.textContent=v>0?`${v}*`:'–*';}});cPes.appendChild(iPes);
-    const cRot=document.createElement('div');cRot.className='campo-rotacao';cRot.innerHTML='<label>🔄 Rotação do nome no mapa</label>';
-    const preview=document.createElement('div');preview.className='rotacao-preview';const prevLabel=document.createElement('div');prevLabel.className='rotacao-preview-label';prevLabel.innerHTML=`<span class="${lado.acs?'prev-acs':'prev-acs vazio'}">${escHtml(lado.acs||`#${lado.id}`)}</span><span class="prev-qtd">${lado.pessoas>0?`${lado.pessoas}*`:'–*'}</span>`;const rotM=lado.rotacaoManual||0;prevLabel.style.transform=`rotate(${rotM}deg)`;preview.appendChild(prevLabel);cRot.appendChild(preview);
-    const controles=document.createElement('div');controles.className='rotacao-controles';const bM10=document.createElement('button');bM10.textContent='↺';const bM1=document.createElement('button');bM1.textContent='−';bM1.style.fontSize='16px';bM1.style.fontWeight='700';
-    const wSlider=document.createElement('div');wSlider.className='rot-input-wrap';const slider=document.createElement('input');slider.type='range';slider.min='-180';slider.max='180';slider.step='1';slider.value=String(rotM);const valD=document.createElement('span');valD.className='rot-val';valD.textContent=`${rotM}°`;wSlider.appendChild(slider);wSlider.appendChild(valD);
-    const bP1=document.createElement('button');bP1.textContent='+';bP1.style.fontSize='16px';bP1.style.fontWeight='700';const bP10=document.createElement('button');bP10.textContent='↻';const bReset=document.createElement('button');bReset.textContent='0°';bReset.className='btn-rot-snap';
-    function apRL(val){let v=Math.max(-180,Math.min(180,Math.round(val)));slider.value=String(v);valD.textContent=`${v}°`;prevLabel.style.transform=`rotate(${v}deg)`;atualizarLado(lado.id,'rotacaoManual',v);}
-    bM10.addEventListener('click',()=>apRL((lado.rotacaoManual||0)-10));bM1.addEventListener('click',()=>apRL((lado.rotacaoManual||0)-1));bP1.addEventListener('click',()=>apRL((lado.rotacaoManual||0)+1));bP10.addEventListener('click',()=>apRL((lado.rotacaoManual||0)+10));bReset.addEventListener('click',()=>apRL(0));slider.addEventListener('input',()=>apRL(parseFloat(slider.value)));
+    const cRot=document.createElement('div');cRot.className='campo-rotacao';
+    // Label da seção explica o modo ativo
+    const rotLabelEl=document.createElement('label');
+    rotLabelEl.textContent=lado.fixado?'🔄 Rotação do nome (fixado na tela)':'🔄 Rotação do nome no mapa';
+    cRot.appendChild(rotLabelEl);
+
+    const preview=document.createElement('div');preview.className='rotacao-preview';const prevLabel=document.createElement('div');prevLabel.className='rotacao-preview-label';prevLabel.innerHTML=`<span class="${lado.acs?'prev-acs':'prev-acs vazio'}">${escHtml(lado.acs||`#${lado.id}`)}</span><span class="prev-qtd">${lado.pessoas>0?`${lado.pessoas}*`:'–*'}</span>`;
+    // Preview mostra o ângulo visual atual (já considera bearing se não fixado)
+    const angAtual=calcAngLabel(lado.angulo||0,lado.rotacaoManual||0,lado.fixado);
+    prevLabel.style.transform=`rotate(${angAtual}deg)`;
+    preview.appendChild(prevLabel);cRot.appendChild(preview);
+
+    const controles=document.createElement('div');controles.className='rotacao-controles';
+    const bM10=document.createElement('button');bM10.textContent='↺';
+    const bM1=document.createElement('button');bM1.textContent='−';bM1.style.fontSize='16px';bM1.style.fontWeight='700';
+    const wSlider=document.createElement('div');wSlider.className='rot-input-wrap';
+    const slider=document.createElement('input');slider.type='range';slider.min='-180';slider.max='180';slider.step='1';slider.value=String(lado.rotacaoManual||0);
+    const valD=document.createElement('span');valD.className='rot-val';valD.textContent=`${lado.rotacaoManual||0}°`;
+    wSlider.appendChild(slider);wSlider.appendChild(valD);
+    const bP1=document.createElement('button');bP1.textContent='+';bP1.style.fontSize='16px';bP1.style.fontWeight='700';
+    const bP10=document.createElement('button');bP10.textContent='↻';
+    const bReset=document.createElement('button');bReset.textContent='0°';bReset.className='btn-rot-snap';
+
+    // apRL: ajusta rotacaoManual e atualiza preview e ícone no mapa
+    function apRL(val){
+      let v=Math.max(-180,Math.min(180,Math.round(val)));
+      slider.value=String(v);valD.textContent=`${v}°`;
+      // Preview mostra ângulo visual resultante
+      const angVisual=lado.fixado?v:calcAngLabel(lado.angulo||0,v,false);
+      prevLabel.style.transform=`rotate(${angVisual}deg)`;
+      atualizarLado(lado.id,'rotacaoManual',v);
+    }
+    bM10.addEventListener('click',()=>apRL((lado.rotacaoManual||0)-10));
+    bM1.addEventListener('click',()=>apRL((lado.rotacaoManual||0)-1));
+    bP1.addEventListener('click',()=>apRL((lado.rotacaoManual||0)+1));
+    bP10.addEventListener('click',()=>apRL((lado.rotacaoManual||0)+10));
+    bReset.addEventListener('click',()=>apRL(0));
+    slider.addEventListener('input',()=>apRL(parseFloat(slider.value)));
     controles.appendChild(bM10);controles.appendChild(bM1);controles.appendChild(wSlider);controles.appendChild(bP1);controles.appendChild(bP10);controles.appendChild(bReset);cRot.appendChild(controles);
-    const fixarRow=document.createElement('div');fixarRow.className='fixar-row'+(lado.fixado?' ativo':'');fixarRow.innerHTML=`<span>📌</span><span class="fixar-txt">${lado.fixado?'Nome fixado':'Fixar posição do nome'}</span><div class="fixar-toggle"></div>`;
-    fixarRow.addEventListener('click',()=>{const nF=!lado.fixado;if(nF){const av=calcAngLabel(lado.angulo||0,lado.rotacaoManual||0,false),v=Math.round(av);lado.rotacaoManual=v;slider.value=String(v);valD.textContent=`${v}°`;prevLabel.style.transform=`rotate(${v}deg)`;}else{lado.rotacaoManual=0;slider.value='0';valD.textContent='0°';prevLabel.style.transform='rotate(0deg)';}fixarRow.classList.toggle('ativo',nF);fixarRow.querySelector('.fixar-txt').textContent=nF?'Nome fixado':'Fixar posição do nome';atualizarLado(lado.id,'fixado',nF);});
+
+    const fixarRow=document.createElement('div');
+    fixarRow.className='fixar-row'+(lado.fixado?' ativo':'');
+    fixarRow.innerHTML=`<span>📌</span><span class="fixar-txt">${lado.fixado?'Nome fixado na tela':'Fixar posição do nome'}</span><div class="fixar-toggle"></div>`;
+
+    fixarRow.addEventListener('click',()=>{
+      const nF=!lado.fixado;
+      if(nF){
+        // CORRIGIDO: ao fixar, captura o ângulo VISUAL atual na tela
+        // (anguloRua - mapBearing + rotacaoManual, normalizado)
+        // e armazena como rotacaoManual. A partir daí calcAngLabel(fixado=true)
+        // retorna esse valor sem subtrair mapBearing → permanece estático.
+        const angVisualAtual=calcAngLabel(lado.angulo||0,lado.rotacaoManual||0,false);
+        const v=Math.round(angVisualAtual);
+        lado.rotacaoManual=v;
+        slider.value=String(v);valD.textContent=`${v}°`;
+        prevLabel.style.transform=`rotate(${v}deg)`;
+      }else{
+        // Ao desfixar: mantém rotacaoManual como offset manual
+        // (o label volta a seguir a rua + offset)
+        lado.rotacaoManual=0;
+        slider.value='0';valD.textContent='0°';
+        const angVisual=calcAngLabel(lado.angulo||0,0,false);
+        prevLabel.style.transform=`rotate(${angVisual}deg)`;
+      }
+      fixarRow.classList.toggle('ativo',nF);
+      fixarRow.querySelector('.fixar-txt').textContent=nF?'Nome fixado na tela':'Fixar posição do nome';
+      rotLabelEl.textContent=nF?'🔄 Rotação do nome (fixado na tela)':'🔄 Rotação do nome no mapa';
+      atualizarLado(lado.id,'fixado',nF);
+    });
     cRot.appendChild(fixarRow);
+
     const cCores=document.createElement('div');cCores.className='campo';cCores.innerHTML='<label>🎨 Cores do marcador</label>';
     const coresRow=document.createElement('div');coresRow.style.cssText='display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;background:#fff;border:1px solid var(--borda);border-radius:8px;padding:8px 10px;';
     const lblCT=document.createElement('label');lblCT.style.cssText='font-size:10px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;';lblCT.textContent='Texto';
