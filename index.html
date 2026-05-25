@@ -641,7 +641,7 @@ function renderCards(){
     const rW=document.createElement('div');rW.className='rot-input-wrap';const rI=document.createElement('input');rI.type='range';rI.min='-180';rI.max='180';rI.value=l.rotacaoManual||0;rI.oninput=()=>atualizarLadoObj(l.id,'rotacaoManual',rI.value);rW.appendChild(rI);
     const rV=document.createElement('div');rV.className='rot-val';rV.textContent=(l.rotacaoManual||0)+'°';rW.appendChild(rV);
     const rP=document.createElement('button');rP.textContent='+';rP.onclick=()=>atualizarLadoObj(l.id,'rotacaoManual',(l.rotacaoManual||0)+5);
-    const rS=document.button;rS.className='btn-rot-snap';rS.textContent='Snap';rS.onclick=()=>atualizarLadoObj(l.id,'rotacaoManual',Math.round((l.rotacaoManual||0)/45)*45);
+    const rS=document.createElement('button');rS.className='btn-rot-snap';rS.textContent='Snap';rS.onclick=()=>atualizarLadoObj(l.id,'rotacaoManual',Math.round((l.rotacaoManual||0)/45)*45);
     rCtrl.appendChild(rM);rCtrl.appendChild(rW);rCtrl.appendChild(rP);rCtrl.appendChild(rS);cR.appendChild(rCtrl);
     const rPr=document.createElement('div');rPr.className='rotacao-preview';const rPl=document.createElement('div');rPl.className='rotacao-preview-label';rPl.style.transform=`rotate(${calcAngLabel(l.angulo,l.rotacaoManual,l.fixado)}deg)`;rPl.innerHTML=`<span class="prev-acs ${l.acs?'':'vazio'}">${l.acs||'Nome ACS'}</span><span class="prev-qtd">${l.pessoas||0}*</span>`;rPr.appendChild(rPl);cR.appendChild(rPr);body.appendChild(cR);
     const fRow=document.createElement('div');fRow.className='fixar-row'+(l.fixado?' ativo':'');fRow.onclick=()=>atualizarLadoObj(l.id,'fixado',!l.fixado);fRow.innerHTML=`<div class="fixar-toggle"></div><div class="fixar-txt">Travar ângulo automático</div>`;body.appendChild(fRow);
