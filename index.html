@@ -127,6 +127,9 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 #drag-qt{display:flex;align-items:center;gap:6px;background:var(--roxo);color:#fff;padding:5px 14px;border-radius:8px;cursor:grab;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;user-select:none;white-space:nowrap;height:32px;transition:background .2s;}
 #drag-qt:hover{background:#8e24aa;}
 #drag-qt.dragging{opacity:.85;cursor:crosshair;}
+#drag-linha{display:flex;align-items:center;gap:6px;background:var(--azul);color:#fff;padding:5px 14px;border-radius:8px;cursor:grab;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;user-select:none;white-space:nowrap;height:32px;transition:background .2s;}
+#drag-linha:hover{background:#1976d2;}
+#drag-linha.dragging{opacity:.85;cursor:crosshair;}
 #drag-ghost{position:fixed;pointer-events:none;z-index:9999;font-size:28px;display:none;transform:translate(-50%,-100%);filter:drop-shadow(0 3px 6px rgba(0,0,0,.4));}
 #drag-ghost-qt{position:fixed;pointer-events:none;z-index:9999;font-size:22px;display:none;transform:translate(-50%,-100%);filter:drop-shadow(0 3px 6px rgba(0,0,0,.4));}
 #btn-exportar,#btn-limpar,#btn-capturar,#btn-ruas,#btn-satelite,#btn-hibrido{background:var(--cinza);border:1px solid var(--borda);}
@@ -245,6 +248,7 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
       <div id="toolbar">
         <div id="drag-handle" title="Arraste para o mapa"><span>📍</span><span>Lado de quadra</span></div>
         <div id="drag-qt" title="Arraste para o mapa"><span>⬜</span><span>Quarteirão</span></div>
+        <div id="drag-linha" title="Arraste para o mapa"><span>➖</span><span>Linha</span></div>
         <div id="zoom-controls">
           <button id="btn-zoom-menos">−</button>
           <div style="display:flex;align-items:center;gap:4px;">
@@ -278,6 +282,7 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
       </div>
       <div id="drag-ghost">📍</div>
       <div id="drag-ghost-qt">⬜</div>
+      <div id="drag-ghost-linha">➖</div>
     </div>
 
     <div id="modal-config" class="modal-overlay oculto">
@@ -479,6 +484,7 @@ map.on('zoomend',atualizarEscalaZoom);
 const dica=document.getElementById('dica');
 const dragGhost=document.getElementById('drag-ghost');
 const dragGhostQt=document.getElementById('drag-ghost-qt');
+const dragGhostLinha=document.getElementById('drag-ghost-linha');
 let _dragMode=null,_ghostEl=null;
 function _moveGhost(cx,cy){if(!_ghostEl)return;_ghostEl.style.left=cx+'px';_ghostEl.style.top=cy+'px';}
 function _cancelDrag(){_dragMode=null;dragGhost.style.display='none';dragGhostQt.style.display='none';_ghostEl=null;dica.classList.remove('visivel');map.dragging.enable();document.body.style.userSelect='';document.body.style.cursor='';document.getElementById('drag-handle').classList.remove('dragging');document.getElementById('drag-qt').classList.remove('dragging');}
@@ -489,6 +495,7 @@ function _soltarEm(cx,cy){
   const latlng=map.containerPointToLatLng(L.point(cx-rect.left,cy-rect.top));
   if(mode==='lado'){buscarRuaEAngulo(latlng.lat,latlng.lng).then(({rua,angulo})=>adicionarLado(latlng.lat,latlng.lng,rua,angulo));}
   else if(mode==='quarteirao'){adicionarQuarteirao(latlng.lat,latlng.lng,80,120,mapBearing,'#6a1b9a',undefined,4,null,null);mudarTab('quarteirao');}
+  else if(mode==='linha'){adicionarQuarteirao(latlng.lat,latlng.lng,100,0,mapBearing,'#1565c0',undefined,2,null,null);mudarTab('quarteirao');}
 }
 document.addEventListener('mousemove',(e)=>{if(!_dragMode)return;_moveGhost(e.clientX,e.clientY);});
 document.addEventListener('touchmove',(e)=>{if(!_dragMode)return;const t=e.touches[0];_moveGhost(t.clientX,t.clientY);},{passive:true});
@@ -502,6 +509,7 @@ function _initDragBtn(btnId,mode,ghostEl,dicaTxt){
 }
 _initDragBtn('drag-handle','lado',dragGhost,'📍 Solte no mapa para marcar o lado');
 _initDragBtn('drag-qt','quarteirao',dragGhostQt,'⬜ Solte no mapa para desenhar o quarteirão');
+_initDragBtn('drag-linha','linha',dragGhostLinha,'➖ Solte no mapa para desenhar a linha');
 
 // ─── GEOCODIFICAÇÃO ───────────────────────────────────────────────────────────
 async function buscarRuaEAngulo(lat,lng){
@@ -598,10 +606,11 @@ function adicionarLado(lat,lng,rua='Localização marcada',angulo=0){
 // ─── HELPERS DE VÉRTICE ───────────────────────────────────────────────────────
 function metrosParaGrausLat(m){return m/111320;}
 function metrosParaGrausLng(m,lat){return m/(111320*Math.cos(lat*Math.PI/180));}
-function resolverNLados(forma){if(typeof forma==='number')return Math.max(3,Math.round(forma));if(forma==='triangulo')return 3;return 4;}
+function resolverNLados(forma){if(typeof forma==='number')return Math.max(2,Math.round(forma));if(forma==='triangulo')return 3;return 4;}
 function calcVertices(lat,lng,lM,aM,angDeg,forma){
   const n=resolverNLados(forma);const ar=angDeg*Math.PI/180,hw=lM/2,hh=aM/2;let corners;
-  if(n===4){corners=[[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]];}else{corners=Array.from({length:n},(_,i)=>{const a=(2*Math.PI*i/n)-(Math.PI/2);return[hw*Math.cos(a),hh*Math.sin(a)];});}
+  if(n===2){corners=[[-hw,0],[hw,0]];}
+  else if(n===4){corners=[[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]];}else{corners=Array.from({length:n},(_,i)=>{const a=(2*Math.PI*i/n)-(Math.PI/2);return[hw*Math.cos(a),hh*Math.sin(a)];});}
   return corners.map(([x,y])=>{const rx=x*Math.cos(ar)-y*Math.sin(ar),ry=x*Math.sin(ar)+y*Math.cos(ar);return[lat+metrosParaGrausLat(ry),lng+metrosParaGrausLng(rx,lat)];});
 }
 function obterVerticesQt(q){return q.vertices||calcVertices(q.lat,q.lng,q.largura,q.altura,q.angulo,q.forma||4);}
@@ -635,9 +644,10 @@ function ativarDragQuarteirao(q){
   map.on('mouseup touchend',function(){if(!_dragging)return;_dragging=false;map.dragging.enable();document.body.style.cursor='';document.getElementById(`qt-card-${q.id}`)?.classList.remove('arrastando');const sub=document.querySelector(`#qt-card-${q.id} .sub2`);if(sub&&!q.vertices)sub.textContent=`${q.lat.toFixed(5)}, ${q.lng.toFixed(5)}`;if(_handleQtId===q.id)mostrarHandles(q.id);atualizarGeometriaQt(q.id);agendarSave();});
 }
 function adicionarQuarteirao(lat,lng,lM,aM,angDeg,cor,forceId,nlados,verticesIniciais,coresLadosIniciais){
-  nlados=Math.max(3,parseInt(nlados)||4);cor=cor||'#6a1b9a';const id=forceId!==undefined?forceId:proximoQtId++;
+  nlados=Math.max(2,parseInt(nlados)||4);cor=cor||'#6a1b9a';const id=forceId!==undefined?forceId:proximoQtId++;
   const forma=nlados;const verts=verticesIniciais||calcVertices(lat,lng,lM,aM,angDeg,forma);
-  const polygon=L.polygon(verts,{color:'transparent',fillColor:cor,fillOpacity:0.15,weight:0,interactive:true}).addTo(map);
+  const fillOp=nlados===2?0:0.15;
+  const polygon=L.polygon(verts,{color:'transparent',fillColor:cor,fillOpacity:fillOp,weight:0,interactive:true}).addTo(map);
   polygon.getElement&&setTimeout(()=>{if(polygon.getElement())polygon.getElement().style.cursor='grab';},100);
   const coresLados=coresLadosIniciais||(Array.from({length:nlados},()=>cor));
   const qt={id,lat,lng,largura:lM,altura:aM,angulo:angDeg,cor,forma,nlados,polygon,vertices:verticesIniciais||null,coresLados,linhas:[]};
@@ -645,12 +655,12 @@ function adicionarQuarteirao(lat,lng,lM,aM,angDeg,cor,forceId,nlados,verticesIni
   polygon.on('click',function(e){if(document.body.style.cursor==='grabbing')return;L.DomEvent.stopPropagation(e);mostrarHandles(id);abrirQtCard(id);mudarTab('quarteirao');if(!painelAberto)togglePainel();});
   ativarDragQuarteirao(qt);renderQtCards();atualizarBadge();agendarSave();
 }
-function atualizarGeometriaQt(id){const q=quarteiroesData.find(x=>x.id===id);if(!q)return;const verts=obterVerticesQt(q);q.polygon.setLatLngs(verts);q.polygon.setStyle({color:'transparent',fillColor:q.cor,fillOpacity:0.15,weight:0});if(q.linhas){q.linhas.forEach(l=>{try{map.removeLayer(l);}catch{}});}q.linhas=criarLinhasLado(q,verts);if(_handleQtId===id)mostrarHandles(id);}
+function atualizarGeometriaQt(id){const q=quarteiroesData.find(x=>x.id===id);if(!q)return;const verts=obterVerticesQt(q);q.polygon.setLatLngs(verts);const fillOp=q.nlados===2?0:0.15;q.polygon.setStyle({color:'transparent',fillColor:q.cor,fillOpacity:fillOp,weight:0});if(q.linhas){q.linhas.forEach(l=>{try{map.removeLayer(l);}catch{}});}q.linhas=criarLinhasLado(q,verts);if(_handleQtId===id)mostrarHandles(id);}
 function criarLinhasLado(q,verts){verts=verts||obterVerticesQt(q);const n=verts.length;const coresLados=q.coresLados||(Array.from({length:n},()=>q.cor||'#6a1b9a'));while(coresLados.length<n)coresLados.push(q.cor||'#6a1b9a');q.coresLados=coresLados;return verts.map((v,i)=>{const next=verts[(i+1)%n];return L.polyline([v,next],{color:coresLados[i],weight:2.5,interactive:false,bubblingMouseEvents:false}).addTo(map);});}
 function removerQuarteirao(id){if(id===_handleQtId)esconderHandles();const i=quarteiroesData.findIndex(x=>x.id===id);if(i===-1)return;map.removeLayer(quarteiroesData[i].polygon);(quarteiroesData[i].linhas||[]).forEach(l=>{try{map.removeLayer(l);}catch{}});quarteiroesData.splice(i,1);renderQtCards();atualizarBadge();agendarSave();}
-function nomeForma(n){const nomes={3:'Triângulo',4:'Quadrilátero',5:'Pentágono',6:'Hexágono',7:'Heptágono',8:'Octógono',9:'Eneágono',10:'Decágono'};return nomes[n]||(n+' lados');}
-function iconeForma(n){const icons={3:'🔺',4:'⬜',5:'⬠',6:'⬡',8:'🔷'};return icons[n]||'🔷';}
-function svgPoligono(n,ativo){const c=ativo?'#6a1b9a':'#9e9e9e';const pts=Array.from({length:n},(_,i)=>{const a=(2*Math.PI*i/n)-(Math.PI/2);return `${22+19*Math.cos(a)},${14+12*Math.sin(a)}`;}).join(' ');return `<svg width="44" height="28" viewBox="0 0 44 28" fill="none"><polygon points="${pts}" fill="${c}22" stroke="${c}" stroke-width="2" stroke-linejoin="round"/></svg>`;}
+function nomeForma(n){const nomes={2:'Linha',3:'Triângulo',4:'Quadrilátero',5:'Pentágono',6:'Hexágono',7:'Heptágono',8:'Octógono',9:'Eneágono',10:'Decágono'};return nomes[n]||(n+' lados');}
+function iconeForma(n){const icons={2:'➖',3:'🔺',4:'⬜',5:'⬠',6:'⬡',8:'🔷'};return icons[n]||'🔷';}
+function svgPoligono(n,ativo){const c=ativo?'#6a1b9a':'#9e9e9e';if(n===2){return `<svg width="44" height="28" viewBox="0 0 44 28" fill="none"><line x1="4" y1="14" x2="40" y2="14" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/><circle cx="4" cy="14" r="3" fill="${c}"/><circle cx="40" cy="14" r="3" fill="${c}"/></svg>`;}const pts=Array.from({length:n},(_,i)=>{const a=(2*Math.PI*i/n)-(Math.PI/2);return `${22+19*Math.cos(a)},${14+12*Math.sin(a)}`;}).join(' ');return `<svg width="44" height="28" viewBox="0 0 44 28" fill="none"><polygon points="${pts}" fill="${c}22" stroke="${c}" stroke-width="2" stroke-linejoin="round"/></svg>`;}
 
 // ─── RENDER CARDS QUARTEIRÕES ─────────────────────────────────────────────────
 function renderQtCards(){
@@ -660,7 +670,8 @@ function renderQtCards(){
     const card=document.createElement('div');card.className='qt-card';card.id=`qt-card-${qt.id}`;if(_handleQtId===qt.id)card.classList.add('com-handles');
     const fi=iconeForma(qt.nlados||resolverNLados(qt.forma));const hdr=document.createElement('div');hdr.className='qt-card-header';
     const sub2txt=qt.vertices?'Forma livre · arraste os cantos':`Arraste no mapa para mover · ${Math.round(qt.angulo)}°`;
-    hdr.innerHTML=`<div class="icone" style="background:${qt.cor}22">${fi}</div><div class="info"><div class="sub">#${qt.id} · ${nomeForma(qt.nlados||resolverNLados(qt.forma))} · ${qt.largura}m × ${qt.altura}m</div><div class="sub2">${sub2txt}</div></div><span class="toggle">⌄</span>`;
+    const dimTxt=(qt.nlados||resolverNLados(qt.forma))===2?`${qt.largura}m`:`${qt.largura}m × ${qt.altura}m`;
+    hdr.innerHTML=`<div class="icone" style="background:${qt.cor}22">${fi}</div><div class="info"><div class="sub">#${qt.id} · ${nomeForma(qt.nlados||resolverNLados(qt.forma))} · ${dimTxt}</div><div class="sub2">${sub2txt}</div></div><span class="toggle">⌄</span>`;
     hdr.addEventListener('click',()=>{toggleQtCard(qt.id);if(!document.getElementById(`qt-card-${qt.id}`).classList.contains('aberto'))return;mostrarHandles(qt.id);});
     const body=document.createElement('div');body.className='qt-card-body';
     if(qt.vertices){const banner=document.createElement('div');banner.className='modo-livre-banner';banner.innerHTML='✏️ Forma livre — cantos editados manualmente <button class="btn-reset-forma">↺ Resetar</button>';banner.querySelector('.btn-reset-forma').addEventListener('click',()=>{qt.vertices=null;atualizarGeometriaQt(qt.id);renderQtCards();agendarSave();});body.appendChild(banner);}
@@ -669,15 +680,15 @@ function renderQtCards(){
     const fWrap=document.createElement('div');fWrap.style.cssText='display:flex;flex-direction:column;gap:8px;';
     const fCtrl=document.createElement('div');fCtrl.style.cssText='display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--borda);border-radius:8px;padding:5px 8px;';
     const fMenos=document.createElement('button');fMenos.type='button';fMenos.textContent='−';fMenos.style.cssText='width:28px;height:28px;border:1px solid var(--borda);border-radius:5px;background:var(--cinza);cursor:pointer;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
-    const fInput=document.createElement('input');fInput.type='number';fInput.min='3';fInput.max='12';fInput.step='1';fInput.value=String(qt.nlados||resolverNLados(qt.forma));fInput.style.cssText='width:48px;text-align:center;border:none;font-size:15px;font-weight:700;font-family:"JetBrains Mono",monospace;background:transparent;outline:none;color:var(--texto);';
+    const fInput=document.createElement('input');fInput.type='number';fInput.min='2';fInput.max='12';fInput.step='1';fInput.value=String(qt.nlados||resolverNLados(qt.forma));fInput.style.cssText='width:48px;text-align:center;border:none;font-size:15px;font-weight:700;font-family:"JetBrains Mono",monospace;background:transparent;outline:none;color:var(--texto);';
     const fMais=document.createElement('button');fMais.type='button';fMais.textContent='+';fMais.style.cssText='width:28px;height:28px;border:1px solid var(--borda);border-radius:5px;background:var(--cinza);cursor:pointer;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
     const fNome=document.createElement('span');fNome.style.cssText='flex:1;font-size:12px;font-weight:600;color:var(--roxo);text-align:right;';fNome.textContent=nomeForma(qt.nlados||resolverNLados(qt.forma));
     const fPrev=document.createElement('div');fPrev.style.cssText='display:flex;justify-content:center;align-items:center;padding:8px 0;';
     const fPrevInner=document.createElement('div');fPrevInner.innerHTML=svgPoligono(qt.nlados||resolverNLados(qt.forma),true);fPrev.appendChild(fPrevInner);
     const fRapidos=document.createElement('div');fRapidos.style.cssText='display:flex;gap:4px;flex-wrap:wrap;';
-    [3,4,5,6,8,10].forEach(n=>{const b=document.createElement('button');b.type='button';b.style.cssText='flex:1;min-width:36px;padding:4px 2px;border-radius:6px;border:1.5px solid var(--borda);background:var(--cinza);cursor:pointer;font-size:10px;font-weight:700;color:var(--muted);font-family:"Sora",sans-serif;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .15s;';b.innerHTML=svgPoligono(n,false)+`<span>${n}</span>`;if((qt.nlados||resolverNLados(qt.forma))===n){b.style.borderColor='var(--roxo)';b.style.background='var(--roxo-bg)';b.style.color='var(--roxo)';}b.addEventListener('click',()=>aplicarNLados(n));fRapidos.appendChild(b);});
+    [2,3,4,5,6,8].forEach(n=>{const b=document.createElement('button');b.type='button';b.style.cssText='flex:1;min-width:36px;padding:4px 2px;border-radius:6px;border:1.5px solid var(--borda);background:var(--cinza);cursor:pointer;font-size:10px;font-weight:700;color:var(--muted);font-family:"Sora",sans-serif;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .15s;';b.innerHTML=svgPoligono(n,false)+`<span>${n}</span>`;if((qt.nlados||resolverNLados(qt.forma))===n){b.style.borderColor='var(--roxo)';b.style.background='var(--roxo-bg)';b.style.color='var(--roxo)';}b.addEventListener('click',()=>aplicarNLados(n));fRapidos.appendChild(b);});
     function atualizarBotoesRapidos(n){fRapidos.querySelectorAll('button').forEach((b,i)=>{const v=[3,4,5,6,8,10][i];if(v===n){b.style.borderColor='var(--roxo)';b.style.background='var(--roxo-bg)';b.style.color='var(--roxo)';}else{b.style.borderColor='var(--borda)';b.style.background='var(--cinza)';b.style.color='var(--muted)';}});}
-    function aplicarNLados(n){n=Math.max(3,Math.min(12,Math.round(n)));qt.nlados=n;qt.forma=n;qt.vertices=null;fInput.value=n;fNome.textContent=nomeForma(n);fPrevInner.innerHTML=svgPoligono(n,true);atualizarBotoesRapidos(n);const ic=card.querySelector('.icone');if(ic)ic.textContent=iconeForma(n);const sub=card.querySelector('.sub');if(sub)sub.textContent=`#${qt.id} · ${nomeForma(n)} · ${qt.largura}m × ${qt.altura}m`;qt.coresLados=null;atualizarGeometriaQt(qt.id);agendarSave();if(_handleQtId===qt.id)mostrarHandles(qt.id);renderCoresLados();}
+    function aplicarNLados(n){n=Math.max(2,Math.min(12,Math.round(n)));qt.nlados=n;qt.forma=n;qt.vertices=null;fInput.value=n;fNome.textContent=nomeForma(n);fPrevInner.innerHTML=svgPoligono(n,true);atualizarBotoesRapidos(n);const ic=card.querySelector('.icone');if(ic)ic.textContent=iconeForma(n);const sub=card.querySelector('.sub');if(sub)sub.textContent=`#${qt.id} · ${nomeForma(n)} · ${n===2?qt.largura+'m':qt.largura+'m × '+qt.altura+'m'}`;qt.coresLados=null;atualizarGeometriaQt(qt.id);agendarSave();if(_handleQtId===qt.id)mostrarHandles(qt.id);renderCoresLados();}
     fMenos.addEventListener('click',()=>aplicarNLados((qt.nlados||4)-1));fMais.addEventListener('click',()=>aplicarNLados((qt.nlados||4)+1));fInput.addEventListener('change',()=>aplicarNLados(parseInt(fInput.value)));fCtrl.appendChild(fMenos);fCtrl.appendChild(fInput);fCtrl.appendChild(fMais);fCtrl.appendChild(fNome);fWrap.appendChild(fCtrl);fWrap.appendChild(fPrev);fWrap.appendChild(fRapidos);fD.appendChild(fWrap);body.appendChild(fD);
     const dimRow=document.createElement('div');dimRow.className='dim-row';
     const cL=document.createElement('div');cL.className='campo';cL.innerHTML='<label>↔️ Largura (m)</label>';const iL=document.createElement('input');iL.type='number';iL.value=qt.largura;iL.addEventListener('input',()=>{qt.largura=parseInt(iL.value)||10;qt.vertices=null;atualizarGeometriaQt(qt.id);agendarSave();});cL.appendChild(iL);dimRow.appendChild(cL);
