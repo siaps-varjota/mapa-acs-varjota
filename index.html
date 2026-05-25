@@ -802,14 +802,15 @@ async function fetchImgBlob(src){try{const res=await fetch(src,{mode:'cors'});if
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
 function containerParaTela(px,py,W,H,S){const ang=-mapBearing*Math.PI/180;const cx=W*S/2,cy=H*S/2;const dx=px*S-cx,dy=py*S-cy;return[cx+dx*Math.cos(ang)-dy*Math.sin(ang),cy+dx*Math.sin(ang)+dy*Math.cos(ang)];}
 async function capturarMapaCanvas(){
-  const S=2;const mapEl=document.getElementById('map');const W=mapEl.offsetWidth,H=mapEl.offsetHeight;const fc=document.createElement('canvas');fc.width=W*S;fc.height=H*S;const ctx=fc.getContext('2d');const mr=mapEl.getBoundingClientRect();
-  ctx.fillStyle='#e8e0d8';ctx.fillRect(0,0,fc.width,fc.height);
-  const tileEls=[...mapEl.querySelectorAll('.leaflet-tile-pane img.leaflet-tile')];
-  await Promise.all(tileEls.map(async el=>{if(!el.src)return;const img=await fetchImgBlob(el.src);if(!img)return;const r=el.getBoundingClientRect();ctx.drawImage(img,(r.left-mr.left)*S,(r.top-mr.top)*S,r.width*S,r.height*S);}));
-  quarteiroesData.forEach(q=>{const verts=obterVerticesQt(q);if(!verts||verts.length<3)return;const n=verts.length;const pts=verts.map(v=>{const p=map.latLngToContainerPoint(L.latLng(v[0],v[1]));return containerParaTela(p.x,p.y,W,H,S);});ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<n;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.closePath();const {r,g,b}=hexParaRgb(q.cor);ctx.fillStyle=`rgba(${r},${g},${b},0.18)`;ctx.fill();const coresLados=q.coresLados||(Array.from({length:n},()=>q.cor||'#6a1b9a'));ctx.lineWidth=2.5*S;ctx.lineJoin='round';pts.forEach((p,i)=>{const next=pts[(i+1)%n];ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(next[0],next[1]);ctx.strokeStyle=coresLados[i]||q.cor||'#6a1b9a';ctx.stroke();});});
-  const fontSize=8*S;ctx.font=`600 ${fontSize}px Sora,sans-serif`;ctx.textBaseline='middle';ctx.textAlign='center';
-  lados.forEach(l=>{const p=map.latLngToContainerPoint(L.latLng(l.lat,l.lng));const [x,y]=containerParaTela(p.x,p.y,W,H,S);const acsLabel=l.acs||('#'+l.id),qtdLabel=l.pessoas>0?`${l.pessoas}*`:'–*',texto=`${acsLabel} | ${qtdLabel}`;const tw=ctx.measureText(texto).width,ph=fontSize*1.6,pw=tw+14*S,rad=4*S,bx=x-pw/2,by=y-ph/2;const op=l.opacidadeFundo!==undefined?l.opacidadeFundo:1;const {r,g,b}=hexParaRgb(l.corFundo||'#ffffff');ctx.shadowColor='rgba(0,0,0,0.15)';ctx.shadowBlur=3*S;roundRect(ctx,bx,by,pw,ph,rad);ctx.fillStyle=`rgba(${r},${g},${b},${op})`;ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='rgba(0,0,0,0.10)';ctx.lineWidth=S;roundRect(ctx,bx,by,pw,ph,rad);ctx.stroke();const corT=l.corTexto||'#1a7f4b';const sepIdx=texto.indexOf(' | ');if(sepIdx>=0){const acsPart=texto.slice(0,sepIdx),sepPart=' | ',qtdPart=texto.slice(sepIdx+3);let cx2=x-tw/2;ctx.textAlign='left';ctx.fillStyle=corT;ctx.font=`700 ${fontSize}px Sora,sans-serif`;ctx.fillText(acsPart,cx2,y);cx2+=ctx.measureText(acsPart).width;ctx.fillStyle='rgba(0,0,0,0.2)';ctx.font=`400 ${fontSize*0.9}px Sora,sans-serif`;ctx.fillText(sepPart,cx2,y);cx2+=ctx.measureText(sepPart).width;ctx.fillStyle='#1e2a38';ctx.font=`700 ${fontSize}px "JetBrains Mono",monospace`;ctx.fillText(qtdPart,cx2,y);ctx.textAlign='center';}else{ctx.fillStyle=corT;ctx.fillText(texto,x,y);}});
-  ctx.shadowBlur=0;return fc;
+  const mapEl=document.getElementById('map');
+  const canvas = await html2canvas(mapEl, {
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#e8e0d8',
+    scale: 2,
+    logging: false
+  });
+  return canvas;
 }
 document.getElementById('btn-capturar').addEventListener('click',async()=>{
   const btn=document.getElementById('btn-capturar');if(btn.classList.contains('capturando'))return;btn.classList.add('capturando');btn.textContent='⏳ Processando…';
