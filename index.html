@@ -488,7 +488,7 @@ function _soltarEm(cx,cy){
   if(cx<rect.left||cx>rect.right||cy<rect.top||cy>rect.bottom)return;
   const latlng=map.containerPointToLatLng(L.point(cx-rect.left,cy-rect.top));
   if(mode==='lado'){buscarRuaEAngulo(latlng.lat,latlng.lng).then(({rua,angulo})=>adicionarLado(latlng.lat,latlng.lng,rua,angulo));}
-  else if(mode==='quarteirao'){adicionarQuarteirao(latlng.lat,latlng.lng,80,40,mapBearing,'#6a1b9a',undefined,4,null,null);mudarTab('quarteirao');}
+  else if(mode==='quarteirao'){adicionarQuarteirao(latlng.lat,latlng.lng,80,100,mapBearing,'#6a1b9a',undefined,4,null,null);mudarTab('quarteirao');}
 }
 document.addEventListener('mousemove',(e)=>{if(!_dragMode)return;_moveGhost(e.clientX,e.clientY);});
 document.addEventListener('touchmove',(e)=>{if(!_dragMode)return;const t=e.touches[0];_moveGhost(t.clientX,t.clientY);},{passive:true});
