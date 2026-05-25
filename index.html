@@ -207,6 +207,8 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e2a38;color:#fff;padding:9px 20px;border-radius:50px;font-size:12px;font-weight:600;z-index:9998;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap;}
 #toast.visivel{opacity:1;}
+.poi-tooltip { background: #1e2a38 !important; color: #fff !important; border: none !important; border-radius: 6px !important; padding: 4px 10px !important; font-size: 11px !important; font-weight: 600 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important; }
+.poi-tooltip::before { border-top-color: #1e2a38 !important; }
 .xadrez-bg{background-image:linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%);background-size:8px 8px;background-position:0 0,0 4px,4px -4px,-4px 0;}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:700px){
@@ -323,7 +325,7 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 </div>
 <script>
 // ─── ESTADO ───────────────────────────────────────────────────────────────────
-let lados=[],quarteiroesData=[],proximoId=1,proximoQtId=1,mapBearing=333,painelAberto=true;
+let lados=[],quarteiroesData=[],proximoId=1,proximoQtId=1,mapBearing=333,painelAberto=true,poiLayer=null;
 const ICON_W=84,ICON_H=28;
 let _handleGroup=null,_handleQtId=null;
 
@@ -370,11 +372,66 @@ document.getElementById('btn-modal-pular').addEventListener('click',()=>{documen
 const map=L.map('map',{zoomControl:false,rotate:true,rotateControl:false,bearing:333,zoomDelta:1,zoomSnap:0,wheelPxPerZoomLevel:250}).setView([-4.1928215,-40.4677377],16);
 
 // ── CAMADAS DE TILE ──────────────────────────────────────────────────────────
-const tileGoogle=L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&apistyle=s.t%3A2%7Cs.e%3Al%7Cv%3Aoff&x={x}&y={y}&z={z}',{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
+// Estilo para ocultar POIs (estabelecimentos) - s.t:2 (points of interest), s.e:l (labels), s.e:i (icons)
+const styleClean = 's.t%3A2%7Cs.e%3Al%7Cv%3Aoff%2Cs.t%3A2%7Cs.e%3Ai%7Cv%3Aoff';
+const tileGoogle=L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m&apistyle=${styleClean}&x={x}&y={y}&z={z}`,{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
 const tileGoogleSat=L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
-const tileGoogleHybrid=L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&apistyle=s.t%3A2%7Cs.e%3Al%7Cv%3Aoff&x={x}&y={y}&z={z}',{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
+const tileGoogleHybrid=L.tileLayer(`https://mt{s}.google.com/vt/lyrs=y&apistyle=${styleClean}&x={x}&y={y}&z={z}`,{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
 const tileOSM=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19});
 tileGoogle.addTo(map);
+poiLayer = L.layerGroup().addTo(map);
+
+async function carregarPOIs() {
+  if (map.getZoom() < 15) { poiLayer.clearLayers(); return; }
+  const bounds = map.getBounds();
+  const query = `[out:json][timeout:25];
+    (
+      node["amenity"~"restaurant|cafe|fast_food|bar|pharmacy|bank|hospital|clinic|supermarket|convenience"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
+      node["shop"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});
+    );
+    out body;`;
+  
+  try {
+    const res = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      body: `data=${encodeURIComponent(query)}`
+    });
+    const data = await res.json();
+    poiLayer.clearLayers();
+    
+    data.elements.forEach(poi => {
+      const nome = poi.tags.name || "Estabelecimento";
+      let icone = '📍';
+      if (poi.tags.amenity === 'restaurant' || poi.tags.amenity === 'fast_food') icone = '🍴';
+      else if (poi.tags.amenity === 'pharmacy') icone = '💊';
+      else if (poi.tags.amenity === 'bank') icone = '💰';
+      else if (poi.tags.amenity === 'hospital' || poi.tags.amenity === 'clinic') icone = '🏥';
+      else if (poi.tags.shop === 'supermarket' || poi.tags.amenity === 'convenience') icone = '🛒';
+      else if (poi.tags.shop) icone = '🛍️';
+      
+      const marker = L.marker([poi.lat, poi.lon], {
+        icon: L.divIcon({
+          className: 'custom-poi-icon',
+          html: `<div style="font-size:18px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); cursor: pointer;">${icone}</div>`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10]
+        })
+      });
+      
+      marker.bindTooltip(nome, {
+        direction: 'top',
+        offset: [0, -10],
+        opacity: 0.9,
+        className: 'poi-tooltip'
+      });
+      
+      marker.addTo(poiLayer);
+    });
+  } catch (e) { console.error("Erro POIs:", e); }
+}
+
+map.on('moveend', carregarPOIs);
+carregarPOIs();
 document.getElementById('btn-ruas').classList.add('ativo');
 let modoAtual='google';
 
