@@ -264,7 +264,8 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
         </div>
         <button id="btn-satelite">🛰️ Satélite</button>
         <button id="btn-hibrido">🗺️ Híbrido</button>
-        <button id="btn-limpo">⚪ Mapa Ruas</button>
+        <button id="btn-limpo">⚪ Mapa Limpo</button>
+        <button id="btn-esri">🗺️ Mapa Esri</button>
         <button id="btn-ruas">🛣️ Ruas OSM</button>
         <button id="btn-capturar">🖼️ Salvar Mapa</button>
         <button id="btn-exportar">📋 Exportar JSON</button>
@@ -383,7 +384,8 @@ const tileGoogle=L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m&apistyle=${styl
 const tileGoogleSat=L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
 const tileGoogleHybrid=L.tileLayer(`https://mt{s}.google.com/vt/lyrs=y&apistyle=${styleClean}&x={x}&y={y}&z={z}`,{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
 const tileOSM=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19});
-const tileCarto=L.tileLayer('https://{s}.basemaps.cartocdn.com/voyager_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:20});
+const tileCarto=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:20});
+const tileEsri=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{attribution:'Tiles © Esri',maxZoom:19});
 tileCarto.addTo(map);
 poiLayer = L.layerGroup().addTo(map);
 
@@ -442,10 +444,11 @@ document.getElementById('btn-limpo').classList.add('ativo');
 let modoAtual='carto';
 
 function limparTileAtivo(){
-  [tileGoogle,tileGoogleSat,tileGoogleHybrid,tileOSM,tileCarto].forEach(t=>{if(map.hasLayer(t))map.removeLayer(t);});
-  ['btn-satelite','btn-hibrido','btn-ruas','btn-limpo'].forEach(id=>document.getElementById(id).classList.remove('ativo'));
+  [tileGoogle,tileGoogleSat,tileGoogleHybrid,tileOSM,tileCarto,tileEsri].forEach(t=>{if(map.hasLayer(t))map.removeLayer(t);});
+  ['btn-satelite','btn-hibrido','btn-ruas','btn-limpo','btn-esri'].forEach(id=>document.getElementById(id).classList.remove('ativo'));
 }
 document.getElementById('btn-limpo').addEventListener('click',()=>{limparTileAtivo();tileCarto.addTo(map);document.getElementById('btn-limpo').classList.add('ativo');modoAtual='carto';});
+document.getElementById('btn-esri').addEventListener('click',()=>{limparTileAtivo();tileEsri.addTo(map);document.getElementById('btn-esri').classList.add('ativo');modoAtual='esri';});
 document.getElementById('btn-ruas').addEventListener('click',()=>{limparTileAtivo();tileGoogle.addTo(map);document.getElementById('btn-ruas').classList.add('ativo');modoAtual='google';});
 document.getElementById('btn-satelite').addEventListener('click',()=>{limparTileAtivo();tileGoogleSat.addTo(map);document.getElementById('btn-satelite').classList.add('ativo');modoAtual='sat';});
 document.getElementById('btn-hibrido').addEventListener('click',()=>{limparTileAtivo();tileGoogleHybrid.addTo(map);document.getElementById('btn-hibrido').classList.add('ativo');modoAtual='hibrido';});
