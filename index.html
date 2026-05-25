@@ -674,7 +674,7 @@ function renderQtCards(){
     const fRapidos=document.createElement('div');fRapidos.style.cssText='display:flex;gap:4px;flex-wrap:wrap;';
     [3,4,5,6,8,10].forEach(n=>{const b=document.createElement('button');b.type='button';b.style.cssText='flex:1;min-width:36px;padding:4px 2px;border-radius:6px;border:1.5px solid var(--borda);background:var(--cinza);cursor:pointer;font-size:10px;font-weight:700;color:var(--muted);font-family:"Sora",sans-serif;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .15s;';b.innerHTML=svgPoligono(n,false)+`<span>${n}</span>`;if((qt.nlados||resolverNLados(qt.forma))===n){b.style.borderColor='var(--roxo)';b.style.background='var(--roxo-bg)';b.style.color='var(--roxo)';}b.addEventListener('click',()=>aplicarNLados(n));fRapidos.appendChild(b);});
     function atualizarBotoesRapidos(n){fRapidos.querySelectorAll('button').forEach((b,i)=>{const v=[3,4,5,6,8,10][i];if(v===n){b.style.borderColor='var(--roxo)';b.style.background='var(--roxo-bg)';b.style.color='var(--roxo)';}else{b.style.borderColor='var(--borda)';b.style.background='var(--cinza)';b.style.color='var(--muted)';}});}
-    function aplicarNLados(n){n=Math.max(3,Math.min(12,Math.round(n)));qt.nlados=n;qt.forma=n;qt.vertices=null;fInput.value=n;fNome.textContent=nomeForma(n);fPrevInner.innerHTML=svgPoligono(n,true);atualizarBotoesRapidos(n);const ic=card.querySelector('.icone');if(ic)ic.textContent=iconeForma(n);const sub=card.querySelector('.sub');if(sub)sub.textContent=`#${qt.id} · ${nomeForma(n)} · ${qt.largura}m × ${qt.altura}m`;atualizarGeometriaQt(qt.id);agendarSave();if(_handleQtId===qt.id)mostrarHandles(qt.id);}
+    function aplicarNLados(n){n=Math.max(3,Math.min(12,Math.round(n)));qt.nlados=n;qt.forma=n;qt.vertices=null;fInput.value=n;fNome.textContent=nomeForma(n);fPrevInner.innerHTML=svgPoligono(n,true);atualizarBotoesRapidos(n);const ic=card.querySelector('.icone');if(ic)ic.textContent=iconeForma(n);const sub=card.querySelector('.sub');if(sub)sub.textContent=`#${qt.id} · ${nomeForma(n)} · ${qt.largura}m × ${qt.altura}m`;qt.coresLados=null;atualizarGeometriaQt(qt.id);agendarSave();if(_handleQtId===qt.id)mostrarHandles(qt.id);renderCoresLados();}
     fMenos.addEventListener('click',()=>aplicarNLados((qt.nlados||4)-1));fMais.addEventListener('click',()=>aplicarNLados((qt.nlados||4)+1));fInput.addEventListener('change',()=>aplicarNLados(parseInt(fInput.value)));fCtrl.appendChild(fMenos);fCtrl.appendChild(fInput);fCtrl.appendChild(fMais);fCtrl.appendChild(fNome);fWrap.appendChild(fCtrl);fWrap.appendChild(fPrev);fWrap.appendChild(fRapidos);fD.appendChild(fWrap);body.appendChild(fD);
     const dimRow=document.createElement('div');dimRow.className='dim-row';
     const cL=document.createElement('div');cL.className='campo';cL.innerHTML='<label>↔️ Largura (m)</label>';const iL=document.createElement('input');iL.type='number';iL.value=qt.largura;iL.addEventListener('input',()=>{qt.largura=parseInt(iL.value)||10;qt.vertices=null;atualizarGeometriaQt(qt.id);agendarSave();});cL.appendChild(iL);dimRow.appendChild(cL);
@@ -687,7 +687,40 @@ function renderQtCards(){
     iRange.addEventListener('input',()=>{qt.angulo=parseInt(iRange.value);qt.vertices=null;vRot.textContent=qt.angulo+'°';atualizarGeometriaQt(qt.id);agendarSave();});
     const rP=document.createElement('button');rP.textContent='+';rP.addEventListener('click',()=>{qt.angulo=(qt.angulo+5)%360;qt.vertices=null;iRange.value=qt.angulo;vRot.textContent=Math.round(qt.angulo)+'°';atualizarGeometriaQt(qt.id);agendarSave();});
     rRow.appendChild(rM);rRow.appendChild(iRange);rRow.appendChild(vRot);rRow.appendChild(rP);cR.appendChild(rRow);body.appendChild(cR);
-    const cC=document.createElement('div');cC.className='campo';cC.innerHTML='<label>🎨 Cor do Quarteirão</label>';const iC=document.createElement('input');iC.type='color';iC.value=qt.cor;iC.addEventListener('input',()=>{qt.cor=iC.value;qt.coresLados=null;atualizarGeometriaQt(qt.id);agendarSave();});cC.appendChild(iC);body.appendChild(cC);
+    const cC=document.createElement('div');cC.className='campo';cC.innerHTML='<label>🎨 Cor do Quarteirão</label>';const iC=document.createElement('input');iC.type='color';iC.value=qt.cor;iC.addEventListener('input',()=>{qt.cor=iC.value;qt.coresLados=null;atualizarGeometriaQt(qt.id);agendarSave();renderCoresLados();});cC.appendChild(iC);body.appendChild(cC);
+
+    // ── CORES INDIVIDUAIS DOS LADOS ──
+    const cLados=document.createElement('div');cLados.className='campo';
+    const cLadosHeader=document.createElement('div');
+    cLadosHeader.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;cursor:pointer;user-select:none;';
+    const cLadosLbl=document.createElement('label');cLadosLbl.style.cssText='cursor:pointer;';cLadosLbl.textContent='🖌️ Cores dos lados';
+    const cLadosToggle=document.createElement('span');cLadosToggle.style.cssText='font-size:11px;font-weight:600;color:var(--roxo);background:var(--roxo-bg);padding:2px 8px;border-radius:10px;border:1px solid #ce93d8;';cLadosToggle.textContent='Expandir';
+    cLadosHeader.appendChild(cLadosLbl);cLadosHeader.appendChild(cLadosToggle);
+    const cLadosBody=document.createElement('div');cLadosBody.style.cssText='display:none;flex-direction:column;gap:6px;';
+    cLadosHeader.addEventListener('click',()=>{const aberto=cLadosBody.style.display!=='none';cLadosBody.style.display=aberto?'none':'flex';cLadosToggle.textContent=aberto?'Expandir':'Recolher';});
+    function renderCoresLados(){
+      cLadosBody.innerHTML='';
+      const n=qt.nlados||resolverNLados(qt.forma);
+      if(!qt.coresLados||qt.coresLados.length!==n){qt.coresLados=Array.from({length:n},(_,i)=>(qt.coresLados&&qt.coresLados[i])||qt.cor||'#6a1b9a');}
+      // botão "Aplicar cor base a todos"
+      const btnSync=document.createElement('button');btnSync.type='button';
+      btnSync.style.cssText='display:flex;align-items:center;gap:5px;background:var(--roxo-bg);border:1px solid #ce93d8;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:600;color:var(--roxo);cursor:pointer;font-family:"Sora",sans-serif;';
+      btnSync.innerHTML='↺ Usar cor base em todos';
+      btnSync.addEventListener('click',()=>{qt.coresLados=Array.from({length:n},()=>qt.cor||'#6a1b9a');atualizarGeometriaQt(qt.id);agendarSave();renderCoresLados();});
+      cLadosBody.appendChild(btnSync);
+      const nomesLado=['Norte','Leste','Sul','Oeste'];
+      qt.coresLados.forEach((cor,i)=>{
+        const row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--borda);border-radius:8px;padding:6px 10px;';
+        const swatch=document.createElement('div');swatch.style.cssText=`width:18px;height:18px;border-radius:4px;border:1.5px solid rgba(0,0,0,.15);background:${cor};flex-shrink:0;`;
+        const lbl=document.createElement('span');lbl.style.cssText='font-size:11px;font-weight:600;color:var(--muted);flex:1;';lbl.textContent=`Lado ${i+1}${n<=4?' — '+(nomesLado[i]||''):''}`;
+        const inp=document.createElement('input');inp.type='color';inp.value=cor;inp.style.cssText='width:32px;height:28px;padding:2px 3px;border:1px solid var(--borda);border-radius:6px;cursor:pointer;';
+        inp.addEventListener('input',()=>{qt.coresLados[i]=inp.value;swatch.style.background=inp.value;atualizarGeometriaQt(qt.id);agendarSave();});
+        row.appendChild(swatch);row.appendChild(lbl);row.appendChild(inp);cLadosBody.appendChild(row);
+      });
+    }
+    renderCoresLados();
+    cLados.appendChild(cLadosHeader);cLados.appendChild(cLadosBody);body.appendChild(cLados);
+
     const btnRem=document.createElement('button');btnRem.className='btn-remover-qt';btnRem.innerHTML='🗑️ Remover Quarteirão';btnRem.onclick=()=>removerQuarteirao(qt.id);body.appendChild(btnRem);
     card.appendChild(hdr);card.appendChild(body);lista.appendChild(card);
   });
