@@ -209,6 +209,9 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 #toast.visivel{opacity:1;}
 .poi-tooltip { background: #1e2a38 !important; color: #fff !important; border: none !important; border-radius: 6px !important; padding: 4px 10px !important; font-size: 11px !important; font-weight: 600 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important; }
 .poi-tooltip::before { border-top-color: #1e2a38 !important; }
+.custom-poi-icon { display: flex; align-items: center; justify-content: center; }
+.custom-poi-icon div { transition: transform 0.2s; }
+.custom-poi-icon:hover div { transform: scale(1.4); }
 .xadrez-bg{background-image:linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%);background-size:8px 8px;background-position:0 0,0 4px,4px -4px,-4px 0;}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:700px){
@@ -261,6 +264,7 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
         </div>
         <button id="btn-satelite">🛰️ Satélite</button>
         <button id="btn-hibrido">🗺️ Híbrido</button>
+        <button id="btn-limpo">⚪ Mapa Ruas</button>
         <button id="btn-ruas">🛣️ Ruas OSM</button>
         <button id="btn-capturar">🖼️ Salvar Mapa</button>
         <button id="btn-exportar">📋 Exportar JSON</button>
@@ -373,12 +377,14 @@ const map=L.map('map',{zoomControl:false,rotate:true,rotateControl:false,bearing
 
 // ── CAMADAS DE TILE ──────────────────────────────────────────────────────────
 // Estilo para ocultar POIs (estabelecimentos) - s.t:2 (points of interest), s.e:l (labels), s.e:i (icons)
-const styleClean = 's.t%3A2%7Cs.e%3Al%7Cv%3Aoff%2Cs.t%3A2%7Cs.e%3Ai%7Cv%3Aoff';
+// Estilo agressivo para esconder absolutamente tudo que é POI nativo (labels e icons)
+const styleClean = 's.t%3A2%7Cv%3Aoff%2Cs.t%3A3%7Cv%3Aoff'; 
 const tileGoogle=L.tileLayer(`https://mt{s}.google.com/vt/lyrs=m&apistyle=${styleClean}&x={x}&y={y}&z={z}`,{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
 const tileGoogleSat=L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
 const tileGoogleHybrid=L.tileLayer(`https://mt{s}.google.com/vt/lyrs=y&apistyle=${styleClean}&x={x}&y={y}&z={z}`,{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
 const tileOSM=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19});
-tileGoogle.addTo(map);
+const tileCarto=L.tileLayer('https://{s}.basemaps.cartocdn.com/voyager_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:20});
+tileCarto.addTo(map);
 poiLayer = L.layerGroup().addTo(map);
 
 async function carregarPOIs() {
@@ -412,9 +418,9 @@ async function carregarPOIs() {
       const marker = L.marker([poi.lat, poi.lon], {
         icon: L.divIcon({
           className: 'custom-poi-icon',
-          html: `<div style="font-size:18px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); cursor: pointer;">${icone}</div>`,
-          iconSize: [20, 20],
-          iconAnchor: [10, 10]
+          html: `<div style="font-size:18px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3)); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px;">${icone}</div>`,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
         })
       });
       
@@ -432,13 +438,14 @@ async function carregarPOIs() {
 
 map.on('moveend', carregarPOIs);
 carregarPOIs();
-document.getElementById('btn-ruas').classList.add('ativo');
-let modoAtual='google';
+document.getElementById('btn-limpo').classList.add('ativo');
+let modoAtual='carto';
 
 function limparTileAtivo(){
-  [tileGoogle,tileGoogleSat,tileGoogleHybrid,tileOSM].forEach(t=>{if(map.hasLayer(t))map.removeLayer(t);});
-  ['btn-satelite','btn-hibrido','btn-ruas'].forEach(id=>document.getElementById(id).classList.remove('ativo'));
+  [tileGoogle,tileGoogleSat,tileGoogleHybrid,tileOSM,tileCarto].forEach(t=>{if(map.hasLayer(t))map.removeLayer(t);});
+  ['btn-satelite','btn-hibrido','btn-ruas','btn-limpo'].forEach(id=>document.getElementById(id).classList.remove('ativo'));
 }
+document.getElementById('btn-limpo').addEventListener('click',()=>{limparTileAtivo();tileCarto.addTo(map);document.getElementById('btn-limpo').classList.add('ativo');modoAtual='carto';});
 document.getElementById('btn-ruas').addEventListener('click',()=>{limparTileAtivo();tileGoogle.addTo(map);document.getElementById('btn-ruas').classList.add('ativo');modoAtual='google';});
 document.getElementById('btn-satelite').addEventListener('click',()=>{limparTileAtivo();tileGoogleSat.addTo(map);document.getElementById('btn-satelite').classList.add('ativo');modoAtual='sat';});
 document.getElementById('btn-hibrido').addEventListener('click',()=>{limparTileAtivo();tileGoogleHybrid.addTo(map);document.getElementById('btn-hibrido').classList.add('ativo');modoAtual='hibrido';});
