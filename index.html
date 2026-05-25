@@ -156,64 +156,15 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 #dica.visivel{opacity:1;}
 #legenda-asterisco{position:absolute;bottom:58px;left:50%;transform:translateX(-50%);z-index:800;background:rgba(255,255,255,.92);padding:4px 11px;border-radius:20px;font-size:10px;font-weight:600;color:var(--muted);box-shadow:0 2px 8px rgba(0,0,0,.12);backdrop-filter:blur(4px);border:1px solid var(--borda);pointer-events:none;display:flex;align-items:center;gap:5px;white-space:nowrap;}
 #legenda-asterisco strong{font-family:'JetBrains Mono',monospace;color:var(--verde);font-size:11px;}
-
-/* ── MARKER: pin sempre visível, label só no hover ────────────────────────── */
-.marker-wrapper{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:move;overflow:visible;}
+.marker-wrapper{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:move;}
 .marker-wrapper.mini .marker-label{display:none;}
 .marker-wrapper.medio .lbl-qtd,.marker-wrapper.medio .lbl-sep{display:none;}
-
-/* Pin — ponto colorido sempre visível */
-.marker-pin{
-  width:11px;height:11px;border-radius:50%;
-  border:2.5px solid #fff;
-  box-shadow:0 1px 5px rgba(0,0,0,.45);
-  pointer-events:none;
-  transition:transform .15s;
-  flex-shrink:0;
-  position:relative;
-  z-index:5;
-}
-.marker-wrapper:hover .marker-pin{transform:scale(1.5);}
-
-/* Label — oculto por padrão, aparece no hover flutuando acima do pin */
-.marker-label{
-  display:block;
-  background:rgba(255,255,255,0.97);
-  border-radius:5px;
-  padding:1px 7px;
-  font-size:8px;font-weight:600;
-  font-family:'Sora',sans-serif;
-  white-space:nowrap;
-  box-shadow:0 3px 10px rgba(0,0,0,.22);
-  border:1px solid rgba(0,0,0,.10);
-  line-height:1.6;
-  text-align:center;
-  pointer-events:none;
-  user-select:none;
-  /* oculto */
-  opacity:0;
-  visibility:hidden;
-  /* posição absoluta acima do pin */
-  position:absolute;
-  top:50%;left:50%;
-  transform:translateX(-50%) translateY(-14px) rotate(var(--ang,0deg));
-  transform-origin:center center;
-  z-index:20;
-  transition:opacity .18s,visibility .18s,transform .18s;
-}
-.marker-wrapper:hover .marker-label{
-  opacity:1;
-  visibility:visible;
-  transform:translateX(-50%) translateY(-20px) rotate(var(--ang,0deg));
-}
-
+.marker-label{display:block;background:rgba(255,255,255,0.92);border-radius:5px;padding:1px 6px;font-size:8px;font-weight:600;font-family:'Sora',sans-serif;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.18);border:1px solid rgba(0,0,0,.10);line-height:1.6;text-align:center;pointer-events:none;transform:rotate(var(--ang,0deg));transform-origin:center center;user-select:none;}
 .marker-label .lbl-acs{display:inline;color:#1a7f4b;font-size:8px;font-weight:700;}
 .marker-label .lbl-acs.vazio{color:rgba(0,0,0,.35);font-style:italic;}
 .marker-label .lbl-sep{display:inline;color:rgba(0,0,0,.15);font-size:7px;margin:0 3px;}
 .marker-label .lbl-qtd{display:inline;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;color:#1e2a38;letter-spacing:.3px;}
 .marker-label .lbl-ast{display:inline;font-family:'JetBrains Mono',monospace;font-size:7px;font-weight:700;color:#25b36a;vertical-align:super;line-height:0;}
-/* ─────────────────────────────────────────────────────────────────────────── */
-
 .leaflet-marker-icon{background:transparent!important;border:none!important;}
 .qt-vertex-handle path{cursor:crosshair!important;}
 .leaflet-interactive.qt-vertex-handle{cursor:crosshair!important;}
@@ -419,18 +370,19 @@ document.getElementById('btn-modal-pular').addEventListener('click',()=>{documen
 const map=L.map('map',{zoomControl:false,rotate:true,rotateControl:false,bearing:333,zoomDelta:1,zoomSnap:0,wheelPxPerZoomLevel:250}).setView([-4.1928215,-40.4677377],16);
 
 // ── CAMADAS DE TILE ──────────────────────────────────────────────────────────
-const tileGoogle=L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
+const tileGoogle=L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&apistyle=s.t%3A2%7Cs.e%3Al%7Cv%3Aoff&x={x}&y={y}&z={z}',{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
 const tileGoogleSat=L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
-const tileGoogleHybrid=L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
+const tileGoogleHybrid=L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&apistyle=s.t%3A2%7Cs.e%3Al%7Cv%3Aoff&x={x}&y={y}&z={z}',{subdomains:'0123',attribution:'© Google Maps',maxNativeZoom:20,maxZoom:22});
 const tileOSM=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19});
 tileGoogle.addTo(map);
+document.getElementById('btn-ruas').classList.add('ativo');
 let modoAtual='google';
 
 function limparTileAtivo(){
   [tileGoogle,tileGoogleSat,tileGoogleHybrid,tileOSM].forEach(t=>{if(map.hasLayer(t))map.removeLayer(t);});
   ['btn-satelite','btn-hibrido','btn-ruas'].forEach(id=>document.getElementById(id).classList.remove('ativo'));
 }
-document.getElementById('btn-ruas').addEventListener('click',()=>{limparTileAtivo();tileOSM.addTo(map);document.getElementById('btn-ruas').classList.add('ativo');modoAtual='osm';});
+document.getElementById('btn-ruas').addEventListener('click',()=>{limparTileAtivo();tileGoogle.addTo(map);document.getElementById('btn-ruas').classList.add('ativo');modoAtual='google';});
 document.getElementById('btn-satelite').addEventListener('click',()=>{limparTileAtivo();tileGoogleSat.addTo(map);document.getElementById('btn-satelite').classList.add('ativo');modoAtual='sat';});
 document.getElementById('btn-hibrido').addEventListener('click',()=>{limparTileAtivo();tileGoogleHybrid.addTo(map);document.getElementById('btn-hibrido').classList.add('ativo');modoAtual='hibrido';});
 
@@ -493,19 +445,22 @@ function hexParaRgbObj(hex){hex=(hex||'#ffffff').replace('#','');if(hex.length==
 function hexOpacidadeParaRgba(hex,op){const {r,g,b}=hexParaRgbObj(hex);return `rgba(${r},${g},${b},${op})`;}
 
 // ─── CÁLCULO DO ÂNGULO DO LABEL ───────────────────────────────────────────────
+// Fixado no mapa: o label mantém sua orientação geográfica.
+// Como o leaflet-rotate gira o container do mapa, o ângulo do label deve ser
+// relativo ao mapa. O leaflet-rotate já cuida disso se usarmos o ângulo geográfico puro.
 function calcAngLabel(anguloRua, rotacaoManual, fixado){
   let a = ((anguloRua||0) + (rotacaoManual||0) + 360) % 360;
+  // Mantém legibilidade (não deixa texto de ponta-cabeça no Norte)
   if(a > 90 && a <= 270) a -= 180;
   if(a > 270) a -= 360;
   return a;
 }
 
-// ─── BUILD MARKER HTML — pin sempre visível, label no hover ───────────────────
 function buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo,scale=1){
   const acsLbl=acs||`#${id}`,acsCls=acs?'lbl-acs':'lbl-acs vazio',qtdLbl=pessoas>0?`${pessoas}`:'–',ang=calcAngLabel(anguloRua,rotacaoManual||0,fixado);
   const ct=corTexto||'#1a7f4b';const op=opacidadeFundo!==undefined?opacidadeFundo:1;const hexFundo=corFundo||'#ffffff';const cf=hexOpacidadeParaRgba(hexFundo,op);const bordaCor=op<0.1?'rgba(0,0,0,0.15)':(corFundo&&corFundo!=='#ffffff'?hexFundo+'55':'rgba(0,0,0,0.10)');
-  // Pin usa corTexto como cor; label flutuante aparece só no hover
-  return `<div class="marker-wrapper" id="marker-${id}" style="transform:scale(${scale})"><div class="marker-pin" style="background:${ct};"></div><div class="marker-label" style="--ang:${ang}deg;background:${cf};border-color:${bordaCor}"><span class="${acsCls}" style="color:${ct}">${escHtml(acsLbl)}</span><span class="lbl-sep">|</span><span class="lbl-qtd">${escHtml(qtdLbl)}<span class="lbl-ast" style="color:${ct}">*</span></span></div></div>`;
+  // A escala é aplicada diretamente no wrapper para evitar "pulos" visuais
+  return `<div class="marker-wrapper" id="marker-${id}" style="transform:scale(${scale})"><div class="marker-label" style="--ang:${ang}deg;background:${cf};border-color:${bordaCor}"><span class="${acsCls}" style="color:${ct}">${escHtml(acsLbl)}</span><span class="lbl-sep">|</span><span class="lbl-qtd">${escHtml(qtdLbl)}<span class="lbl-ast" style="color:${ct}">*</span></span></div></div>`;
 }
 function buildIcon(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo){
   const scale = calcZoomScale(map.getZoom());
