@@ -262,6 +262,8 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
         <button id="btn-ruas">🛣️ Ruas OSM</button>
         <button id="btn-capturar">🖼️ Salvar Mapa</button>
         <button id="btn-exportar">📋 Exportar JSON</button>
+        <button id="btn-importar">📥 Importar JSON</button>
+        <input type="file" id="input-importar" style="display:none" accept=".json"/>
         <button id="btn-limpar">🗑️ Limpar Tudo</button>
       </div>
       <div id="drag-ghost">📍</div>
@@ -709,10 +711,27 @@ document.getElementById('btn-zoom-mais').addEventListener('click',()=>setZoomPct
 document.getElementById('btn-zoom-reset').addEventListener('click',()=>setZoomPct(100));
 map.on('zoomend',sincronizarZoom);
 
-// ─── EXPORTAR ─────────────────────────────────────────────────────────────────
+// ─── EXPORTAR / IMPORTAR ──────────────────────────────────────────────────────
 document.getElementById('btn-exportar').addEventListener('click',()=>{
   const dados={lados:lados.map(l=>({id:l.id,rua:l.rua,lat:l.lat,lng:l.lng,acs:l.acs,pessoas:l.pessoas,rotacaoManual:l.rotacaoManual||0,fixado:!!l.fixado,corTexto:l.corTexto||'#1a7f4b',corFundo:l.corFundo||'#ffffff',opacidadeFundo:l.opacidadeFundo!==undefined?l.opacidadeFundo:1})),quarteiroesData:serializarQts()};
   const blob=new Blob([JSON.stringify(dados,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`acs_varjota_${new Date().toISOString().slice(0,10)}.json`;a.click();
+});
+document.getElementById('btn-importar').addEventListener('click',()=>document.getElementById('input-importar').click());
+document.getElementById('input-importar').addEventListener('change',function(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async function(ev){
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(!d.lados && !d.quarteiroesData) throw new Error('Arquivo JSON inválido.');
+      if(confirm('Isso irá substituir todos os dados atuais. Continuar?')){
+        await carregarDados(d.lados||[], d.quarteiroesData||[]);
+        mostrarToast('✅ Dados importados com sucesso!');
+      }
+    }catch(err){ alert('Erro ao importar: '+err.message); }
+    e.target.value='';
+  };
+  reader.readAsText(file);
 });
 
 // ─── CAPTURAR MAPA ────────────────────────────────────────────────────────────
