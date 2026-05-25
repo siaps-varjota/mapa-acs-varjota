@@ -455,23 +455,17 @@ function hexParaRgbObj(hex){hex=(hex||'#ffffff').replace('#','');if(hex.length==
 function hexOpacidadeParaRgba(hex,op){const {r,g,b}=hexParaRgbObj(hex);return `rgba(${r},${g},${b},${op})`;}
 
 // ─── CÁLCULO DO ÂNGULO DO LABEL ───────────────────────────────────────────────
-// CORRIGIDO: Dois modos distintos com comportamento claro e estável:
+// Sempre fixado no espaço geográfico: o label acompanha a orientação da rua
+// no mundo real. Quando o mapa rota, mapBearing é subtraído do ângulo da rua
+// para calcular o ângulo na tela → label permanece visualmente alinhado à rua.
 //
-// fixado=false → label acompanha a orientação da rua no mundo real.
-//   O CSS rotate() é relativo à TELA. Para o label ficar paralelo à rua:
-//   ang_tela = anguloRua (norte geográfico) - mapBearing (rotação da tela) + rotacaoManual
-//   Normaliza para [-90°, +90°] para evitar texto de cabeça para baixo.
+// "fixado" agora significa apenas "travar anguloRua contra auto-detecção via drag"
+// (não altera mais a fórmula de ângulo — comportamento idêntico ao modo livre).
 //
-// fixado=true → label tem ângulo FIXO na tela, não muda com a rotação do mapa.
-//   O rotacaoManual armazena o ângulo de tela capturado no momento do "fixar".
-//   Retornamos ele diretamente, sem subtrair mapBearing.
+// rotacaoManual = offset manual em graus geográficos (somado antes da conversão)
 function calcAngLabel(anguloRua, rotacaoManual, fixado){
-  // ── MODO FIXADO: ângulo absoluto na tela, imune à rotação do mapa ──────────
-  if(fixado) return (rotacaoManual||0);
-
-  // ── MODO LIVRE: acompanha a rua no mundo real ─────────────────────────────
   // Transforma ângulo-mundo → ângulo-tela subtraindo o bearing atual do mapa
-  let a = (anguloRua - mapBearing + (rotacaoManual||0) + 360) % 360;
+  let a = ((anguloRua||0) - mapBearing + (rotacaoManual||0) + 360) % 360;
   // Evita texto invertido: se >90° e <=270°, gira 180°
   if(a > 90 && a <= 270) a -= 180;
   // Normaliza para range limpo
@@ -503,9 +497,10 @@ async function adicionarLadoSilencioso(d){
     const _ll=e.target.getLatLng();
     const l=lados.find(x=>x.id===id);
     if(l){l.lat=_ll.lat;l.lng=_ll.lng;agendarSave();}
+    // Só re-detecta rua/ângulo se o ângulo não estiver travado
     buscarRuaEAngulo(_ll.lat,_ll.lng).then(({rua,angulo})=>{
       const l2=lados.find(x=>x.id===id);
-      if(l2){l2.rua=rua;l2.angulo=angulo;atualizarCardHeader(id);atualizarIconeMarcador(id);agendarSave();}
+      if(l2&&!l2.fixado){l2.rua=rua;l2.angulo=angulo;atualizarCardHeader(id);atualizarIconeMarcador(id);agendarSave();}
     });
   });
   lados.push({id,lat:d.lat,lng:d.lng,rua:d.rua,angulo:ar,rotacaoManual:rm,fixado:fx,acs:d.acs||'',pessoas:d.pessoas||0,corTexto:ct,corFundo:cf,opacidadeFundo:op,marker});
@@ -519,9 +514,10 @@ function adicionarLado(lat,lng,rua='Localização marcada',angulo=0){
     const _ll=e.target.getLatLng();
     const l=lados.find(x=>x.id===id);
     if(l){l.lat=_ll.lat;l.lng=_ll.lng;agendarSave();}
+    // Só re-detecta rua/ângulo se o ângulo não estiver travado
     buscarRuaEAngulo(_ll.lat,_ll.lng).then(({rua:nome,angulo:ang})=>{
       const l2=lados.find(x=>x.id===id);
-      if(l2){l2.rua=nome;l2.angulo=ang;atualizarCardHeader(id);atualizarIconeMarcador(id);agendarSave();}
+      if(l2&&!l2.fixado){l2.rua=nome;l2.angulo=ang;atualizarCardHeader(id);atualizarIconeMarcador(id);agendarSave();}
     });
   });
   lados.push({id,lat,lng,rua,angulo,rotacaoManual:0,fixado:false,acs:'',pessoas:0,corTexto:'#1a7f4b',corFundo:'#ffffff',opacidadeFundo:1,marker});
@@ -655,15 +651,16 @@ function renderCards(){
     const cRua=document.createElement('div');cRua.className='campo';cRua.innerHTML='<label>🏘️ Nome da Rua</label>';const iRua=document.createElement('input');iRua.type='text';iRua.placeholder='Ex.: Rua das Flores';iRua.value=lado.rua||'';iRua.addEventListener('input',function(){atualizarLado(lado.id,'rua',this.value);});cRua.appendChild(iRua);
     const cAcs=document.createElement('div');cAcs.className='campo';cAcs.innerHTML='<label>👤 Nome da ACS</label>';const iAcs=document.createElement('input');iAcs.type='text';iAcs.placeholder='Ex.: Maria da Silva';iAcs.value=lado.acs||'';iAcs.addEventListener('input',function(){atualizarLado(lado.id,'acs',this.value);const prev=body.querySelector('.prev-acs');if(prev){prev.textContent=this.value||`#${lado.id}`;prev.className='prev-acs'+(this.value?'':' vazio');}});cAcs.appendChild(iAcs);
     const cPes=document.createElement('div');cPes.className='campo';cPes.innerHTML='<label>👥 Total de pessoas</label>';const iPes=document.createElement('input');iPes.type='number';iPes.min='0';iPes.placeholder='0';iPes.value=lado.pessoas>0?lado.pessoas:'';iPes.addEventListener('input',function(){atualizarLado(lado.id,'pessoas',this.value);const prev=body.querySelector('.prev-qtd');if(prev){const v=parseInt(this.value,10)||0;prev.textContent=v>0?`${v}*`:'–*';}});cPes.appendChild(iPes);
+
     const cRot=document.createElement('div');cRot.className='campo-rotacao';
-    // Label da seção explica o modo ativo
+    // Sempre "no mapa" — o label é sempre fixado ao espaço geográfico
     const rotLabelEl=document.createElement('label');
-    rotLabelEl.textContent=lado.fixado?'🔄 Rotação do nome (fixado na tela)':'🔄 Rotação do nome no mapa';
+    rotLabelEl.textContent='🔄 Rotação do nome no mapa';
     cRot.appendChild(rotLabelEl);
 
     const preview=document.createElement('div');preview.className='rotacao-preview';const prevLabel=document.createElement('div');prevLabel.className='rotacao-preview-label';prevLabel.innerHTML=`<span class="${lado.acs?'prev-acs':'prev-acs vazio'}">${escHtml(lado.acs||`#${lado.id}`)}</span><span class="prev-qtd">${lado.pessoas>0?`${lado.pessoas}*`:'–*'}</span>`;
-    // Preview mostra o ângulo visual atual (já considera bearing se não fixado)
-    const angAtual=calcAngLabel(lado.angulo||0,lado.rotacaoManual||0,lado.fixado);
+    // Preview reflete o ângulo geográfico atual (já considera bearing do mapa)
+    const angAtual=calcAngLabel(lado.angulo||0,lado.rotacaoManual||0,false);
     prevLabel.style.transform=`rotate(${angAtual}deg)`;
     preview.appendChild(prevLabel);cRot.appendChild(preview);
 
@@ -678,12 +675,12 @@ function renderCards(){
     const bP10=document.createElement('button');bP10.textContent='↻';
     const bReset=document.createElement('button');bReset.textContent='0°';bReset.className='btn-rot-snap';
 
-    // apRL: ajusta rotacaoManual e atualiza preview e ícone no mapa
+    // apRL: offset manual em graus geográficos; preview sempre usa calcAngLabel (geográfico)
     function apRL(val){
       let v=Math.max(-180,Math.min(180,Math.round(val)));
       slider.value=String(v);valD.textContent=`${v}°`;
-      // Preview mostra ângulo visual resultante
-      const angVisual=lado.fixado?v:calcAngLabel(lado.angulo||0,v,false);
+      // Preview mostra o ângulo visual resultante (compensado pelo bearing do mapa)
+      const angVisual=calcAngLabel(lado.angulo||0,v,false);
       prevLabel.style.transform=`rotate(${angVisual}deg)`;
       atualizarLado(lado.id,'rotacaoManual',v);
     }
@@ -695,33 +692,27 @@ function renderCards(){
     slider.addEventListener('input',()=>apRL(parseFloat(slider.value)));
     controles.appendChild(bM10);controles.appendChild(bM1);controles.appendChild(wSlider);controles.appendChild(bP1);controles.appendChild(bP10);controles.appendChild(bReset);cRot.appendChild(controles);
 
+    // ── TRAVAR ÂNGULO DA RUA ────────────────────────────────────────────────
+    // Quando travado: arraste do marker NÃO atualiza anguloRua via geocode.
+    // O label continua fixado no mapa (acompanha bearing) em ambos os estados.
     const fixarRow=document.createElement('div');
     fixarRow.className='fixar-row'+(lado.fixado?' ativo':'');
-    fixarRow.innerHTML=`<span>📌</span><span class="fixar-txt">${lado.fixado?'Nome fixado na tela':'Fixar posição do nome'}</span><div class="fixar-toggle"></div>`;
+    fixarRow.innerHTML=`<span>📌</span><span class="fixar-txt">${lado.fixado?'Ângulo da rua travado no mapa':'Travar ângulo da rua no mapa'}</span><div class="fixar-toggle"></div>`;
 
     fixarRow.addEventListener('click',()=>{
       const nF=!lado.fixado;
-      if(nF){
-        // CORRIGIDO: ao fixar, captura o ângulo VISUAL atual na tela
-        // (anguloRua - mapBearing + rotacaoManual, normalizado)
-        // e armazena como rotacaoManual. A partir daí calcAngLabel(fixado=true)
-        // retorna esse valor sem subtrair mapBearing → permanece estático.
-        const angVisualAtual=calcAngLabel(lado.angulo||0,lado.rotacaoManual||0,false);
-        const v=Math.round(angVisualAtual);
-        lado.rotacaoManual=v;
-        slider.value=String(v);valD.textContent=`${v}°`;
-        prevLabel.style.transform=`rotate(${v}deg)`;
-      }else{
-        // Ao desfixar: mantém rotacaoManual como offset manual
-        // (o label volta a seguir a rua + offset)
+      if(!nF){
+        // Ao destravar: zera offset manual; retoma auto-detecção na próxima vez
         lado.rotacaoManual=0;
         slider.value='0';valD.textContent='0°';
         const angVisual=calcAngLabel(lado.angulo||0,0,false);
         prevLabel.style.transform=`rotate(${angVisual}deg)`;
       }
+      // Ao travar (nF=true): mantém anguloRua atual; drag não o substituirá.
+      // O label continua fixado ao mapa em ambos os casos.
       fixarRow.classList.toggle('ativo',nF);
-      fixarRow.querySelector('.fixar-txt').textContent=nF?'Nome fixado na tela':'Fixar posição do nome';
-      rotLabelEl.textContent=nF?'🔄 Rotação do nome (fixado na tela)':'🔄 Rotação do nome no mapa';
+      fixarRow.querySelector('.fixar-txt').textContent=nF?'Ângulo da rua travado no mapa':'Travar ângulo da rua no mapa';
+      rotLabelEl.textContent='🔄 Rotação do nome no mapa';
       atualizarLado(lado.id,'fixado',nF);
     });
     cRot.appendChild(fixarRow);
