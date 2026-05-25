@@ -145,9 +145,9 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 #rot-range{width:60px;height:4px;accent-color:var(--verde2);cursor:pointer;border:none;background:transparent;padding:0;}
 #rot-input{width:38px;padding:1px 3px;border:1px solid var(--borda);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--texto);background:var(--cinza);text-align:center;outline:none;height:22px;-moz-appearance:textfield;}
 #rot-input::-webkit-inner-spin-button,#rot-input::-webkit-outer-spin-button{-webkit-appearance:none;}
-#rot-input:focus{border-color:var(--verde2);background:#fff;}
+#rot-input:focus{border-color:var(--verde2);}
 #zoom-controls{display:flex;align-items:center;gap:3px;background:#fff;border:1px solid var(--borda);border-radius:8px;padding:4px 7px;height:32px;flex-shrink:0;}
-#zoom-controls button{width:24px;height:24px;border:1px solid var(--borda);border-radius:5px;background:var(--cinza);cursor:pointer;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;font-family:'Sora',sans-serif;}
+#zoom-controls button{width:24px;height:24px;border:1px solid var(--borda);border-radius:5px;background:var(--cinza);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;font-family:'Sora',sans-serif;font-weight:600;}
 #zoom-controls button:hover{background:var(--borda);border-color:var(--verde2);}
 #btn-zoom-reset{font-size:11px!important;color:var(--azul)!important;width:auto!important;padding:0 6px!important;}
 #zoom-range{width:70px;height:4px;accent-color:var(--verde2);cursor:pointer;border:none;background:transparent;padding:0;}
@@ -250,8 +250,8 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
           <button id="btn-rot-esq">↺</button>
           <button id="btn-rot-menos1" style="font-size:15px">−</button>
           <div style="display:flex;align-items:center;gap:4px;">
-            <input id="rot-range" type="range" min="0" max="359" step="1" value="0"/>
-            <input id="rot-input" type="number" min="0" max="359" value="0"/>
+            <input id="rot-range" type="range" min="0" max="359" step="1" value="333"/>
+            <input id="rot-input" type="number" min="0" max="359" value="333"/>
           </div>
           <button id="btn-rot-mais1" style="font-size:15px">+</button>
           <button id="btn-rot-dir">↻</button>
@@ -321,7 +321,7 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 </div>
 <script>
 // ─── ESTADO ───────────────────────────────────────────────────────────────────
-let lados=[],quarteiroesData=[],proximoId=1,proximoQtId=1,mapBearing=0,painelAberto=true;
+let lados=[],quarteiroesData=[],proximoId=1,proximoQtId=1,mapBearing=333,painelAberto=true;
 const ICON_W=84,ICON_H=28;
 let _handleGroup=null,_handleQtId=null;
 
@@ -379,23 +379,10 @@ function limparTileAtivo(){
   [tileGoogle,tileGoogleSat,tileGoogleHybrid,tileOSM].forEach(t=>{if(map.hasLayer(t))map.removeLayer(t);});
   ['btn-satelite','btn-hibrido','btn-ruas'].forEach(id=>document.getElementById(id).classList.remove('ativo'));
 }
-document.getElementById('btn-satelite').addEventListener('click',()=>{
-  if(modoAtual==='satelite'){limparTileAtivo();tileGoogle.addTo(map);modoAtual='google';return;}
-  limparTileAtivo();tileGoogleSat.addTo(map);modoAtual='satelite';
-  const b=document.getElementById('btn-satelite');b.textContent='🛰️ Satélite ✓';b.classList.add('ativo');
-});
-document.getElementById('btn-hibrido').addEventListener('click',()=>{
-  if(modoAtual==='hibrido'){limparTileAtivo();tileGoogle.addTo(map);modoAtual='google';return;}
-  limparTileAtivo();tileGoogleHybrid.addTo(map);modoAtual='hibrido';
-  const b=document.getElementById('btn-hibrido');b.textContent='🗺️ Híbrido ✓';b.classList.add('ativo');
-});
-document.getElementById('btn-ruas').addEventListener('click',()=>{
-  if(modoAtual==='osm'){limparTileAtivo();tileGoogle.addTo(map);modoAtual='google';document.getElementById('btn-ruas').textContent='🛣️ Ruas OSM';return;}
-  limparTileAtivo();tileOSM.addTo(map);modoAtual='osm';
-  const b=document.getElementById('btn-ruas');b.textContent='🛣️ OSM ✓';b.classList.add('ativo');
-});
+document.getElementById('btn-ruas').addEventListener('click',()=>{limparTileAtivo();tileOSM.addTo(map);document.getElementById('btn-ruas').classList.add('ativo');modoAtual='osm';});
+document.getElementById('btn-satelite').addEventListener('click',()=>{limparTileAtivo();tileGoogleSat.addTo(map);document.getElementById('btn-satelite').classList.add('ativo');modoAtual='sat';});
+document.getElementById('btn-hibrido').addEventListener('click',()=>{limparTileAtivo();tileGoogleHybrid.addTo(map);document.getElementById('btn-hibrido').classList.add('ativo');modoAtual='hibrido';});
 
-// ─── CARREGAR DADOS ───────────────────────────────────────────────────────────
 async function carregarDados(dadosLados,dadosQts){
   esconderHandles();
   lados.forEach(l=>{try{map.removeLayer(l.marker);}catch{}});
@@ -455,20 +442,16 @@ function hexParaRgbObj(hex){hex=(hex||'#ffffff').replace('#','');if(hex.length==
 function hexOpacidadeParaRgba(hex,op){const {r,g,b}=hexParaRgbObj(hex);return `rgba(${r},${g},${b},${op})`;}
 
 // ─── CÁLCULO DO ÂNGULO DO LABEL ───────────────────────────────────────────────
-// Sempre fixado no espaço geográfico: o label acompanha a orientação da rua
-// no mundo real. Quando o mapa rota, mapBearing é subtraído do ângulo da rua
-// para calcular o ângulo na tela → label permanece visualmente alinhado à rua.
-//
-// "fixado" agora significa apenas "travar anguloRua contra auto-detecção via drag"
-// (não altera mais a fórmula de ângulo — comportamento idêntico ao modo livre).
-//
-// rotacaoManual = offset manual em graus geográficos (somado antes da conversão)
+// O comportamento esperado é que o label fique fixo geograficamente.
+// Como o leaflet-rotate gira o container do mapa, se definirmos um ângulo fixo no CSS,
+// ele já acompanhará a rotação do mapa naturalmente se não tentarmos "compensar" a rotação da tela.
 function calcAngLabel(anguloRua, rotacaoManual, fixado){
-  // Transforma ângulo-mundo → ângulo-tela subtraindo o bearing atual do mapa
-  let a = ((anguloRua||0) - mapBearing + (rotacaoManual||0) + 360) % 360;
-  // Evita texto invertido: se >90° e <=270°, gira 180°
+  // Ângulo geográfico total (em relação ao Norte)
+  let a = ((anguloRua||0) + (rotacaoManual||0) + 360) % 360;
+  // Evita texto de cabeça para baixo em relação à visualização padrão (Norte para cima)
+  // Nota: Se o usuário quiser que o texto nunca inverta independente da rotação do mapa, 
+  // precisaríamos incluir o mapBearing aqui, mas o pedido é "fixado no mapa".
   if(a > 90 && a <= 270) a -= 180;
-  // Normaliza para range limpo
   if(a > 270) a -= 360;
   return a;
 }
@@ -496,12 +479,21 @@ async function adicionarLadoSilencioso(d){
   marker.on('dragend',(e)=>{
     const _ll=e.target.getLatLng();
     const l=lados.find(x=>x.id===id);
-    if(l){l.lat=_ll.lat;l.lng=_ll.lng;agendarSave();}
-    // Só re-detecta rua/ângulo se o ângulo não estiver travado
-    buscarRuaEAngulo(_ll.lat,_ll.lng).then(({rua,angulo})=>{
-      const l2=lados.find(x=>x.id===id);
-      if(l2&&!l2.fixado){l2.rua=rua;l2.angulo=angulo;atualizarCardHeader(id);atualizarIconeMarcador(id);agendarSave();}
-    });
+    if(l){
+      l.lat=_ll.lat; l.lng=_ll.lng;
+      // Quando movemos, apenas recalculamos se NÃO estiver fixado
+      if(!l.fixado){
+        buscarRuaEAngulo(_ll.lat,_ll.lng).then(({rua,angulo})=>{
+          const l2=lados.find(x=>x.id===id);
+          if(l2 && !l2.fixado){
+            l2.rua=rua; l2.angulo=angulo;
+            atualizarCardHeader(id); atualizarIconeMarcador(id); agendarSave();
+          }
+        });
+      } else {
+        agendarSave();
+      }
+    }
   });
   lados.push({id,lat:d.lat,lng:d.lng,rua:d.rua,angulo:ar,rotacaoManual:rm,fixado:fx,acs:d.acs||'',pessoas:d.pessoas||0,corTexto:ct,corFundo:cf,opacidadeFundo:op,marker});
 }
@@ -513,12 +505,17 @@ function adicionarLado(lat,lng,rua='Localização marcada',angulo=0){
   marker.on('dragend',(e)=>{
     const _ll=e.target.getLatLng();
     const l=lados.find(x=>x.id===id);
-    if(l){l.lat=_ll.lat;l.lng=_ll.lng;agendarSave();}
-    // Só re-detecta rua/ângulo se o ângulo não estiver travado
-    buscarRuaEAngulo(_ll.lat,_ll.lng).then(({rua:nome,angulo:ang})=>{
-      const l2=lados.find(x=>x.id===id);
-      if(l2&&!l2.fixado){l2.rua=nome;l2.angulo=ang;atualizarCardHeader(id);atualizarIconeMarcador(id);agendarSave();}
-    });
+    if(l){
+      l.lat=_ll.lat; l.lng=_ll.lng;
+      if(!l.fixado){
+        buscarRuaEAngulo(_ll.lat,_ll.lng).then(({rua:nome,angulo:ang})=>{
+          const l2=lados.find(x=>x.id===id);
+          if(l2&&!l2.fixado){l2.rua=nome;l2.angulo=ang;atualizarCardHeader(id);atualizarIconeMarcador(id);agendarSave();}
+        });
+      } else {
+        agendarSave();
+      }
+    }
   });
   lados.push({id,lat,lng,rua,angulo,rotacaoManual:0,fixado:false,acs:'',pessoas:0,corTexto:'#1a7f4b',corFundo:'#ffffff',opacidadeFundo:1,marker});
   if(!painelAberto)togglePainel();renderCards();atualizarResumo();abrirCard(id);atualizarBadge();agendarSave();setTimeout(atualizarEscalaZoom,50);
@@ -607,147 +604,60 @@ function renderQtCards(){
     [3,4,5,6,8,10].forEach(n=>{const b=document.createElement('button');b.type='button';b.style.cssText='flex:1;min-width:36px;padding:4px 2px;border-radius:6px;border:1.5px solid var(--borda);background:var(--cinza);cursor:pointer;font-size:10px;font-weight:700;color:var(--muted);font-family:"Sora",sans-serif;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .15s;';b.innerHTML=svgPoligono(n,false)+`<span>${n}</span>`;if((qt.nlados||resolverNLados(qt.forma))===n){b.style.borderColor='var(--roxo)';b.style.background='var(--roxo-bg)';b.style.color='var(--roxo)';}b.addEventListener('click',()=>aplicarNLados(n));fRapidos.appendChild(b);});
     function atualizarBotoesRapidos(n){fRapidos.querySelectorAll('button').forEach((b,i)=>{const v=[3,4,5,6,8,10][i];if(v===n){b.style.borderColor='var(--roxo)';b.style.background='var(--roxo-bg)';b.style.color='var(--roxo)';}else{b.style.borderColor='var(--borda)';b.style.background='var(--cinza)';b.style.color='var(--muted)';}});}
     function aplicarNLados(n){n=Math.max(3,Math.min(12,Math.round(n)));qt.nlados=n;qt.forma=n;qt.vertices=null;fInput.value=n;fNome.textContent=nomeForma(n);fPrevInner.innerHTML=svgPoligono(n,true);atualizarBotoesRapidos(n);const ic=card.querySelector('.icone');if(ic)ic.textContent=iconeForma(n);const sub=card.querySelector('.sub');if(sub)sub.textContent=`#${qt.id} · ${nomeForma(n)} · ${qt.largura}m × ${qt.altura}m`;atualizarGeometriaQt(qt.id);agendarSave();if(_handleQtId===qt.id)mostrarHandles(qt.id);}
-    fMenos.addEventListener('click',()=>aplicarNLados((qt.nlados||4)-1));fMais.addEventListener('click',()=>aplicarNLados((qt.nlados||4)+1));fInput.addEventListener('change',()=>aplicarNLados(parseInt(fInput.value)||4));fInput.addEventListener('keydown',e=>{if(e.key==='ArrowUp'){e.preventDefault();aplicarNLados((qt.nlados||4)+1);}if(e.key==='ArrowDown'){e.preventDefault();aplicarNLados((qt.nlados||4)-1);}});
-    fCtrl.appendChild(fMenos);fCtrl.appendChild(fInput);fCtrl.appendChild(fMais);fCtrl.appendChild(fNome);fWrap.appendChild(fCtrl);fWrap.appendChild(fPrev);fWrap.appendChild(fRapidos);fD.appendChild(fWrap);
-    const cC=document.createElement('div');cC.className='campo';cC.innerHTML='<label>🎨 Cor</label>';const iC=document.createElement('input');iC.type='color';iC.value=qt.cor;iC.addEventListener('input',function(){qt.cor=this.value;atualizarGeometriaQt(qt.id);agendarSave();});cC.appendChild(iC);
-    const dRow=document.createElement('div');dRow.className='dim-row';
-    const cL=document.createElement('div');cL.className='campo';cL.innerHTML='<label>↔ Largura (m)</label>';const iL=document.createElement('input');iL.type='number';iL.min='5';iL.max='2000';iL.step='5';iL.value=qt.largura;iL.addEventListener('input',function(){if(qt.vertices)return;qt.largura=parseFloat(this.value)||50;atualizarGeometriaQt(qt.id);const sub=card.querySelector('.sub');if(sub)sub.textContent=`#${qt.id} · ${nomeForma(qt.nlados||resolverNLados(qt.forma))} · ${qt.largura}m × ${qt.altura}m`;agendarSave();});cL.appendChild(iL);
-    const cA=document.createElement('div');cA.className='campo';cA.innerHTML='<label>↕ Altura (m)</label>';const iA=document.createElement('input');iA.type='number';iA.min='5';iA.max='2000';iA.step='5';iA.value=qt.altura;iA.addEventListener('input',function(){if(qt.vertices)return;qt.altura=parseFloat(this.value)||30;atualizarGeometriaQt(qt.id);const sub=card.querySelector('.sub');if(sub)sub.textContent=`#${qt.id} · ${nomeForma(qt.nlados||resolverNLados(qt.forma))} · ${qt.largura}m × ${qt.altura}m`;agendarSave();});cA.appendChild(iA);
-    dRow.appendChild(cL);dRow.appendChild(cA);
-    if(qt.vertices){const nota=document.createElement('p');nota.style.cssText='font-size:10px;color:var(--muted);font-style:italic;margin-bottom:6px;';nota.textContent='Largura/altura desativadas no modo livre. Clique ↺ Resetar para voltar.';dRow.appendChild(nota);}
-    const cRot=document.createElement('div');cRot.className='campo-rot';cRot.innerHTML='<label>🔄 Ângulo base</label>';
-    const rRow=document.createElement('div');rRow.className='rot-row';const bm10=document.createElement('button');bm10.textContent='↺';const bm1=document.createElement('button');bm1.textContent='−';bm1.style.fontSize='15px';
-    const slQt=document.createElement('input');slQt.type='range';slQt.min='0';slQt.max='359';slQt.step='1';slQt.value=String(((qt.angulo%360)+360)%360);if(qt.vertices)slQt.disabled=true;
-    const rv=document.createElement('span');rv.className='rv';rv.textContent=`${Math.round(qt.angulo)}°`;const bp1=document.createElement('button');bp1.textContent='+';bp1.style.fontSize='15px';const bp10=document.createElement('button');bp10.textContent='↻';const bz=document.createElement('button');bz.textContent='0°';bz.style.cssText='font-size:10px;color:var(--azul);width:auto;padding:0 6px;';
-    function apAng(v){if(qt.vertices)return;v=((Math.round(v)%360)+360)%360;qt.angulo=v;slQt.value=v;rv.textContent=`${v}°`;atualizarGeometriaQt(qt.id);const sub2=card.querySelector('.sub2');if(sub2&&!qt.vertices)sub2.textContent=`Arraste no mapa para mover · ${v}°`;agendarSave();}
-    bm10.addEventListener('click',()=>apAng(qt.angulo-10));bm1.addEventListener('click',()=>apAng(qt.angulo-1));bp1.addEventListener('click',()=>apAng(qt.angulo+1));bp10.addEventListener('click',()=>apAng(qt.angulo+10));bz.addEventListener('click',()=>apAng(0));slQt.addEventListener('input',()=>apAng(parseFloat(slQt.value)));
-    rRow.appendChild(bm10);rRow.appendChild(bm1);rRow.appendChild(slQt);rRow.appendChild(rv);rRow.appendChild(bp1);rRow.appendChild(bp10);rRow.appendChild(bz);cRot.appendChild(rRow);
-    const cCoresLados=document.createElement('div');cCoresLados.className='campo';cCoresLados.innerHTML='<label>🎨 Cor de cada lado</label>';
-    const coresLadosWrap=document.createElement('div');coresLadosWrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:#fff;border:1px solid var(--borda);border-radius:8px;';
-    function renderCoresLados(){
-      coresLadosWrap.innerHTML='';const n=qt.nlados||resolverNLados(qt.forma);if(!qt.coresLados||qt.coresLados.length!==n)qt.coresLados=Array.from({length:n},()=>qt.cor||'#6a1b9a');
-      qt.coresLados.forEach((cor,i)=>{const wrap=document.createElement('label');wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9px;font-weight:700;color:var(--muted);cursor:pointer;min-width:36px;';wrap.textContent='Lado '+(i+1);const inp=document.createElement('input');inp.type='color';inp.value=cor;inp.style.cssText='width:32px;height:26px;padding:1px;border:1px solid var(--borda);border-radius:5px;cursor:pointer;';inp.addEventListener('input',function(){qt.coresLados[i]=this.value;if(qt.linhas&&qt.linhas[i])qt.linhas[i].setStyle({color:this.value});agendarSave();});wrap.appendChild(inp);coresLadosWrap.appendChild(wrap);});
-      const bTodos=document.createElement('button');bTodos.type='button';bTodos.style.cssText='font-size:9px;font-weight:700;color:var(--azul);background:rgba(21,101,192,.07);border:1px solid #90caf9;border-radius:6px;padding:3px 7px;cursor:pointer;align-self:flex-end;font-family:"Sora",sans-serif;white-space:nowrap;';bTodos.textContent='= Todos iguais';bTodos.addEventListener('click',()=>{const primeira=qt.coresLados[0]||qt.cor;qt.coresLados=qt.coresLados.map(()=>primeira);(qt.linhas||[]).forEach(l=>l.setStyle({color:primeira}));renderCoresLados();agendarSave();});coresLadosWrap.appendChild(bTodos);
-    }
-    renderCoresLados();cCoresLados.appendChild(coresLadosWrap);body.appendChild(cCoresLados);
-    const bAl=document.createElement('button');bAl.style.cssText='display:flex;align-items:center;gap:5px;background:rgba(21,101,192,.08);border:1px solid #90caf9;color:#1565c0;border-radius:7px;padding:6px 12px;cursor:pointer;font-family:"Sora",sans-serif;font-size:11px;font-weight:600;width:100%;justify-content:center;margin-bottom:4px;';bAl.textContent='🗺️ Alinhar com rotação do mapa';bAl.addEventListener('click',()=>apAng(mapBearing));
-    const bRm=document.createElement('button');bRm.className='btn-remover-qt';bRm.textContent='🗑️ Remover quarteirão';bRm.addEventListener('click',()=>removerQuarteirao(qt.id));
-    body.appendChild(fD);body.appendChild(cC);body.appendChild(dRow);body.appendChild(cRot);body.appendChild(bAl);body.appendChild(bRm);card.appendChild(hdr);card.appendChild(body);lista.appendChild(card);
+    fMenos.addEventListener('click',()=>aplicarNLados((qt.nlados||4)-1));fMais.addEventListener('click',()=>aplicarNLados((qt.nlados||4)+1));fInput.addEventListener('change',()=>aplicarNLados(parseInt(fInput.value)));fCtrl.appendChild(fMenos);fCtrl.appendChild(fInput);fCtrl.appendChild(fMais);fCtrl.appendChild(fNome);fWrap.appendChild(fCtrl);fWrap.appendChild(fPrev);fWrap.appendChild(fRapidos);fD.appendChild(fWrap);body.appendChild(fD);
+    const dimRow=document.createElement('div');dimRow.className='dim-row';
+    const cL=document.createElement('div');cL.className='campo';cL.innerHTML='<label>↔️ Largura (m)</label>';const iL=document.createElement('input');iL.type='number';iL.value=qt.largura;iL.addEventListener('input',()=>{qt.largura=parseInt(iL.value)||10;qt.vertices=null;atualizarGeometriaQt(qt.id);agendarSave();});cL.appendChild(iL);dimRow.appendChild(cL);
+    const cA=document.createElement('div');cA.className='campo';cA.innerHTML='<label>↕️ Altura (m)</label>';const iA=document.createElement('input');iA.type='number';iA.value=qt.altura;iA.addEventListener('input',()=>{qt.altura=parseInt(iA.value)||10;qt.vertices=null;atualizarGeometriaQt(qt.id);agendarSave();});cA.appendChild(iA);dimRow.appendChild(cA);
+    body.appendChild(dimRow);
+    const cR=document.createElement('div');cR.className='campo-rot';cR.innerHTML='<label>🔄 Rotação Geográfica</label>';const rRow=document.createElement('div');rRow.className='rot-row';
+    const rM=document.createElement('button');rM.textContent='−';rM.addEventListener('click',()=>{qt.angulo=(qt.angulo-5+360)%360;qt.vertices=null;iRange.value=qt.angulo;vRot.textContent=Math.round(qt.angulo)+'°';atualizarGeometriaQt(qt.id);agendarSave();});
+    const iRange=document.createElement('input');iRange.type='range';iRange.min='0';iRange.max='359';iRange.value=qt.angulo;
+    const vRot=document.createElement('div');vRot.className='rv';vRot.textContent=Math.round(qt.angulo)+'°';
+    iRange.addEventListener('input',()=>{qt.angulo=parseInt(iRange.value);qt.vertices=null;vRot.textContent=qt.angulo+'°';atualizarGeometriaQt(qt.id);agendarSave();});
+    const rP=document.createElement('button');rP.textContent='+';rP.addEventListener('click',()=>{qt.angulo=(qt.angulo+5)%360;qt.vertices=null;iRange.value=qt.angulo;vRot.textContent=Math.round(qt.angulo)+'°';atualizarGeometriaQt(qt.id);agendarSave();});
+    rRow.appendChild(rM);rRow.appendChild(iRange);rRow.appendChild(vRot);rRow.appendChild(rP);cR.appendChild(rRow);body.appendChild(cR);
+    const cC=document.createElement('div');cC.className='campo';cC.innerHTML='<label>🎨 Cor do Quarteirão</label>';const iC=document.createElement('input');iC.type='color';iC.value=qt.cor;iC.addEventListener('input',()=>{qt.cor=iC.value;qt.coresLados=null;atualizarGeometriaQt(qt.id);agendarSave();});cC.appendChild(iC);body.appendChild(cC);
+    const btnRem=document.createElement('button');btnRem.className='btn-remover-qt';btnRem.innerHTML='🗑️ Remover Quarteirão';btnRem.onclick=()=>removerQuarteirao(qt.id);body.appendChild(btnRem);
+    card.appendChild(hdr);card.appendChild(body);lista.appendChild(card);
   });
 }
-function toggleQtCard(id){const c=document.getElementById(`qt-card-${id}`);if(c)c.classList.toggle('aberto');}
-function abrirQtCard(id){const c=document.getElementById(`qt-card-${id}`);if(c){c.classList.add('aberto');setTimeout(()=>c.scrollIntoView({behavior:'smooth',block:'nearest'}),50);}}
+function toggleQtCard(id){const c=document.getElementById(`qt-card-${id}`);const aberto=c.classList.contains('aberto');document.querySelectorAll('.qt-card').forEach(x=>x.classList.remove('aberto'));if(!aberto)c.classList.add('aberto');}
+function abrirQtCard(id){document.querySelectorAll('.qt-card').forEach(x=>x.classList.remove('aberto'));const c=document.getElementById(`qt-card-${id}`);if(c){c.classList.add('aberto');c.scrollIntoView({behavior:'smooth',block:'nearest'});}}
 
 // ─── RENDER CARDS LADOS ───────────────────────────────────────────────────────
 function renderCards(){
   const lista=document.getElementById('lados-lista'),h3=lista.querySelector('h3');lista.innerHTML='';lista.appendChild(h3);
-  if(!lados.length){const v=document.createElement('p');v.style.cssText='font-size:12px;color:var(--muted);font-style:italic;margin-top:6px';v.textContent='Nenhum lado marcado. Arraste 📍 para o mapa.';lista.appendChild(v);return;}
-  lados.forEach(lado=>{
-    const card=document.createElement('div');card.className='lado-card'+(lado.acs||lado.pessoas?' preenchido':'');card.id=`card-${lado.id}`;
+  if(!lados.length){const p=document.createElement('p');p.style.cssText='font-size:12px;color:var(--muted);font-style:italic;margin-top:6px';p.textContent='Nenhum lado marcado. Arraste 📍 para o mapa.';lista.appendChild(p);return;}
+  lados.forEach(l=>{
+    const card=document.createElement('div');card.className='lado-card';card.id=`card-${l.id}`;if(l.acs||l.pessoas)card.classList.add('preenchido');
     const hdr=document.createElement('div');hdr.className='lado-card-header';
-    hdr.innerHTML=`<div class="icone">📍</div><div class="info"><div class="rua" title="${escHtml(lado.rua)}">#${lado.id} — ${escHtml(lado.rua)}</div><div class="sub">${lado.acs?escHtml(lado.acs):'ACS não definida'} · ${lado.pessoas||0} pessoas</div></div><span class="toggle">⌄</span>`;
-    hdr.addEventListener('click',()=>toggleCard(lado.id));
+    hdr.innerHTML=`<div class="icone">📍</div><div class="info"><div class="rua" title="${l.rua}">#${l.id} — ${l.rua}</div><div class="sub">${l.acs||'ACS não definida'} · ${l.pessoas||0} pessoas</div></div><span class="toggle">⌄</span>`;
+    hdr.onclick=()=>toggleCard(l.id);
     const body=document.createElement('div');body.className='lado-card-body';
-    const cRua=document.createElement('div');cRua.className='campo';cRua.innerHTML='<label>🏘️ Nome da Rua</label>';const iRua=document.createElement('input');iRua.type='text';iRua.placeholder='Ex.: Rua das Flores';iRua.value=lado.rua||'';iRua.addEventListener('input',function(){atualizarLado(lado.id,'rua',this.value);});cRua.appendChild(iRua);
-    const cAcs=document.createElement('div');cAcs.className='campo';cAcs.innerHTML='<label>👤 Nome da ACS</label>';const iAcs=document.createElement('input');iAcs.type='text';iAcs.placeholder='Ex.: Maria da Silva';iAcs.value=lado.acs||'';iAcs.addEventListener('input',function(){atualizarLado(lado.id,'acs',this.value);const prev=body.querySelector('.prev-acs');if(prev){prev.textContent=this.value||`#${lado.id}`;prev.className='prev-acs'+(this.value?'':' vazio');}});cAcs.appendChild(iAcs);
-    const cPes=document.createElement('div');cPes.className='campo';cPes.innerHTML='<label>👥 Total de pessoas</label>';const iPes=document.createElement('input');iPes.type='number';iPes.min='0';iPes.placeholder='0';iPes.value=lado.pessoas>0?lado.pessoas:'';iPes.addEventListener('input',function(){atualizarLado(lado.id,'pessoas',this.value);const prev=body.querySelector('.prev-qtd');if(prev){const v=parseInt(this.value,10)||0;prev.textContent=v>0?`${v}*`:'–*';}});cPes.appendChild(iPes);
-
-    const cRot=document.createElement('div');cRot.className='campo-rotacao';
-    // Sempre "no mapa" — o label é sempre fixado ao espaço geográfico
-    const rotLabelEl=document.createElement('label');
-    rotLabelEl.textContent='🔄 Rotação do nome no mapa';
-    cRot.appendChild(rotLabelEl);
-
-    const preview=document.createElement('div');preview.className='rotacao-preview';const prevLabel=document.createElement('div');prevLabel.className='rotacao-preview-label';prevLabel.innerHTML=`<span class="${lado.acs?'prev-acs':'prev-acs vazio'}">${escHtml(lado.acs||`#${lado.id}`)}</span><span class="prev-qtd">${lado.pessoas>0?`${lado.pessoas}*`:'–*'}</span>`;
-    // Preview reflete o ângulo geográfico atual (já considera bearing do mapa)
-    const angAtual=calcAngLabel(lado.angulo||0,lado.rotacaoManual||0,false);
-    prevLabel.style.transform=`rotate(${angAtual}deg)`;
-    preview.appendChild(prevLabel);cRot.appendChild(preview);
-
-    const controles=document.createElement('div');controles.className='rotacao-controles';
-    const bM10=document.createElement('button');bM10.textContent='↺';
-    const bM1=document.createElement('button');bM1.textContent='−';bM1.style.fontSize='16px';bM1.style.fontWeight='700';
-    const wSlider=document.createElement('div');wSlider.className='rot-input-wrap';
-    const slider=document.createElement('input');slider.type='range';slider.min='-180';slider.max='180';slider.step='1';slider.value=String(lado.rotacaoManual||0);
-    const valD=document.createElement('span');valD.className='rot-val';valD.textContent=`${lado.rotacaoManual||0}°`;
-    wSlider.appendChild(slider);wSlider.appendChild(valD);
-    const bP1=document.createElement('button');bP1.textContent='+';bP1.style.fontSize='16px';bP1.style.fontWeight='700';
-    const bP10=document.createElement('button');bP10.textContent='↻';
-    const bReset=document.createElement('button');bReset.textContent='0°';bReset.className='btn-rot-snap';
-
-    // apRL: offset manual em graus geográficos; preview sempre usa calcAngLabel (geográfico)
-    function apRL(val){
-      let v=Math.max(-180,Math.min(180,Math.round(val)));
-      slider.value=String(v);valD.textContent=`${v}°`;
-      // Preview mostra o ângulo visual resultante (compensado pelo bearing do mapa)
-      const angVisual=calcAngLabel(lado.angulo||0,v,false);
-      prevLabel.style.transform=`rotate(${angVisual}deg)`;
-      atualizarLado(lado.id,'rotacaoManual',v);
-    }
-    bM10.addEventListener('click',()=>apRL((lado.rotacaoManual||0)-10));
-    bM1.addEventListener('click',()=>apRL((lado.rotacaoManual||0)-1));
-    bP1.addEventListener('click',()=>apRL((lado.rotacaoManual||0)+1));
-    bP10.addEventListener('click',()=>apRL((lado.rotacaoManual||0)+10));
-    bReset.addEventListener('click',()=>apRL(0));
-    slider.addEventListener('input',()=>apRL(parseFloat(slider.value)));
-    controles.appendChild(bM10);controles.appendChild(bM1);controles.appendChild(wSlider);controles.appendChild(bP1);controles.appendChild(bP10);controles.appendChild(bReset);cRot.appendChild(controles);
-
-    // ── TRAVAR ÂNGULO DA RUA ────────────────────────────────────────────────
-    // Quando travado: arraste do marker NÃO atualiza anguloRua via geocode.
-    // O label continua fixado no mapa (acompanha bearing) em ambos os estados.
-    const fixarRow=document.createElement('div');
-    fixarRow.className='fixar-row'+(lado.fixado?' ativo':'');
-    fixarRow.innerHTML=`<span>📌</span><span class="fixar-txt">${lado.fixado?'Ângulo da rua travado no mapa':'Travar ângulo da rua no mapa'}</span><div class="fixar-toggle"></div>`;
-
-    fixarRow.addEventListener('click',()=>{
-      const nF=!lado.fixado;
-      if(!nF){
-        // Ao destravar: zera offset manual; retoma auto-detecção na próxima vez
-        lado.rotacaoManual=0;
-        slider.value='0';valD.textContent='0°';
-        const angVisual=calcAngLabel(lado.angulo||0,0,false);
-        prevLabel.style.transform=`rotate(${angVisual}deg)`;
-      }
-      // Ao travar (nF=true): mantém anguloRua atual; drag não o substituirá.
-      // O label continua fixado ao mapa em ambos os casos.
-      fixarRow.classList.toggle('ativo',nF);
-      fixarRow.querySelector('.fixar-txt').textContent=nF?'Ângulo da rua travado no mapa':'Travar ângulo da rua no mapa';
-      rotLabelEl.textContent='🔄 Rotação do nome no mapa';
-      atualizarLado(lado.id,'fixado',nF);
-    });
-    cRot.appendChild(fixarRow);
-
-    const cCores=document.createElement('div');cCores.className='campo';cCores.innerHTML='<label>🎨 Cores do marcador</label>';
-    const coresRow=document.createElement('div');coresRow.style.cssText='display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;background:#fff;border:1px solid var(--borda);border-radius:8px;padding:8px 10px;';
-    const lblCT=document.createElement('label');lblCT.style.cssText='font-size:10px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;';lblCT.textContent='Texto';
-    const iCorTexto=document.createElement('input');iCorTexto.type='color';iCorTexto.value=lado.corTexto||'#1a7f4b';iCorTexto.style.cssText='width:36px;height:28px;padding:2px;border:1px solid var(--borda);border-radius:5px;cursor:pointer;';iCorTexto.addEventListener('input',function(){atualizarLado(lado.id,'corTexto',this.value);atualizarPrevCor();});lblCT.appendChild(iCorTexto);
-    const lblCF=document.createElement('label');lblCF.style.cssText='font-size:10px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;';lblCF.textContent='Fundo';
-    const iCorFundo=document.createElement('input');iCorFundo.type='color';iCorFundo.value=lado.corFundo||'#ffffff';iCorFundo.style.cssText='width:36px;height:28px;padding:2px;border:1px solid var(--borda);border-radius:5px;cursor:pointer;';iCorFundo.addEventListener('input',function(){atualizarLado(lado.id,'corFundo',this.value);atualizarPrevCor();});lblCF.appendChild(iCorFundo);
-    const lblOp=document.createElement('label');lblOp.style.cssText='font-size:10px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;min-width:80px;';lblOp.textContent='Opacidade fundo';
-    const iOpWrap=document.createElement('div');iOpWrap.style.cssText='display:flex;align-items:center;gap:4px;width:100%;';
-    const iOp=document.createElement('input');iOp.type='range';iOp.min='0';iOp.max='1';iOp.step='0.05';iOp.value=String(lado.opacidadeFundo!==undefined?lado.opacidadeFundo:1);iOp.style.cssText='flex:1;height:4px;accent-color:var(--roxo);';
-    const iOpVal=document.createElement('span');iOpVal.style.cssText='font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:600;min-width:30px;text-align:right;color:var(--muted);';iOpVal.textContent=Math.round((lado.opacidadeFundo!==undefined?lado.opacidadeFundo:1)*100)+'%';
-    iOp.addEventListener('input',function(){lado.opacidadeFundo=parseFloat(this.value);iOpVal.textContent=Math.round(lado.opacidadeFundo*100)+'%';atualizarLado(lado.id,'opacidadeFundo',lado.opacidadeFundo);atualizarPrevCor();});
-    iOpWrap.appendChild(iOp);iOpWrap.appendChild(iOpVal);lblOp.appendChild(iOpWrap);
-    const prevCorWrap=document.createElement('div');prevCorWrap.style.cssText='width:100%;display:flex;align-items:center;gap:6px;margin-top:2px;';
-    const prevCorXadrez=document.createElement('div');prevCorXadrez.className='xadrez-bg';prevCorXadrez.style.cssText='flex:1;height:28px;border-radius:5px;overflow:hidden;border:1px solid var(--borda);display:flex;align-items:center;justify-content:center;';
-    const prevCor=document.createElement('div');prevCor.style.cssText='width:100%;height:100%;display:flex;align-items:center;justify-content:center;';
-    prevCorXadrez.appendChild(prevCor);
-    function atualizarPrevCor(){const ct=iCorTexto.value,cfHex=iCorFundo.value;const op=lado.opacidadeFundo!==undefined?lado.opacidadeFundo:1;const cf=hexOpacidadeParaRgba(cfHex,op);const acsT=lado.acs||('#'+lado.id),qtdT=lado.pessoas>0?`${lado.pessoas}*`:'–*';prevCor.innerHTML=`<div style="background:${cf};padding:2px 8px;font-size:11px;font-weight:600;white-space:nowrap;border-radius:3px;"><span style="color:${ct};font-weight:700">${escHtml(acsT)}</span><span style="color:rgba(0,0,0,.2);margin:0 3px;font-size:10px">|</span><span style="font-family:monospace;color:#1e2a38">${escHtml(qtdT)}</span></div>`;}
-    atualizarPrevCor();
-    const bResetCor=document.createElement('button');bResetCor.type='button';bResetCor.title='Resetar cores padrão';bResetCor.style.cssText='background:none;border:1px solid var(--borda);border-radius:6px;padding:4px 7px;cursor:pointer;font-size:12px;color:var(--muted);align-self:flex-end;';bResetCor.textContent='↺';
-    bResetCor.addEventListener('click',()=>{iCorTexto.value='#1a7f4b';iCorFundo.value='#ffffff';iOp.value='1';iOpVal.textContent='100%';lado.opacidadeFundo=1;atualizarLado(lado.id,'corTexto','#1a7f4b');atualizarLado(lado.id,'corFundo','#ffffff');atualizarLado(lado.id,'opacidadeFundo',1);atualizarPrevCor();});
-    coresRow.appendChild(lblCT);coresRow.appendChild(lblCF);coresRow.appendChild(bResetCor);coresRow.appendChild(lblOp);coresRow.appendChild(prevCorWrap);prevCorWrap.appendChild(prevCorXadrez);
-    cCores.appendChild(coresRow);
-    const btnRem=document.createElement('button');btnRem.className='btn-remover';btnRem.textContent='🗑️ Remover este lado';btnRem.addEventListener('click',()=>removerLado(lado.id));
-    body.appendChild(cRua);body.appendChild(cAcs);body.appendChild(cPes);body.appendChild(cCores);body.appendChild(cRot);body.appendChild(btnRem);
+    const cA=document.createElement('div');cA.className='campo';cA.innerHTML='<label>👤 Nome do ACS</label>';const iA=document.createElement('input');iA.value=l.acs;iA.oninput=()=>atualizarLadoObj(l.id,'acs',iA.value);cA.appendChild(iA);body.appendChild(cA);
+    const cP=document.createElement('div');cP.className='campo';cP.innerHTML='<label>👥 Nº de Pessoas (e-SUS)</label>';const iP=document.createElement('input');iP.type='number';iP.value=l.pessoas;iP.oninput=()=>atualizarLadoObj(l.id,'pessoas',iP.value);cP.appendChild(iP);body.appendChild(cP);
+    const cR=document.createElement('div');cR.className='campo-rotacao';cR.innerHTML='<label>🔄 Rotação do Label (Ajuste Fino)</label>';const rCtrl=document.createElement('div');rCtrl.className='rotacao-controles';
+    const rM=document.createElement('button');rM.textContent='−';rM.onclick=()=>atualizarLadoObj(l.id,'rotacaoManual',(l.rotacaoManual||0)-5);
+    const rW=document.createElement('div');rW.className='rot-input-wrap';const rI=document.createElement('input');rI.type='range';rI.min='-180';rI.max='180';rI.value=l.rotacaoManual||0;rI.oninput=()=>atualizarLadoObj(l.id,'rotacaoManual',rI.value);rW.appendChild(rI);
+    const rV=document.createElement('div');rV.className='rot-val';rV.textContent=(l.rotacaoManual||0)+'°';rW.appendChild(rV);
+    const rP=document.createElement('button');rP.textContent='+';rP.onclick=()=>atualizarLadoObj(l.id,'rotacaoManual',(l.rotacaoManual||0)+5);
+    const rS=document.createElement('button');rS.className='btn-rot-snap';rS.textContent='Snap';rS.onclick=()=>atualizarLadoObj(l.id,'rotacaoManual',Math.round((l.rotacaoManual||0)/45)*45);
+    rCtrl.appendChild(rM);rCtrl.appendChild(rW);rCtrl.appendChild(rP);rCtrl.appendChild(rS);cR.appendChild(rCtrl);
+    const rPr=document.createElement('div');rPr.className='rotacao-preview';const rPl=document.createElement('div');rPl.className='rotacao-preview-label';rPl.style.transform=`rotate(${calcAngLabel(l.angulo,l.rotacaoManual,l.fixado)}deg)`;rPl.innerHTML=`<span class="prev-acs ${l.acs?'':'vazio'}">${l.acs||'Nome ACS'}</span><span class="prev-qtd">${l.pessoas||0}*</span>`;rPr.appendChild(rPl);cR.appendChild(rPr);body.appendChild(cR);
+    const fRow=document.createElement('div');fRow.className='fixar-row'+(l.fixado?' ativo':'');fRow.onclick=()=>atualizarLadoObj(l.id,'fixado',!l.fixado);fRow.innerHTML=`<div class="fixar-toggle"></div><div class="fixar-txt">Travar ângulo automático</div>`;body.appendChild(fRow);
+    const dimRow=document.createElement('div');dimRow.className='dim-row';
+    const cCT=document.createElement('div');cCT.className='campo';cCT.innerHTML='<label>Texto</label>';const iCT=document.createElement('input');iCT.type='color';iCT.value=l.corTexto||'#1a7f4b';iCT.oninput=()=>atualizarLadoObj(l.id,'corTexto',iCT.value);cCT.appendChild(iCT);dimRow.appendChild(cCT);
+    const cCF=document.createElement('div');cCF.className='campo';cCF.innerHTML='<label>Fundo</label>';const iCF=document.createElement('input');iCF.type='color';iCF.value=l.corFundo||'#ffffff';iCF.oninput=()=>atualizarLadoObj(l.id,'corFundo',iCF.value);cCF.appendChild(iCF);dimRow.appendChild(cCF);
+    const cOP=document.createElement('div');cOP.className='campo';cOP.innerHTML='<label>Opacidade</label>';const iOP=document.createElement('input');iOP.type='number';iOP.min='0';iOP.max='1';iOP.step='0.1';iOP.value=l.opacidadeFundo!==undefined?l.opacidadeFundo:1;iOP.oninput=()=>atualizarLadoObj(l.id,'opacidadeFundo',iOP.value);cOP.appendChild(iOP);dimRow.appendChild(cOP);
+    body.appendChild(dimRow);
+    const btnRem=document.createElement('button');btnRem.className='btn-remover';btnRem.innerHTML='🗑️ Remover Marcador';btnRem.onclick=()=>removerLado(l.id);body.appendChild(btnRem);
     card.appendChild(hdr);card.appendChild(body);lista.appendChild(card);
   });
 }
-function toggleCard(id){const c=document.getElementById(`card-${id}`);if(c)c.classList.toggle('aberto');}
-function abrirCard(id){const c=document.getElementById(`card-${id}`);if(c){c.classList.add('aberto');setTimeout(()=>c.scrollIntoView({behavior:'smooth',block:'nearest'}),50);}}
-function atualizarCardHeader(id){const l=lados.find(x=>x.id===id);if(!l)return;const c=document.getElementById(`card-${id}`);if(c){const s=c.querySelector('.sub');if(s)s.textContent=`${l.acs||'ACS não definida'} · ${l.pessoas||0} pessoas`;const r=c.querySelector('.rua');if(r){r.title=l.rua;r.textContent=`#${l.id} — ${l.rua}`;}}atualizarResumo();}
-function atualizarLado(id,campo,valor){
+function toggleCard(id){const c=document.getElementById(`card-${id}`);const aberto=c.classList.contains('aberto');document.querySelectorAll('.lado-card').forEach(x=>x.classList.remove('aberto'));if(!aberto)c.classList.add('aberto');}
+function abrirCard(id){document.querySelectorAll('.lado-card').forEach(x=>x.classList.remove('aberto'));const c=document.getElementById(`card-${id}`);if(c){c.classList.add('aberto');c.scrollIntoView({behavior:'smooth',block:'nearest'});}}
+function atualizarCardHeader(id){const l=lados.find(x=>x.id===id);const c=document.getElementById(`card-${id}`);if(!l||!c)return;c.querySelector('.rua').textContent=`#${l.id} — ${l.rua}`;c.querySelector('.sub').textContent=`${l.acs||'ACS não definida'} · ${l.pessoas||0} pessoas`;}
+function atualizarLadoObj(id,campo,valor){
   const l=lados.find(x=>x.id===id);if(!l)return;
   if(campo==='pessoas')l.pessoas=parseInt(valor,10)||0;
   else if(campo==='rotacaoManual')l.rotacaoManual=Number(valor)||0;
@@ -755,7 +665,7 @@ function atualizarLado(id,campo,valor){
   else if(campo==='opacidadeFundo')l.opacidadeFundo=parseFloat(valor);
   else l[campo]=valor;
   if(campo==='corTexto'||campo==='corFundo'||campo==='opacidadeFundo'){atualizarIconeMarcador(id);agendarSave();return;}
-  const c=document.getElementById(`card-${id}`);if(c){const s=c.querySelector('.sub');if(s)s.textContent=`${l.acs||'ACS não definida'} · ${l.pessoas||0} pessoas`;const r=c.querySelector('.rua');if(r){r.title=l.rua;r.textContent=`#${l.id} — ${l.rua}`;}c.classList.toggle('preenchido',!!(l.acs||l.pessoas));}
+  const c=document.getElementById(`card-${id}`);if(c){const s=c.querySelector('.sub');if(s)s.textContent=`${l.acs||'ACS não definida'} · ${l.pessoas||0} pessoas`;const r=c.querySelector('.rua');if(r){r.title=l.rua;r.textContent=`#${l.id} — ${l.rua}`;}c.classList.toggle('preenchido',!!(l.acs||l.pessoas));const pLabel=c.querySelector('.rotacao-preview-label');if(pLabel){pLabel.style.transform=`rotate(${calcAngLabel(l.angulo,l.rotacaoManual,l.fixado)}deg)`;pLabel.innerHTML=`<span class="prev-acs ${l.acs?'':'vazio'}">${l.acs||'Nome ACS'}</span><span class="prev-qtd">${l.pessoas||0}*</span>`;}const rVal=c.querySelector('.rot-val');if(rVal)rVal.textContent=(l.rotacaoManual||0)+'°';const rInp=c.querySelector('input[type="range"]');if(rInp)rInp.value=l.rotacaoManual||0;const fRow=c.querySelector('.fixar-row');if(fRow)fRow.classList.toggle('ativo',!!l.fixado);}
   atualizarIconeMarcador(id);atualizarResumo();agendarSave();
 }
 function removerLado(id){const i=lados.findIndex(x=>x.id===id);if(i===-1)return;map.removeLayer(lados[i].marker);lados.splice(i,1);renderCards();atualizarResumo();atualizarBadge();}
@@ -774,15 +684,15 @@ function atualizarBadge(){const t=lados.length+quarteiroesData.length;document.g
 // ─── ROTAÇÃO DO MAPA ──────────────────────────────────────────────────────────
 const rotInput=document.getElementById('rot-input'),rotRange=document.getElementById('rot-range');
 function sincronizarControlesRot(){const v=Math.round(mapBearing);rotInput.value=v;rotRange.value=v;document.getElementById('btn-rot-reset').textContent=mapBearing===0?'N':'↺';}
-function girarMapa(d){mapBearing=(mapBearing+d+360)%360;map.setBearing(mapBearing);sincronizarControlesRot();atualizarTodosOsIcones();}
-function aplicarRotacao(){map.setBearing(mapBearing);sincronizarControlesRot();atualizarTodosOsIcones();}
+function girarMapa(d){mapBearing=(mapBearing+d+360)%360;map.setBearing(mapBearing);sincronizarControlesRot();/*atualizarTodosOsIcones();*/}
+function aplicarRotacao(){map.setBearing(mapBearing);sincronizarControlesRot();/*atualizarTodosOsIcones();*/}
 document.getElementById('btn-rot-esq').addEventListener('click',()=>girarMapa(-10));
 document.getElementById('btn-rot-dir').addEventListener('click',()=>girarMapa(10));
 document.getElementById('btn-rot-menos1').addEventListener('click',()=>girarMapa(-1));
 document.getElementById('btn-rot-mais1').addEventListener('click',()=>girarMapa(1));
 document.getElementById('btn-rot-reset').addEventListener('click',()=>{mapBearing=0;aplicarRotacao();});
-rotRange.addEventListener('input',()=>{mapBearing=((parseFloat(rotRange.value)%360)+360)%360;map.setBearing(mapBearing);rotInput.value=Math.round(mapBearing);document.getElementById('btn-rot-reset').textContent=mapBearing===0?'N':'↺';atualizarTodosOsIcones();});
-rotInput.addEventListener('input',()=>{mapBearing=((parseFloat(rotInput.value)%360)+360)%360;map.setBearing(mapBearing);rotRange.value=Math.round(mapBearing);document.getElementById('btn-rot-reset').textContent=mapBearing===0?'N':'↺';atualizarTodosOsIcones();});
+rotRange.addEventListener('input',()=>{mapBearing=((parseFloat(rotRange.value)%360)+360)%360;map.setBearing(mapBearing);rotInput.value=Math.round(mapBearing);document.getElementById('btn-rot-reset').textContent=mapBearing===0?'N':'↺';/*atualizarTodosOsIcones();*/});
+rotInput.addEventListener('input',()=>{mapBearing=((parseFloat(rotInput.value)%360)+360)%360;map.setBearing(mapBearing);rotRange.value=Math.round(mapBearing);document.getElementById('btn-rot-reset').textContent=mapBearing===0?'N':'↺';/*atualizarTodosOsIcones();*/});
 rotInput.addEventListener('keydown',(e)=>{if(e.key==='ArrowUp'){e.preventDefault();girarMapa(1);}if(e.key==='ArrowDown'){e.preventDefault();girarMapa(-1);}});
 
 // ─── ZOOM ─────────────────────────────────────────────────────────────────────
