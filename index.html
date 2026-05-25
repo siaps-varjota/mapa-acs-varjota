@@ -442,26 +442,27 @@ function hexParaRgbObj(hex){hex=(hex||'#ffffff').replace('#','');if(hex.length==
 function hexOpacidadeParaRgba(hex,op){const {r,g,b}=hexParaRgbObj(hex);return `rgba(${r},${g},${b},${op})`;}
 
 // ─── CÁLCULO DO ÂNGULO DO LABEL ───────────────────────────────────────────────
-// O comportamento esperado é que o label fique fixo geograficamente.
-// Como o leaflet-rotate gira o container do mapa, se definirmos um ângulo fixo no CSS,
-// ele já acompanhará a rotação do mapa naturalmente se não tentarmos "compensar" a rotação da tela.
+// Fixado no mapa: o label mantém sua orientação geográfica.
+// Como o leaflet-rotate gira o container do mapa, o ângulo do label deve ser
+// relativo ao mapa. O leaflet-rotate já cuida disso se usarmos o ângulo geográfico puro.
 function calcAngLabel(anguloRua, rotacaoManual, fixado){
-  // Ângulo geográfico total (em relação ao Norte)
   let a = ((anguloRua||0) + (rotacaoManual||0) + 360) % 360;
-  // Evita texto de cabeça para baixo em relação à visualização padrão (Norte para cima)
-  // Nota: Se o usuário quiser que o texto nunca inverta independente da rotação do mapa, 
-  // precisaríamos incluir o mapBearing aqui, mas o pedido é "fixado no mapa".
+  // Mantém legibilidade (não deixa texto de ponta-cabeça no Norte)
   if(a > 90 && a <= 270) a -= 180;
   if(a > 270) a -= 360;
   return a;
 }
 
-function buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo){
+function buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo,scale=1){
   const acsLbl=acs||`#${id}`,acsCls=acs?'lbl-acs':'lbl-acs vazio',qtdLbl=pessoas>0?`${pessoas}`:'–',ang=calcAngLabel(anguloRua,rotacaoManual||0,fixado);
   const ct=corTexto||'#1a7f4b';const op=opacidadeFundo!==undefined?opacidadeFundo:1;const hexFundo=corFundo||'#ffffff';const cf=hexOpacidadeParaRgba(hexFundo,op);const bordaCor=op<0.1?'rgba(0,0,0,0.15)':(corFundo&&corFundo!=='#ffffff'?hexFundo+'55':'rgba(0,0,0,0.10)');
-  return `<div class="marker-wrapper" id="marker-${id}"><div class="marker-label" style="--ang:${ang}deg;background:${cf};border-color:${bordaCor}"><span class="${acsCls}" style="color:${ct}">${escHtml(acsLbl)}</span><span class="lbl-sep">|</span><span class="lbl-qtd">${escHtml(qtdLbl)}<span class="lbl-ast" style="color:${ct}">*</span></span></div></div>`;
+  // A escala é aplicada diretamente no wrapper para evitar "pulos" visuais
+  return `<div class="marker-wrapper" id="marker-${id}" style="transform:scale(${scale})"><div class="marker-label" style="--ang:${ang}deg;background:${cf};border-color:${bordaCor}"><span class="${acsCls}" style="color:${ct}">${escHtml(acsLbl)}</span><span class="lbl-sep">|</span><span class="lbl-qtd">${escHtml(qtdLbl)}<span class="lbl-ast" style="color:${ct}">*</span></span></div></div>`;
 }
-function buildIcon(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo){return L.divIcon({className:'',html:buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo),iconSize:[ICON_W,ICON_H],iconAnchor:[ICON_W/2,ICON_H/2]});}
+function buildIcon(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo){
+  const scale = calcZoomScale(map.getZoom());
+  return L.divIcon({className:'',html:buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo,scale),iconSize:[ICON_W,ICON_H],iconAnchor:[ICON_W/2,ICON_H/2]});
+}
 function atualizarTodosOsIcones(){lados.forEach(l=>atualizarIconeMarcador(l.id));}
 function _criarMarker(id,lat,lng,icon){
   const marker=L.marker([lat,lng],{icon,draggable:true,autoPan:false}).addTo(map);
@@ -481,7 +482,6 @@ async function adicionarLadoSilencioso(d){
     const l=lados.find(x=>x.id===id);
     if(l){
       l.lat=_ll.lat; l.lng=_ll.lng;
-      // Quando movemos, apenas recalculamos se NÃO estiver fixado
       if(!l.fixado){
         buscarRuaEAngulo(_ll.lat,_ll.lng).then(({rua,angulo})=>{
           const l2=lados.find(x=>x.id===id);
@@ -641,7 +641,7 @@ function renderCards(){
     const rW=document.createElement('div');rW.className='rot-input-wrap';const rI=document.createElement('input');rI.type='range';rI.min='-180';rI.max='180';rI.value=l.rotacaoManual||0;rI.oninput=()=>atualizarLadoObj(l.id,'rotacaoManual',rI.value);rW.appendChild(rI);
     const rV=document.createElement('div');rV.className='rot-val';rV.textContent=(l.rotacaoManual||0)+'°';rW.appendChild(rV);
     const rP=document.createElement('button');rP.textContent='+';rP.onclick=()=>atualizarLadoObj(l.id,'rotacaoManual',(l.rotacaoManual||0)+5);
-    const rS=document.createElement('button');rS.className='btn-rot-snap';rS.textContent='Snap';rS.onclick=()=>atualizarLadoObj(l.id,'rotacaoManual',Math.round((l.rotacaoManual||0)/45)*45);
+    const rS=document.button;rS.className='btn-rot-snap';rS.textContent='Snap';rS.onclick=()=>atualizarLadoObj(l.id,'rotacaoManual',Math.round((l.rotacaoManual||0)/45)*45);
     rCtrl.appendChild(rM);rCtrl.appendChild(rW);rCtrl.appendChild(rP);rCtrl.appendChild(rS);cR.appendChild(rCtrl);
     const rPr=document.createElement('div');rPr.className='rotacao-preview';const rPl=document.createElement('div');rPl.className='rotacao-preview-label';rPl.style.transform=`rotate(${calcAngLabel(l.angulo,l.rotacaoManual,l.fixado)}deg)`;rPl.innerHTML=`<span class="prev-acs ${l.acs?'':'vazio'}">${l.acs||'Nome ACS'}</span><span class="prev-qtd">${l.pessoas||0}*</span>`;rPr.appendChild(rPl);cR.appendChild(rPr);body.appendChild(cR);
     const fRow=document.createElement('div');fRow.className='fixar-row'+(l.fixado?' ativo':'');fRow.onclick=()=>atualizarLadoObj(l.id,'fixado',!l.fixado);fRow.innerHTML=`<div class="fixar-toggle"></div><div class="fixar-txt">Travar ângulo automático</div>`;body.appendChild(fRow);
@@ -684,15 +684,15 @@ function atualizarBadge(){const t=lados.length+quarteiroesData.length;document.g
 // ─── ROTAÇÃO DO MAPA ──────────────────────────────────────────────────────────
 const rotInput=document.getElementById('rot-input'),rotRange=document.getElementById('rot-range');
 function sincronizarControlesRot(){const v=Math.round(mapBearing);rotInput.value=v;rotRange.value=v;document.getElementById('btn-rot-reset').textContent=mapBearing===0?'N':'↺';}
-function girarMapa(d){mapBearing=(mapBearing+d+360)%360;map.setBearing(mapBearing);sincronizarControlesRot();/*atualizarTodosOsIcones();*/}
-function aplicarRotacao(){map.setBearing(mapBearing);sincronizarControlesRot();/*atualizarTodosOsIcones();*/}
+function girarMapa(d){mapBearing=(mapBearing+d+360)%360;map.setBearing(mapBearing);sincronizarControlesRot();}
+function aplicarRotacao(){map.setBearing(mapBearing);sincronizarControlesRot();}
 document.getElementById('btn-rot-esq').addEventListener('click',()=>girarMapa(-10));
 document.getElementById('btn-rot-dir').addEventListener('click',()=>girarMapa(10));
 document.getElementById('btn-rot-menos1').addEventListener('click',()=>girarMapa(-1));
 document.getElementById('btn-rot-mais1').addEventListener('click',()=>girarMapa(1));
 document.getElementById('btn-rot-reset').addEventListener('click',()=>{mapBearing=0;aplicarRotacao();});
-rotRange.addEventListener('input',()=>{mapBearing=((parseFloat(rotRange.value)%360)+360)%360;map.setBearing(mapBearing);rotInput.value=Math.round(mapBearing);document.getElementById('btn-rot-reset').textContent=mapBearing===0?'N':'↺';/*atualizarTodosOsIcones();*/});
-rotInput.addEventListener('input',()=>{mapBearing=((parseFloat(rotInput.value)%360)+360)%360;map.setBearing(mapBearing);rotRange.value=Math.round(mapBearing);document.getElementById('btn-rot-reset').textContent=mapBearing===0?'N':'↺';/*atualizarTodosOsIcones();*/});
+rotRange.addEventListener('input',()=>{mapBearing=((parseFloat(rotRange.value)%360)+360)%360;map.setBearing(mapBearing);rotInput.value=Math.round(mapBearing);document.getElementById('btn-rot-reset').textContent=mapBearing===0?'N':'↺';});
+rotInput.addEventListener('input',()=>{mapBearing=((parseFloat(rotInput.value)%360)+360)%360;map.setBearing(mapBearing);rotRange.value=Math.round(mapBearing);document.getElementById('btn-rot-reset').textContent=mapBearing===0?'N':'↺';});
 rotInput.addEventListener('keydown',(e)=>{if(e.key==='ArrowUp'){e.preventDefault();girarMapa(1);}if(e.key==='ArrowDown'){e.preventDefault();girarMapa(-1);}});
 
 // ─── ZOOM ─────────────────────────────────────────────────────────────────────
