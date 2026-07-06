@@ -284,6 +284,7 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
           <button id="btn-rot-dir">↻</button>
           <button id="btn-rot-reset">N</button>
         </div>
+        <button id="btn-toggle-pinos" onclick="toggleVisibilidadePinos()" title="Mostrar apenas os quarteirões, ocultando os pinos dos ACS">📍 Ocultar Pinos</button>
         <button id="btn-satelite">🛰️ Satélite</button>
         <button id="btn-hibrido">🗺️ Híbrido</button>
         <button id="btn-esri">🗺️ Mapa Esri</button>
@@ -375,7 +376,7 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 </div>
 <script>
 // ─── ESTADO ───────────────────────────────────────────────────────────────────
-let lados=[],quarteiroesData=[],proximoId=1,proximoQtId=1,mapBearing=333,painelAberto=true,poiLayer=null;
+let lados=[],quarteiroesData=[],proximoId=1,proximoQtId=1,mapBearing=333,painelAberto=true,poiLayer=null,pinosVisiveis=true;
 const ICON_W=84,ICON_H=28;
 let _handleGroup=null,_handleQtId=null;
 
@@ -393,6 +394,21 @@ function mudarTab(tab){
 }
 
 // ─── PAINEL ───────────────────────────────────────────────────────────────────
+function toggleVisibilidadePinos(){
+  pinosVisiveis=!pinosVisiveis;
+  lados.forEach(l=>{
+    try{
+      if(pinosVisiveis)l.marker.addTo(map);
+      else map.removeLayer(l.marker);
+    }catch{}
+  });
+  const btn=document.getElementById('btn-toggle-pinos');
+  if(btn){
+    btn.innerHTML=pinosVisiveis?'📍 Ocultar Pinos':'👁️ Mostrar Pinos';
+    btn.style.background=pinosVisiveis?'':'var(--verde2)';
+    btn.style.color=pinosVisiveis?'':'#fff';
+  }
+}
 function togglePainel(){
   const p=document.getElementById('painel'),i=document.getElementById('toggle-icon-el');
   painelAberto=!painelAberto;p.classList.toggle('recolhido',!painelAberto);
@@ -583,7 +599,8 @@ function buildIcon(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFun
 }
 function atualizarTodosOsIcones(){lados.forEach(l=>atualizarIconeMarcador(l.id));}
 function _criarMarker(id,lat,lng,icon){
-  const marker=L.marker([lat,lng],{icon,draggable:true,autoPan:false}).addTo(map);
+  const marker=L.marker([lat,lng],{icon,draggable:true,autoPan:false});
+  if(pinosVisiveis)marker.addTo(map);
   let _hasDragged=false;
   marker.on('dragstart',()=>{_hasDragged=true;});
   marker.on('dragend',()=>{setTimeout(()=>{_hasDragged=false;},50);});
