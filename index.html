@@ -1009,75 +1009,58 @@ function comTimeout(promessa,ms,msgErro){let t;const timeout=new Promise((_,rej)
 async function capturarMapaCanvas(){
   const mapEl=document.getElementById('map');
   const bearingOriginal=mapBearing;
-  const precisaRotacionar = Math.abs(bearingOriginal)>0.01;
+  const precisaRotacionar=Math.abs(bearingOriginal)>0.01;
 
-  // Caso o mapa já esteja com o norte para cima, não há transform de rotação
-  // ativo, então a captura direta funciona sem problemas.
   if(!precisaRotacionar){
     return await comTimeout(html2canvas(mapEl,{useCORS:true,allowTaint:true,backgroundColor:'#e8e0d8',scale:2,logging:false}),12000,'A captura do mapa demorou demais e foi cancelada.');
   }
 
-  // ── Estratégia: o html2canvas não interpreta corretamente os transforms
-  // aninhados que o leaflet-rotate aplica (rotate() em cima do translate3d()
-  // que o próprio Leaflet usa nos panes). Em vez de tentar capturar já
-  // rotacionado, capturamos com o mapa "endireitado" (bearing 0) — o que o
-  // html2canvas sabe fazer bem — e depois aplicamos a rotação manualmente
-  // com Canvas 2D nativo, que lida com isso de forma correta e instantânea.
-  const W=mapEl.clientWidth, H=mapEl.clientHeight;
-  const rad=bearingOriginal*Math.PI/180;
-  const cos=Math.abs(Math.cos(rad)), sin=Math.abs(Math.sin(rad));
-  // Área extra necessária para que, depois de rotacionar de volta, os
-  // cantos do enquadramento original não fiquem vazios.
-  const Wexp=Math.ceil(W*cos+H*sin);
-  const Hexp=Math.ceil(W*sin+H*cos);
+  // O leaflet-rotate aplica a rotação diretamente no CSS transform do
+  // _mapPane interno do Leaflet (o mesmo elemento que o Leaflet usa para
+  // posicionar/panar o mapa, combinando translate3d(...) com rotate(...)).
+  // O html2canvas não interpreta bem esse transform combinado. A tentativa
+  // anterior de contornar isso mudando o bearing/tamanho do mapa ao vivo
+  // fazia o Leaflet reposicionar as camadas (por isso quarteirões e pinos
+  // sumiram). Desta vez não tocamos em nada do estado do Leaflet: apenas
+  // removemos temporariamente a parte "rotate(...)" já calculada no CSS,
+  // sem disparar nenhum evento — nada se move, nada é recriado.
+  const paneEl=map._mapPane;
+  const transformOriginal=paneEl?paneEl.style.transform:null;
+  const match=transformOriginal?transformOriginal.match(/rotate\(([-\d.]+)deg\)/):null;
+  let removido=false;
 
-  const rect=mapEl.getBoundingClientRect();
-  const estiloOriginal={
-    position:mapEl.style.position,top:mapEl.style.top,left:mapEl.style.left,
-    width:mapEl.style.width,height:mapEl.style.height,zIndex:mapEl.style.zIndex
-  };
+  if(paneEl&&match){
+    paneEl.style.transform=transformOriginal.replace(/rotate\([^)]*\)/,'rotate(0deg)');
+    removido=true;
+  }
 
   try{
-    // 1. Endireita o mapa (norte para cima)
-    map.setBearing(0);
-
-    // 2. Expande o container temporariamente, mantendo o mesmo centro
-    //    geográfico, para termos margem suficiente para a rotação.
-    mapEl.style.position='fixed';
-    mapEl.style.left=(rect.left-(Wexp-W)/2)+'px';
-    mapEl.style.top=(rect.top-(Hexp-H)/2)+'px';
-    mapEl.style.width=Wexp+'px';
-    mapEl.style.height=Hexp+'px';
-    mapEl.style.zIndex='9999';
-    map.invalidateSize({pan:false});
-    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-    await new Promise(r=>setTimeout(r,350)); // tempo para os tiles novos carregarem
-
-    // 3. Captura limpa, sem nenhum transform de rotação ativo
+    await new Promise(r=>requestAnimationFrame(r));
     const canvasNorte=await comTimeout(html2canvas(mapEl,{useCORS:true,allowTaint:true,backgroundColor:'#e8e0d8',scale:2,logging:false}),12000,'A captura do mapa demorou demais e foi cancelada.');
 
-    // 4. Rotaciona manualmente de volta ao ângulo exibido e recorta o
-    //    retângulo central equivalente ao enquadramento original.
-    const escala=canvasNorte.width/Wexp;
-    const outW=Math.round(W*escala), outH=Math.round(H*escala);
+    if(!removido)return canvasNorte;
+
+    // Rotaciona o resultado de volta ao ângulo exibido — sem cortar nada:
+    // o canvas de saída é expandido para caber a imagem inteira já
+    // rotacionada, com os cantos preenchidos na cor de fundo do mapa.
+    const anguloCss=parseFloat(match[1]);
+    const rad=anguloCss*Math.PI/180;
+    const w=canvasNorte.width,h=canvasNorte.height;
+    const cos=Math.abs(Math.cos(rad)),sin=Math.abs(Math.sin(rad));
+    const outW=Math.ceil(w*cos+h*sin),outH=Math.ceil(w*sin+h*cos);
     const out=document.createElement('canvas');
-    out.width=outW; out.height=outH;
+    out.width=outW;out.height=outH;
     const ctx=out.getContext('2d');
+    ctx.fillStyle='#e8e0d8';
+    ctx.fillRect(0,0,outW,outH);
     ctx.translate(outW/2,outH/2);
     ctx.rotate(rad);
-    ctx.drawImage(canvasNorte,-canvasNorte.width/2,-canvasNorte.height/2);
+    ctx.drawImage(canvasNorte,-w/2,-h/2);
     return out;
   } finally {
-    // 5. Restaura tudo do jeito que estava
-    mapEl.style.position=estiloOriginal.position;
-    mapEl.style.top=estiloOriginal.top;
-    mapEl.style.left=estiloOriginal.left;
-    mapEl.style.width=estiloOriginal.width;
-    mapEl.style.height=estiloOriginal.height;
-    mapEl.style.zIndex=estiloOriginal.zIndex;
-    map.setBearing(bearingOriginal);
-    map.invalidateSize({pan:false});
-    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    if(removido&&paneEl){
+      paneEl.style.transform=transformOriginal;
+    }
   }
 }
 async function _capturarComToggles(){
