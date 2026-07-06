@@ -541,8 +541,8 @@ _initDragBtn('drag-linha','linha',dragGhostLinha,'➖ Solte no mapa para desenha
 
 // ─── GEOCODIFICAÇÃO ───────────────────────────────────────────────────────────
 async function buscarRuaEAngulo(lat,lng){
-  let rua='Localização marcada',angulo=0;
-  try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,{headers:{'Accept-Language':'pt-BR'}});const d=await r.json();rua=d.address?.road||d.address?.neighbourhood||d.display_name?.split(',')[0]||'Local desconhecido';}catch{}
+  let rua='Varjota',angulo=0;
+  try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,{headers:{'Accept-Language':'pt-BR'}});const d=await r.json();rua=d.address?.road||d.address?.neighbourhood||d.display_name?.split(',')[0]||'Varjota';}catch{}
   try{const delta=0.0003,bbox=`${lat-delta},${lng-delta},${lat+delta},${lng+delta}`,q=`[out:json][timeout:5];way[highway](${bbox});out geom;`;const ov=await fetch('https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`data=${encodeURIComponent(q)}`});const od=await ov.json();let md=Infinity,ma=0;for(const way of(od.elements||[])){if(!way.geometry||way.geometry.length<2)continue;for(let i=0;i<way.geometry.length-1;i++){const a=way.geometry[i],b=way.geometry[i+1],mx=(a.lon+b.lon)/2,my=(a.lat+b.lat)/2,dx=mx-lng,dy=my-lat,dist=Math.sqrt(dx*dx+dy*dy);if(dist<md){md=dist;const dLon=(b.lon-a.lon)*Math.cos(lat*Math.PI/180),dLat=b.lat-a.lat;ma=Math.atan2(dLon,dLat)*180/Math.PI;}}}angulo=ma;}catch{}
   return{rua,angulo};
 }
@@ -584,6 +584,7 @@ function _criarMarker(id,lat,lng,icon){
 }
 
 async function adicionarLadoSilencioso(d){
+  if(!d.rua||d.rua==='Local desconhecido'||d.rua==='Localização marcada'||d.rua==='Rua não identificada')d.rua='Varjota';
   const id=d.id,ar=d.angulo||0,rm=d.rotacaoManual||0,fx=!!d.fixado,ct=d.corTexto||'#1a7f4b',cf=d.corFundo||'#ffffff',op=d.opacidadeFundo!==undefined?d.opacidadeFundo:1;
   const marker=_criarMarker(id,d.lat,d.lng,buildIcon(id,d.acs||'',d.pessoas||0,ar,rm,fx,ct,cf,op));
   marker.bindTooltip(`Lado #${id} — ${d.rua}`,{permanent:false});
@@ -832,7 +833,7 @@ function obterRuasAgrupadas(termo){
   // Agrupa por rua, e dentro de cada rua soma por ACS
   const porRua={};
   lados.forEach(l=>{
-    const rua=(l.rua||'Rua não identificada').trim();
+    const rua=(l.rua||'Varjota').trim();
     const acs=(l.acs||'').trim()||'ACS não definida';
     const qtd=l.pessoas||0;
     if(!porRua[rua])porRua[rua]={};
