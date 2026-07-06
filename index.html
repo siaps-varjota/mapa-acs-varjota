@@ -1035,18 +1035,29 @@ async function capturarMapaCanvas(){
   const mapEl=document.getElementById('map');
   const overlayPane=mapEl.querySelector('.leaflet-overlay-pane');
   const overlayPrevDisplay=overlayPane?overlayPane.style.display:null;
+  const bearingAtual=mapBearing;
+  if(bearingAtual!==0){
+    map.setBearing(0);
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    await new Promise(r=>setTimeout(r,180));
+  }
   if(overlayPane)overlayPane.style.display='none';
   const scale=2;
-  const canvas = await html2canvas(mapEl, {
-    useCORS: true,
-    allowTaint: true,
-    backgroundColor: '#e8e0d8',
-    scale,
-    logging: false
-  });
-  if(overlayPane)overlayPane.style.display=overlayPrevDisplay||'';
-  const ctx=canvas.getContext('2d');
-  desenharQuarteiroesCanvas(ctx,scale);
+  let canvas;
+  try{
+    canvas = await html2canvas(mapEl, {
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#e8e0d8',
+      scale,
+      logging: false
+    });
+    const ctx=canvas.getContext('2d');
+    desenharQuarteiroesCanvas(ctx,scale);
+  }finally{
+    if(overlayPane)overlayPane.style.display=overlayPrevDisplay||'';
+    if(bearingAtual!==0)map.setBearing(bearingAtual);
+  }
   return canvas;
 }
 async function _capturarComToggles(){
