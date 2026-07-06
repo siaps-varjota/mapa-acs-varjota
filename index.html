@@ -879,7 +879,7 @@ function renderRuas(){
   if(termo.trim()){
     const totalBusca=grupos.reduce((s,g)=>s+g.totalMostrado,0);
     const rodape=document.createElement('div');rodape.className='ruas-total-busca';
-    rodape.innerHTML=`<span>Total da busca</span><span class="qtd">${totalBusca.toLocaleString('pt-BR')}</span>`;
+    rodape.innerHTML=`<span>Total da busca </span><span class="qtd">${totalBusca.toLocaleString('pt-BR')}</span>`;
     lista.appendChild(rodape);
   }
 }
