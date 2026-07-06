@@ -325,6 +325,10 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
       <div class="modal-box">
         <div class="modal-icon">🖼️</div>
         <h2>Salvar imagem do mapa</h2>
+        <div class="modal-field" style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="chk-mostrar-lados" checked style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+          <label for="chk-mostrar-lados" style="margin:0;cursor:pointer;font-size:13px;">Mostrar lados coloridos (ACS)</label>
+        </div>
         <div id="preview-canvas-wrap"><span style="font-size:28px;animation:spin 1s linear infinite">⏳</span></div>
         <div class="modal-field"><label>📝 Nome do documento / mapa</label><input type="text" id="input-nome-doc" placeholder="Ex.: ESF 01 — Área 1"/></div>
         <div class="modal-field"><label>💾 Nome do arquivo</label><input type="text" id="input-nome-arquivo" placeholder="mapa_acs_varjota"/></div>
@@ -987,6 +991,8 @@ document.getElementById('input-importar').addEventListener('change',function(e){
 
 // ─── CAPTURAR MAPA ────────────────────────────────────────────────────────────
 let _canvasMapaSemRodape=null;
+let _canvasComLados=null,_canvasSemLados=null;
+function setOpacidadeLados(op){quarteiroesData.forEach(q=>{(q.linhas||[]).forEach(l=>{try{l.setStyle({opacity:op});}catch{}});});}
 function montarCanvasFinal(mapaCanvas,nomeDoc){
   const totalPessoas=document.getElementById('total-num').textContent,dataAtual=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}),rh=40,fc=document.createElement('canvas');fc.width=mapaCanvas.width;fc.height=mapaCanvas.height+rh*2;const ctx=fc.getContext('2d');ctx.fillStyle='#1a7f4b';ctx.fillRect(0,mapaCanvas.height,fc.width,rh*2);ctx.drawImage(mapaCanvas,0,0);const titulo=nomeDoc?`Mapa ACS — ${nomeDoc} — Varjota/CE`:'Mapa ACS — Varjota/CE';ctx.fillStyle='#ffffff';ctx.font='bold 28px Sora, sans-serif';ctx.textBaseline='middle';ctx.fillText(titulo,30,mapaCanvas.height+rh*0.7);ctx.font='24px Sora, sans-serif';ctx.fillStyle='rgba(255,255,255,0.8)';ctx.fillText(`Total: ${totalPessoas} pessoas  ·  Gerado em ${dataAtual}  ·  * = nº de pessoas`,30,mapaCanvas.height+rh*1.5);return fc;
 }
@@ -1010,12 +1016,25 @@ document.getElementById('btn-capturar').addEventListener('click',async()=>{
   const toolbar=document.getElementById('toolbar'),sn=document.getElementById('status-nuvem'),dicaEl=document.getElementById('dica'),la=document.getElementById('legenda-asterisco'),pt=document.getElementById('painel-toggle');
   toolbar.style.display='none';sn.style.display='none';dicaEl.style.display='none';la.style.display='none';pt.style.visibility='hidden';
   const handlesBkp=_handleQtId;if(handlesBkp!==null)esconderHandles();await new Promise(r=>setTimeout(r,150));
-  try{const canvas=await capturarMapaCanvas();_canvasMapaSemRodape=canvas;const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(canvas,'').toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);document.getElementById('input-nome-doc').value='';document.getElementById('input-nome-arquivo').value=`mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;document.getElementById('modal-salvar').classList.remove('oculto');setTimeout(()=>document.getElementById('input-nome-doc').focus(),100);}catch(e){console.error(e);mostrarToast('❌ '+e.message);}
+  try{
+    _canvasComLados=await capturarMapaCanvas();
+    setOpacidadeLados(0);await new Promise(r=>setTimeout(r,80));
+    _canvasSemLados=await capturarMapaCanvas();
+    setOpacidadeLados(1);
+    const chk=document.getElementById('chk-mostrar-lados');chk.checked=true;
+    _canvasMapaSemRodape=_canvasComLados;
+    const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(_canvasMapaSemRodape,'').toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);document.getElementById('input-nome-doc').value='';document.getElementById('input-nome-arquivo').value=`mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;document.getElementById('modal-salvar').classList.remove('oculto');setTimeout(()=>document.getElementById('input-nome-doc').focus(),100);
+  }catch(e){console.error(e);setOpacidadeLados(1);mostrarToast('❌ '+e.message);}
   finally{toolbar.style.display='';sn.style.display='';la.style.display='';pt.style.visibility='';btn.classList.remove('capturando');btn.textContent='🖼️ Salvar Mapa';if(handlesBkp!==null)mostrarHandles(handlesBkp);}
 });
+document.getElementById('chk-mostrar-lados').addEventListener('change',function(){
+  _canvasMapaSemRodape=this.checked?_canvasComLados:_canvasSemLados;
+  if(!_canvasMapaSemRodape)return;
+  const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim()).toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);
+});
 document.getElementById('input-nome-doc').addEventListener('input',()=>{if(!_canvasMapaSemRodape)return;const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim()).toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);});
-document.getElementById('btn-confirmar-salvar').addEventListener('click',()=>{if(!_canvasMapaSemRodape)return;const fc=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim());const nome=(document.getElementById('input-nome-arquivo').value||'mapa_acs_varjota').trim().replace(/\.png$/i,'');const a=document.createElement('a');a.download=`${nome}.png`;a.href=fc.toDataURL('image/png');a.click();document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;mostrarToast('✅ Imagem salva!');});
-document.getElementById('btn-cancelar-salvar').addEventListener('click',()=>{document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;});
+document.getElementById('btn-confirmar-salvar').addEventListener('click',()=>{if(!_canvasMapaSemRodape)return;const fc=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim());const nome=(document.getElementById('input-nome-arquivo').value||'mapa_acs_varjota').trim().replace(/\.png$/i,'');const a=document.createElement('a');a.download=`${nome}.png`;a.href=fc.toDataURL('image/png');a.click();document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;_canvasComLados=null;_canvasSemLados=null;mostrarToast('✅ Imagem salva!');});
+document.getElementById('btn-cancelar-salvar').addEventListener('click',()=>{document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;_canvasComLados=null;_canvasSemLados=null;});
 
 // ─── LIMPAR TUDO ──────────────────────────────────────────────────────────────
 document.getElementById('btn-limpar').addEventListener('click',()=>{
