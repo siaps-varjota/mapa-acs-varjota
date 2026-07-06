@@ -876,6 +876,12 @@ function renderRuas(){
       acsNomes.map(acs=>`<div class="rua-row"><span class="nome">👤 ${escHtml(acs)}</span><span class="qtd">${acsMap[acs].toLocaleString('pt-BR')}</span></div>`).join('');
     lista.appendChild(grupo);
   });
+  if(termo.trim()){
+    const totalBusca=grupos.reduce((s,g)=>s+g.totalMostrado,0);
+    const rodape=document.createElement('div');rodape.className='ruas-total-busca';
+    rodape.innerHTML=`<span>Total da busca</span><span class="qtd">${totalBusca.toLocaleString('pt-BR')}</span>`;
+    lista.appendChild(rodape);
+  }
 }
 function imprimirRelatorioRuas(){
   const buscaEl=document.getElementById('ruas-busca');
