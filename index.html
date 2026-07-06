@@ -1005,94 +1005,40 @@ function hexParaRgb(hex){hex=(hex||'#6a1b9a').replace('#','');if(hex.length===3)
 async function fetchImgBlob(src){try{const res=await fetch(src,{mode:'cors'});if(!res.ok)throw new Error();const blob=await res.blob();const url=URL.createObjectURL(blob);return await new Promise(ok=>{const img=new Image();img.onload=()=>{URL.revokeObjectURL(url);ok(img);};img.onerror=()=>{URL.revokeObjectURL(url);ok(null);};img.src=url;});}catch{return null;}}
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
 function containerParaTela(px,py,W,H,S){const ang=-mapBearing*Math.PI/180;const cx=W*S/2,cy=H*S/2;const dx=px*S-cx,dy=py*S-cy;return[cx+dx*Math.cos(ang)-dy*Math.sin(ang),cy+dx*Math.sin(ang)+dy*Math.cos(ang)];}
-function desenharQuarteiroesCanvas(ctx,scale){
-  quarteiroesData.forEach(q=>{
-    const verts=obterVerticesQt(q);
-    const pts=verts.map(v=>{const p=map.latLngToContainerPoint([v[0],v[1]]);return[p.x*scale,p.y*scale];});
-    if(pts.length<2)return;
-    const fillOp=(q.polygon&&q.polygon.options&&typeof q.polygon.options.fillOpacity==='number')?q.polygon.options.fillOpacity:0;
-    if(fillOp>0&&pts.length>2){
-      ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);
-      for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
-      ctx.closePath();
-      ctx.fillStyle=(q.polygon.options.fillColor)||q.cor||'#6a1b9a';
-      ctx.globalAlpha=fillOp;ctx.fill();ctx.globalAlpha=1;
-    }
-    (q.linhas||[]).forEach((l,i)=>{
-      const op=(l.options&&typeof l.options.opacity==='number')?l.options.opacity:1;
-      if(op<=0)return;
-      const a=pts[i],b=pts[(i+1)%pts.length];
-      if(!a||!b)return;
-      ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);
-      ctx.strokeStyle=(l.options&&l.options.color)||q.cor||'#6a1b9a';
-      ctx.lineWidth=((l.options&&l.options.weight)?l.options.weight:2.5)*scale;
-      ctx.lineCap='round';
-      ctx.globalAlpha=op;ctx.stroke();ctx.globalAlpha=1;
-    });
-  });
-}
-function rotacionarCanvas(srcCanvas,anguloDeg,corFundo){
-  const w=srcCanvas.width,h=srcCanvas.height;
-  const out=document.createElement('canvas');out.width=w;out.height=h;
-  const ctx=out.getContext('2d');
-  ctx.fillStyle=corFundo||'#e8e0d8';ctx.fillRect(0,0,w,h);
-  ctx.save();
-  ctx.translate(w/2,h/2);
-  ctx.rotate(-anguloDeg*Math.PI/180);
-  ctx.translate(-w/2,-h/2);
-  ctx.drawImage(srcCanvas,0,0);
-  ctx.restore();
-  return out;
-}
-function retanguloInscrito(W,H,anguloDeg){
-  let a=((anguloDeg%360)+360)%360;a=a%90;
-  const rad=a*Math.PI/180;
-  const sinA=Math.abs(Math.sin(rad)),cosA=Math.abs(Math.cos(rad));
-  if(sinA<1e-6||cosA<1e-6)return{w:W,h:H};
-  const sideLong=Math.max(W,H),sideShort=Math.min(W,H);
-  let wr,hr;
-  if(sideShort<=2*sinA*cosA*sideLong+1e-6){
-    const x=0.5*sideShort;
-    if(W>=H){wr=x/sinA;hr=x/cosA;}else{wr=x/cosA;hr=x/sinA;}
-  }else{
-    const cos2a=cosA*cosA-sinA*sinA;
-    wr=(W*cosA-H*sinA)/cos2a;
-    hr=(H*cosA-W*sinA)/cos2a;
-  }
-  return{w:Math.abs(wr),h:Math.abs(hr)};
-}
-function cortarCentro(srcCanvas,cw,ch){
-  cw=Math.max(1,Math.round(cw));ch=Math.max(1,Math.round(ch));
-  const out=document.createElement('canvas');out.width=cw;out.height=ch;
-  const ctx=out.getContext('2d');
-  const sx=(srcCanvas.width-cw)/2,sy=(srcCanvas.height-ch)/2;
-  ctx.drawImage(srcCanvas,sx,sy,cw,ch,0,0,cw,ch);
-  return out;
-}
 async function capturarMapaCanvas(){
   const mapEl=document.getElementById('map');
-  const overlayPane=mapEl.querySelector('.leaflet-overlay-pane');
-  const overlayPrevDisplay=overlayPane?overlayPane.style.display:null;
-  if(overlayPane)overlayPane.style.display='none';
-  const scale=2;
-  let tileCanvas;
+  // foreignObjectRendering:true faz o próprio navegador desenhar o conteúdo
+  // (via <foreignObject> de SVG) em vez do html2canvas tentar recalcular o CSS.
+  // Isso evita o bug em que transforms aninhados (translate3d do Leaflet +
+  // rotate do leaflet-rotate) geram uma captura desalinhada/"girada" em
+  // relação à posição real do mapa na tela.
+  let canvas;
   try{
-    tileCanvas = await html2canvas(mapEl, {
+    canvas = await html2canvas(mapEl, {
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#e8e0d8',
-      scale,
-      logging: false
+      scale: 2,
+      logging: false,
+      foreignObjectRendering: true
     });
-  }finally{
-    if(overlayPane)overlayPane.style.display=overlayPrevDisplay||'';
-  }
-  let canvas = mapBearing ? rotacionarCanvas(tileCanvas,mapBearing,'#e8e0d8') : tileCanvas;
-  const ctx=canvas.getContext('2d');
-  desenharQuarteiroesCanvas(ctx,scale);
-  if(mapBearing){
-    const {w:cw,h:ch}=retanguloInscrito(canvas.width,canvas.height,mapBearing);
-    if(cw<canvas.width-1||ch<canvas.height-1)canvas=cortarCentro(canvas,cw,ch);
+    // Sanity check: em alguns navegadores o foreignObjectRendering falha
+    // silenciosamente e devolve um canvas em branco/transparente. Nesse
+    // caso caímos para o modo clássico.
+    const ctxChk=canvas.getContext('2d');
+    const amostra=ctxChk.getImageData(0,0,Math.min(10,canvas.width),Math.min(10,canvas.height)).data;
+    let temConteudo=false;
+    for(let i=0;i<amostra.length;i+=4){if(amostra[i+3]>0){temConteudo=true;break;}}
+    if(!temConteudo)throw new Error('canvas vazio');
+  }catch(e){
+    canvas = await html2canvas(mapEl, {
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#e8e0d8',
+      scale: 2,
+      logging: false,
+      foreignObjectRendering: false
+    });
   }
   return canvas;
 }
