@@ -1044,6 +1044,31 @@ function rotacionarCanvas(srcCanvas,anguloDeg,corFundo){
   ctx.restore();
   return out;
 }
+function retanguloInscrito(W,H,anguloDeg){
+  let a=((anguloDeg%360)+360)%360;a=a%90;
+  const rad=a*Math.PI/180;
+  const sinA=Math.abs(Math.sin(rad)),cosA=Math.abs(Math.cos(rad));
+  if(sinA<1e-6||cosA<1e-6)return{w:W,h:H};
+  const sideLong=Math.max(W,H),sideShort=Math.min(W,H);
+  let wr,hr;
+  if(sideShort<=2*sinA*cosA*sideLong+1e-6){
+    const x=0.5*sideShort;
+    if(W>=H){wr=x/sinA;hr=x/cosA;}else{wr=x/cosA;hr=x/sinA;}
+  }else{
+    const cos2a=cosA*cosA-sinA*sinA;
+    wr=(W*cosA-H*sinA)/cos2a;
+    hr=(H*cosA-W*sinA)/cos2a;
+  }
+  return{w:Math.abs(wr),h:Math.abs(hr)};
+}
+function cortarCentro(srcCanvas,cw,ch){
+  cw=Math.max(1,Math.round(cw));ch=Math.max(1,Math.round(ch));
+  const out=document.createElement('canvas');out.width=cw;out.height=ch;
+  const ctx=out.getContext('2d');
+  const sx=(srcCanvas.width-cw)/2,sy=(srcCanvas.height-ch)/2;
+  ctx.drawImage(srcCanvas,sx,sy,cw,ch,0,0,cw,ch);
+  return out;
+}
 async function capturarMapaCanvas(){
   const mapEl=document.getElementById('map');
   const overlayPane=mapEl.querySelector('.leaflet-overlay-pane');
@@ -1062,9 +1087,13 @@ async function capturarMapaCanvas(){
   }finally{
     if(overlayPane)overlayPane.style.display=overlayPrevDisplay||'';
   }
-  const canvas = mapBearing ? rotacionarCanvas(tileCanvas,mapBearing,'#e8e0d8') : tileCanvas;
+  let canvas = mapBearing ? rotacionarCanvas(tileCanvas,mapBearing,'#e8e0d8') : tileCanvas;
   const ctx=canvas.getContext('2d');
   desenharQuarteiroesCanvas(ctx,scale);
+  if(mapBearing){
+    const {w:cw,h:ch}=retanguloInscrito(canvas.width,canvas.height,mapBearing);
+    if(cw<canvas.width-1||ch<canvas.height-1)canvas=cortarCentro(canvas,cw,ch);
+  }
   return canvas;
 }
 async function _capturarComToggles(){
