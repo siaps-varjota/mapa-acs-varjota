@@ -56,6 +56,12 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 .rua-grupo{display:flex;flex-direction:column;gap:6px;}
 .rua-grupo-titulo{font-size:12px;font-weight:700;color:var(--texto);display:flex;align-items:center;gap:6px;padding:0 2px;}
 .rua-grupo-titulo .total{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--laranja);}
+.ruas-toolbar{padding:12px 18px 8px;display:flex;flex-direction:column;gap:8px;flex-shrink:0;border-bottom:1px solid var(--borda);background:#fff;}
+.ruas-busca-input{width:100%;padding:8px 10px;border:1px solid var(--borda);border-radius:7px;font-family:'Sora',sans-serif;font-size:12px;color:var(--texto);background:var(--cinza);outline:none;transition:border-color .2s;box-sizing:border-box;}
+.ruas-busca-input:focus{border-color:var(--laranja);background:#fff;}
+.btn-imprimir-ruas{display:flex;align-items:center;justify-content:center;gap:6px;background:var(--laranja);color:#fff;border:none;border-radius:7px;padding:8px 10px;font-family:'Sora',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:filter .2s;}
+.btn-imprimir-ruas:hover{filter:brightness(1.1);}
+.ruas-sem-resultado{font-size:12px;color:var(--muted);font-style:italic;margin-top:6px;}
 .rua-row{display:flex;justify-content:space-between;align-items:center;background:var(--laranja-bg);border-left:3px solid var(--laranja);padding:7px 10px;border-radius:0 6px 6px 0;}
 .rua-row .nome{font-size:12px;font-weight:600;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .rua-row .qtd{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--laranja);background:#fff;padding:2px 10px;border-radius:20px;border:1px solid var(--laranja);flex-shrink:0;margin-left:8px;}
@@ -348,7 +354,13 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
       </div>
       <div class="tab-content ativo" id="tab-lados"><div id="lados-lista"><h3>Lados de quadra marcados</h3></div></div>
       <div class="tab-content" id="tab-quarteirao"><div id="qts-lista"><h3>Quarteirões desenhados</h3></div></div>
-      <div class="tab-content" id="tab-ruas"><div id="ruas-lista"><h3>Ruas cadastradas</h3></div></div>
+      <div class="tab-content" id="tab-ruas">
+        <div class="ruas-toolbar">
+          <input type="text" id="ruas-busca" class="ruas-busca-input" placeholder="🔍 Buscar por ACS ou Rua..." oninput="renderRuas()" />
+          <button class="btn-imprimir-ruas" onclick="imprimirRelatorioRuas()">🖨️ Imprimir relatório</button>
+        </div>
+        <div id="ruas-lista"><h3>Ruas cadastradas</h3></div>
+      </div>
       <div id="total-geral"><span>Total geral de pessoas</span><span class="num" id="total-num">0</span></div>
     </div>
   </div>
@@ -816,10 +828,7 @@ function atualizarResumo(){
 }
 
 // ─── RUAS ─────────────────────────────────────────────────────────────────────
-function renderRuas(){
-  const lista=document.getElementById('ruas-lista');if(!lista)return;
-  const h3=lista.querySelector('h3');lista.innerHTML='';lista.appendChild(h3);
-  if(!lados.length){const p=document.createElement('p');p.style.cssText='font-size:12px;color:var(--muted);font-style:italic;margin-top:6px';p.textContent='Nenhum lado marcado ainda.';lista.appendChild(p);return;}
+function obterRuasAgrupadas(termo){
   // Agrupa por rua, e dentro de cada rua soma por ACS
   const porRua={};
   lados.forEach(l=>{
@@ -830,17 +839,90 @@ function renderRuas(){
     if(!porRua[rua][acs])porRua[rua][acs]=0;
     porRua[rua][acs]+=qtd;
   });
+  const t=(termo||'').trim().toLowerCase();
   const nomesRuas=Object.keys(porRua).sort((a,b)=>a.localeCompare(b,'pt-BR'));
-  lista.innerHTML='';lista.appendChild(h3);
+  const resultado=[];
   nomesRuas.forEach(rua=>{
     const acsMap=porRua[rua];
-    const totalRua=Object.values(acsMap).reduce((s,v)=>s+v,0);
-    const acsNomes=Object.keys(acsMap).sort((a,b)=>acsMap[b]-acsMap[a]);
+    let acsNomes=Object.keys(acsMap).sort((a,b)=>acsMap[b]-acsMap[a]);
+    if(t){
+      const ruaCasa=rua.toLowerCase().includes(t);
+      if(!ruaCasa){
+        // filtra somente as linhas de ACS que casam com o termo
+        acsNomes=acsNomes.filter(acs=>acs.toLowerCase().includes(t));
+        if(!acsNomes.length)return; // nem a rua nem nenhuma ACS casam, pula
+      }
+    }
+    const totalMostrado=acsNomes.reduce((s,acs)=>s+acsMap[acs],0);
+    resultado.push({rua,acsNomes,acsMap,totalMostrado});
+  });
+  return resultado;
+}
+function renderRuas(){
+  const lista=document.getElementById('ruas-lista');if(!lista)return;
+  const buscaEl=document.getElementById('ruas-busca');
+  const termo=buscaEl?buscaEl.value:'';
+  const h3=lista.querySelector('h3')||document.createElement('h3');
+  if(!h3.parentNode){h3.textContent='Ruas cadastradas';}
+  lista.innerHTML='';lista.appendChild(h3);
+  if(!lados.length){const p=document.createElement('p');p.className='ruas-sem-resultado';p.textContent='Nenhum lado marcado ainda.';lista.appendChild(p);return;}
+  const grupos=obterRuasAgrupadas(termo);
+  if(!grupos.length){const p=document.createElement('p');p.className='ruas-sem-resultado';p.textContent='Nenhum resultado para essa busca.';lista.appendChild(p);return;}
+  grupos.forEach(({rua,acsNomes,acsMap,totalMostrado})=>{
     const grupo=document.createElement('div');grupo.className='rua-grupo';
-    grupo.innerHTML=`<div class="rua-grupo-titulo"><span>🛣️ ${escHtml(rua)}</span><span class="total">${totalRua.toLocaleString('pt-BR')} pessoas</span></div>`+
+    grupo.innerHTML=`<div class="rua-grupo-titulo"><span>🛣️ ${escHtml(rua)}</span><span class="total">${totalMostrado.toLocaleString('pt-BR')} pessoas</span></div>`+
       acsNomes.map(acs=>`<div class="rua-row"><span class="nome">👤 ${escHtml(acs)}</span><span class="qtd">${acsMap[acs].toLocaleString('pt-BR')}</span></div>`).join('');
     lista.appendChild(grupo);
   });
+}
+function imprimirRelatorioRuas(){
+  const buscaEl=document.getElementById('ruas-busca');
+  const termo=buscaEl?buscaEl.value.trim():'';
+  const grupos=obterRuasAgrupadas(termo);
+  if(!grupos.length){mostrarToast('Nenhum dado para gerar o relatório.');return;}
+  const dataHoje=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const totalGeral=grupos.reduce((s,g)=>s+g.totalMostrado,0);
+  const linhasHtml=grupos.map(({rua,acsNomes,acsMap,totalMostrado})=>{
+    const linhasAcs=acsNomes.map(acs=>`<tr><td class="col-acs">${escHtml(acs)}</td><td class="col-qtd">${acsMap[acs].toLocaleString('pt-BR')}</td></tr>`).join('');
+    return `<tr class="linha-rua"><td colspan="2">🛣️ ${escHtml(rua)} <span class="total-rua">— ${totalMostrado.toLocaleString('pt-BR')} pessoas</span></td></tr>${linhasAcs}`;
+  }).join('');
+  const filtroLabel=termo?`Filtro aplicado: <strong>${escHtml(termo)}</strong>`:'Sem filtro (todas as ruas)';
+  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><title>Relatório de Ruas por ACS — Varjota/CE</title>
+<style>
+@page{size:A4;margin:16mm;}
+*{box-sizing:border-box;}
+body{font-family:'Segoe UI',Arial,sans-serif;color:#1e2a38;margin:0;padding:0;}
+header{border-bottom:3px solid #1a7f4b;padding-bottom:10px;margin-bottom:16px;}
+header h1{font-size:20px;color:#1a7f4b;margin:0 0 4px;}
+header p{font-size:12px;color:#6b7a8d;margin:2px 0;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead th{background:#1a7f4b;color:#fff;text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;}
+tr.linha-rua td{background:#fff3e0;font-weight:700;padding:8px 10px;border-top:2px solid #e65100;font-size:12.5px;}
+tr.linha-rua .total-rua{font-weight:600;color:#e65100;font-size:11px;}
+td.col-acs{padding:6px 10px 6px 24px;border-bottom:1px solid #dde3ec;}
+td.col-qtd{padding:6px 10px;border-bottom:1px solid #dde3ec;text-align:right;font-family:'Consolas',monospace;font-weight:600;width:110px;}
+tfoot td{padding:10px;font-weight:700;border-top:3px solid #1a7f4b;font-size:13px;}
+tfoot .total-geral-num{text-align:right;color:#1a7f4b;font-family:'Consolas',monospace;}
+footer{margin-top:18px;font-size:10px;color:#6b7a8d;text-align:right;}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+</style></head>
+<body>
+<header>
+<h1>📍 Relatório de Ruas por ACS — ESF Varjota/CE</h1>
+<p>Gerado em ${dataHoje}</p>
+<p>${filtroLabel}</p>
+</header>
+<table>
+<thead><tr><th>Rua / ACS</th><th style="text-align:right">Pessoas</th></tr></thead>
+<tbody>${linhasHtml}</tbody>
+<tfoot><tr><td>Total geral</td><td class="total-geral-num">${totalGeral.toLocaleString('pt-BR')}</td></tr></tfoot>
+</table>
+<footer>Relatório gerado automaticamente pelo Mapa ACS — Varjota/CE</footer>
+</body></html>`;
+  const janela=window.open('','_blank');
+  if(!janela){mostrarToast('Bloqueador de pop-up impediu a abertura. Permita pop-ups para imprimir.');return;}
+  janela.document.open();janela.document.write(html);janela.document.close();
+  janela.onload=()=>{janela.focus();janela.print();};
 }
 function atualizarBadge(){const t=lados.length+quarteiroesData.length;document.getElementById('badge-lados').textContent=`${t} elemento${t!==1?'s':''}`;}
 
