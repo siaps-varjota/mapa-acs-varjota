@@ -995,7 +995,7 @@ document.getElementById('input-importar').addEventListener('change',function(e){
 
 // ─── CAPTURAR MAPA ────────────────────────────────────────────────────────────
 let _canvasMapaSemRodape=null;
-let _canvasCache={};
+let _capturandoPreview=false;
 function setOpacidadeLados(op){quarteiroesData.forEach(q=>{(q.linhas||[]).forEach(l=>{try{l.setStyle({opacity:op});}catch{}});});}
 function setOpacidadePinos(op){lados.forEach(l=>{try{l.marker.setOpacity(op);}catch{}});}
 function montarCanvasFinal(mapaCanvas,nomeDoc){
@@ -1016,41 +1016,46 @@ async function capturarMapaCanvas(){
   });
   return canvas;
 }
+async function _capturarComToggles(){
+  if(_capturandoPreview)return;
+  _capturandoPreview=true;
+  const wrap=document.getElementById('preview-canvas-wrap');
+  const lOn=document.getElementById('chk-mostrar-lados').checked;
+  const pOn=document.getElementById('chk-mostrar-pinos').checked;
+  const toolbar=document.getElementById('toolbar'),sn=document.getElementById('status-nuvem'),dicaEl=document.getElementById('dica'),la=document.getElementById('legenda-asterisco'),pt=document.getElementById('painel-toggle');
+  const prevImg=wrap.querySelector('img');
+  wrap.innerHTML='<span style="font-size:28px;animation:spin 1s linear infinite">⏳</span>';
+  toolbar.style.display='none';sn.style.display='none';dicaEl.style.display='none';la.style.display='none';pt.style.visibility='hidden';
+  const handlesBkp=_handleQtId;if(handlesBkp!==null)esconderHandles();
+  try{
+    setOpacidadeLados(lOn?1:0);
+    setOpacidadePinos(pOn?1:0);
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    await new Promise(r=>setTimeout(r,150));
+    _canvasMapaSemRodape=await capturarMapaCanvas();
+    wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim()).toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);
+  }catch(e){console.error(e);wrap.innerHTML='';if(prevImg)wrap.appendChild(prevImg);mostrarToast('❌ '+e.message);}
+  finally{
+    setOpacidadeLados(1);setOpacidadePinos(1);
+    toolbar.style.display='';sn.style.display='';la.style.display='';pt.style.visibility='';if(handlesBkp!==null)mostrarHandles(handlesBkp);
+    _capturandoPreview=false;
+  }
+}
 document.getElementById('btn-capturar').addEventListener('click',async()=>{
   const btn=document.getElementById('btn-capturar');if(btn.classList.contains('capturando'))return;btn.classList.add('capturando');btn.textContent='⏳ Processando…';
-  const toolbar=document.getElementById('toolbar'),sn=document.getElementById('status-nuvem'),dicaEl=document.getElementById('dica'),la=document.getElementById('legenda-asterisco'),pt=document.getElementById('painel-toggle');
-  toolbar.style.display='none';sn.style.display='none';dicaEl.style.display='none';la.style.display='none';pt.style.visibility='hidden';
-  const handlesBkp=_handleQtId;if(handlesBkp!==null)esconderHandles();await new Promise(r=>setTimeout(r,150));
-  try{
-    _canvasCache={};
-    for(const lOn of [true,false]){
-      setOpacidadeLados(lOn?1:0);
-      for(const pOn of [true,false]){
-        setOpacidadePinos(pOn?1:0);
-        await new Promise(r=>setTimeout(r,60));
-        _canvasCache[`${lOn?1:0}-${pOn?1:0}`]=await capturarMapaCanvas();
-      }
-    }
-    setOpacidadeLados(1);setOpacidadePinos(1);
-    document.getElementById('chk-mostrar-lados').checked=true;
-    document.getElementById('chk-mostrar-pinos').checked=true;
-    _canvasMapaSemRodape=_canvasCache['1-1'];
-    const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(_canvasMapaSemRodape,'').toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);document.getElementById('input-nome-doc').value='';document.getElementById('input-nome-arquivo').value=`mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;document.getElementById('modal-salvar').classList.remove('oculto');setTimeout(()=>document.getElementById('input-nome-doc').focus(),100);
-  }catch(e){console.error(e);setOpacidadeLados(1);setOpacidadePinos(1);mostrarToast('❌ '+e.message);}
-  finally{toolbar.style.display='';sn.style.display='';la.style.display='';pt.style.visibility='';btn.classList.remove('capturando');btn.textContent='🖼️ Salvar Mapa';if(handlesBkp!==null)mostrarHandles(handlesBkp);}
+  document.getElementById('chk-mostrar-lados').checked=true;
+  document.getElementById('chk-mostrar-pinos').checked=true;
+  document.getElementById('input-nome-doc').value='';document.getElementById('input-nome-arquivo').value=`mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;
+  document.getElementById('modal-salvar').classList.remove('oculto');
+  await _capturarComToggles();
+  btn.classList.remove('capturando');btn.textContent='🖼️ Salvar Mapa';
+  setTimeout(()=>document.getElementById('input-nome-doc').focus(),100);
 });
-function _atualizarPreviewPorToggle(){
-  const lOn=document.getElementById('chk-mostrar-lados').checked?1:0;
-  const pOn=document.getElementById('chk-mostrar-pinos').checked?1:0;
-  _canvasMapaSemRodape=_canvasCache[`${lOn}-${pOn}`];
-  if(!_canvasMapaSemRodape)return;
-  const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim()).toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);
-}
-document.getElementById('chk-mostrar-lados').addEventListener('change',_atualizarPreviewPorToggle);
-document.getElementById('chk-mostrar-pinos').addEventListener('change',_atualizarPreviewPorToggle);
+document.getElementById('chk-mostrar-lados').addEventListener('change',_capturarComToggles);
+document.getElementById('chk-mostrar-pinos').addEventListener('change',_capturarComToggles);
 document.getElementById('input-nome-doc').addEventListener('input',()=>{if(!_canvasMapaSemRodape)return;const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim()).toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);});
-document.getElementById('btn-confirmar-salvar').addEventListener('click',()=>{if(!_canvasMapaSemRodape)return;const fc=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim());const nome=(document.getElementById('input-nome-arquivo').value||'mapa_acs_varjota').trim().replace(/\.png$/i,'');const a=document.createElement('a');a.download=`${nome}.png`;a.href=fc.toDataURL('image/png');a.click();document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;_canvasCache={};mostrarToast('✅ Imagem salva!');});
-document.getElementById('btn-cancelar-salvar').addEventListener('click',()=>{document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;_canvasCache={};});
+document.getElementById('btn-confirmar-salvar').addEventListener('click',()=>{if(!_canvasMapaSemRodape)return;const fc=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim());const nome=(document.getElementById('input-nome-arquivo').value||'mapa_acs_varjota').trim().replace(/\.png$/i,'');const a=document.createElement('a');a.download=`${nome}.png`;a.href=fc.toDataURL('image/png');a.click();document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;mostrarToast('✅ Imagem salva!');});
+document.getElementById('btn-cancelar-salvar').addEventListener('click',()=>{document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;});
 
 // ─── LIMPAR TUDO ──────────────────────────────────────────────────────────────
 document.getElementById('btn-limpar').addEventListener('click',()=>{
