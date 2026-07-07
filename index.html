@@ -1009,14 +1009,14 @@ function montarCanvasFinal(mapaCanvas,nomeDoc){
 function hexParaRgb(hex){hex=(hex||'#6a1b9a').replace('#','');if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');const n=parseInt(hex,16)||0;return{r:(n>>16)&255,g:(n>>8)&255,b:n&255};}
 async function fetchImgBlob(src){try{const res=await fetch(src,{mode:'cors'});if(!res.ok)throw new Error();const blob=await res.blob();const url=URL.createObjectURL(blob);return await new Promise(ok=>{const img=new Image();img.onload=()=>{URL.revokeObjectURL(url);ok(img);};img.onerror=()=>{URL.revokeObjectURL(url);ok(null);};img.src=url;});}catch{return null;}}
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
-function containerParaTela(px,py,W,H,S){const ang=-mapBearing*Math.PI/180;const cx=W*S/2,cy=H*S/2;const dx=px*S-cx,dy=py*S-cy;return[cx+dx*Math.cos(ang)-dy*Math.sin(ang),cy+dx*Math.sin(ang)+dy*Math.cos(ang)];}
-function desenharQuarteiroesEmCanvas(ctx,escala,W,H){
+function rotacionarPontoTela(px,py,W,H,S,ang){const cx=W*S/2,cy=H*S/2;const dx=px*S-cx,dy=py*S-cy;return[cx+dx*Math.cos(ang)-dy*Math.sin(ang),cy+dx*Math.sin(ang)+dy*Math.cos(ang)];}
+function desenharQuarteiroesEmCanvas(ctx,escala,W,H,ang){
   // O html2canvas não captura de forma confiável os polígonos SVG do Leaflet
   // (quarteirões) quando o mapa está rotacionado. Para garantir que os
   // quadriláteros apareçam sempre na imagem exportada, desenhamos eles aqui
   // manualmente, usando a posição real na tela (map.latLngToContainerPoint).
   // A captura dos tiles é feita com a rotação zerada (ver capturarMapaCanvas),
-  // então aplicamos aqui a mesma transformação de containerParaTela usada para
+  // então aplicamos aqui o mesmo ângulo (lido do CSS real do mapa) usado para
   // re-rotacionar a imagem final, mantendo os quarteirões alinhados aos tiles.
   quarteiroesData.forEach(q=>{
     try{
@@ -1024,7 +1024,7 @@ function desenharQuarteiroesEmCanvas(ctx,escala,W,H){
       if(!verts||verts.length<3)return;
       const pts=verts.map(v=>{
         const p=map.latLngToContainerPoint(L.latLng(v));
-        const [tx,ty]=containerParaTela(p.x,p.y,W,H,1);
+        const [tx,ty]=ang?rotacionarPontoTela(p.x,p.y,W,H,1,ang):[p.x,p.y];
         return {x:tx,y:ty};
       });
       const fillOp=(q.nlados===2)?0:0.15;
@@ -1057,7 +1057,7 @@ function desenharQuarteiroesEmCanvas(ctx,escala,W,H){
     }catch(e){console.warn('[captura-mapa] erro ao desenhar quarteirão',q.id,e);}
   });
 }
-async function capturarMapaCanvas(){
+async function capturarMapaCanvas(anguloRad){
   const mapEl=document.getElementById('map');
   const SCALE=2;
   const W=mapEl.clientWidth,H=mapEl.clientHeight;
@@ -1071,19 +1071,21 @@ async function capturarMapaCanvas(){
   // A captura acima é feita com a rotação do mapa zerada (ver clique do botão
   // "Salvar Mapa"), pois o html2canvas não rasteriza com precisão o CSS
   // transform de rotação do leaflet-rotate. Para a foto final sair com o
-  // mesmo ângulo visual que o usuário vê na tela (mapBearing), giramos aqui
-  // a imagem já capturada de volta para esse ângulo, preenchendo os cantos
-  // expostos pela rotação com a cor de fundo do mapa.
-  if(mapBearing!==0){
+  // mesmo ângulo visual que o usuário vê na tela, giramos aqui a imagem já
+  // capturada de volta usando o ângulo real (em radianos) lido do próprio
+  // CSS do mapa antes de zerarmos a rotação — evita ter que adivinhar o
+  // sentido/sinal usado internamente pelo leaflet-rotate. Os cantos expostos
+  // pela rotação ficam preenchidos com a cor de fundo do mapa.
+  if(anguloRad){
     const rotado=document.createElement('canvas');
     rotado.width=canvas.width;rotado.height=canvas.height;
     const rctx=rotado.getContext('2d');
     rctx.fillStyle='#e8e0d8';
     rctx.fillRect(0,0,rotado.width,rotado.height);
-    const cx=canvas.width/2,cy=canvas.height/2,ang=-mapBearing*Math.PI/180;
+    const cx=canvas.width/2,cy=canvas.height/2;
     rctx.save();
     rctx.translate(cx,cy);
-    rctx.rotate(ang);
+    rctx.rotate(anguloRad);
     rctx.drawImage(canvas,-cx,-cy);
     rctx.restore();
     canvas=rotado;
@@ -1097,7 +1099,7 @@ async function capturarMapaCanvas(){
     // todos os quarteirões) — exatamente o bug relatado. Resetamos aqui antes
     // de desenhar qualquer coisa manualmente.
     ctx.setTransform(1,0,0,1,0,0);
-    desenharQuarteiroesEmCanvas(ctx,SCALE,W,H);
+    desenharQuarteiroesEmCanvas(ctx,SCALE,W,H,anguloRad);
   }catch(e){console.warn('[captura-mapa] falha ao desenhar quarteirões',e);}
   return canvas;
 }
@@ -1115,9 +1117,22 @@ document.getElementById('btn-capturar').addEventListener('click',async()=>{
   // na imagem final. Solução: zerar a rotação só durante a captura (tiles
   // ficam retos, sem ambiguidade para o html2canvas) e restaurar depois.
   const bearingBkp=mapBearing;
+  // Lemos o ângulo real aplicado pelo leaflet-rotate no pane do mapa (via CSS)
+  // antes de zerar a rotação para a captura. Assim usamos o valor exato que o
+  // navegador já está desenhando, sem depender de recalcular manualmente o
+  // sentido/sinal da rotação.
+  let anguloFotoRad=0;
+  if(bearingBkp!==0){
+    try{
+      const paneEl=document.querySelector('#map .leaflet-map-pane');
+      const tr=paneEl?getComputedStyle(paneEl).transform:null;
+      const m=tr&&tr!=='none'?tr.match(/^matrix\(([^)]+)\)$/):null;
+      if(m){const p=m[1].split(',').map(Number);anguloFotoRad=Math.atan2(p[1],p[0]);}
+    }catch{}
+  }
   if(bearingBkp!==0){map.setBearing(0);await new Promise(r=>setTimeout(r,350));}
   else{await new Promise(r=>setTimeout(r,150));}
-  try{const canvas=await capturarMapaCanvas();_canvasMapaSemRodape=canvas;const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(canvas,'').toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);document.getElementById('input-nome-doc').value='';document.getElementById('input-nome-arquivo').value=`mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;document.getElementById('modal-salvar').classList.remove('oculto');setTimeout(()=>document.getElementById('input-nome-doc').focus(),100);}catch(e){console.error(e);mostrarToast('❌ '+e.message);}
+  try{const canvas=await capturarMapaCanvas(anguloFotoRad);_canvasMapaSemRodape=canvas;const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(canvas,'').toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);document.getElementById('input-nome-doc').value='';document.getElementById('input-nome-arquivo').value=`mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;document.getElementById('modal-salvar').classList.remove('oculto');setTimeout(()=>document.getElementById('input-nome-doc').focus(),100);}catch(e){console.error(e);mostrarToast('❌ '+e.message);}
   finally{toolbar.style.display='';sn.style.display='';la.style.display='';pt.style.visibility='';btn.classList.remove('capturando');btn.textContent='🖼️ Salvar Mapa';if(handlesBkp!==null)mostrarHandles(handlesBkp);if(bearingBkp!==0)map.setBearing(bearingBkp);}
 });
 document.getElementById('input-nome-doc').addEventListener('input',()=>{if(!_canvasMapaSemRodape)return;const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim()).toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);});
