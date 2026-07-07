@@ -1117,21 +1117,29 @@ document.getElementById('btn-capturar').addEventListener('click',async()=>{
   // na imagem final. Solução: zerar a rotação só durante a captura (tiles
   // ficam retos, sem ambiguidade para o html2canvas) e restaurar depois.
   const bearingBkp=mapBearing;
-  // Lemos o ângulo real aplicado pelo leaflet-rotate no pane do mapa (via CSS)
-  // antes de zerar a rotação para a captura. Assim usamos o valor exato que o
-  // navegador já está desenhando, sem depender de recalcular manualmente o
-  // sentido/sinal da rotação.
+  // Em vez de tentar ler/adivinhar o ângulo de rotação (via CSS ou pelo valor
+  // de mapBearing em graus), medimos empiricamente: escolhemos dois pontos de
+  // referência na tela AINDA com a rotação atual aplicada, guardamos suas
+  // coordenadas geográficas, zeramos a rotação para a captura, e então
+  // comparamos onde esses mesmos pontos caem na tela "achatada". A diferença
+  // de ângulo entre os dois pares de pontos é exatamente a rotação que
+  // precisamos reaplicar na imagem final — sem depender de nenhuma convenção
+  // interna do leaflet-rotate.
+  const mapElRef=document.getElementById('map');
+  const WcRef=mapElRef.clientWidth,HcRef=mapElRef.clientHeight;
+  const pARef=L.point(WcRef*0.25,HcRef*0.5),pBRef=L.point(WcRef*0.75,HcRef*0.5);
+  const llARef=map.containerPointToLatLng(pARef),llBRef=map.containerPointToLatLng(pBRef);
+  if(bearingBkp!==0){map.setBearing(0);await new Promise(r=>setTimeout(r,350));}
+  else{await new Promise(r=>setTimeout(r,150));}
   let anguloFotoRad=0;
   if(bearingBkp!==0){
     try{
-      const paneEl=document.querySelector('#map .leaflet-map-pane');
-      const tr=paneEl?getComputedStyle(paneEl).transform:null;
-      const m=tr&&tr!=='none'?tr.match(/^matrix\(([^)]+)\)$/):null;
-      if(m){const p=m[1].split(',').map(Number);anguloFotoRad=Math.atan2(p[1],p[0]);}
+      const pAFlat=map.latLngToContainerPoint(llARef),pBFlat=map.latLngToContainerPoint(llBRef);
+      const angAntes=Math.atan2(pBRef.y-pARef.y,pBRef.x-pARef.x);
+      const angDepois=Math.atan2(pBFlat.y-pAFlat.y,pBFlat.x-pAFlat.x);
+      anguloFotoRad=angAntes-angDepois;
     }catch{}
   }
-  if(bearingBkp!==0){map.setBearing(0);await new Promise(r=>setTimeout(r,350));}
-  else{await new Promise(r=>setTimeout(r,150));}
   try{const canvas=await capturarMapaCanvas(anguloFotoRad);_canvasMapaSemRodape=canvas;const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(canvas,'').toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);document.getElementById('input-nome-doc').value='';document.getElementById('input-nome-arquivo').value=`mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;document.getElementById('modal-salvar').classList.remove('oculto');setTimeout(()=>document.getElementById('input-nome-doc').focus(),100);}catch(e){console.error(e);mostrarToast('❌ '+e.message);}
   finally{toolbar.style.display='';sn.style.display='';la.style.display='';pt.style.visibility='';btn.classList.remove('capturando');btn.textContent='🖼️ Salvar Mapa';if(handlesBkp!==null)mostrarHandles(handlesBkp);if(bearingBkp!==0)map.setBearing(bearingBkp);}
 });
