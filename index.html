@@ -1010,15 +1010,63 @@ function hexParaRgb(hex){hex=(hex||'#6a1b9a').replace('#','');if(hex.length===3)
 async function fetchImgBlob(src){try{const res=await fetch(src,{mode:'cors'});if(!res.ok)throw new Error();const blob=await res.blob();const url=URL.createObjectURL(blob);return await new Promise(ok=>{const img=new Image();img.onload=()=>{URL.revokeObjectURL(url);ok(img);};img.onerror=()=>{URL.revokeObjectURL(url);ok(null);};img.src=url;});}catch{return null;}}
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
 function containerParaTela(px,py,W,H,S){const ang=-mapBearing*Math.PI/180;const cx=W*S/2,cy=H*S/2;const dx=px*S-cx,dy=py*S-cy;return[cx+dx*Math.cos(ang)-dy*Math.sin(ang),cy+dx*Math.sin(ang)+dy*Math.cos(ang)];}
+function desenharQuarteiroesEmCanvas(ctx,escala){
+  // O html2canvas não captura de forma confiável os polígonos SVG do Leaflet
+  // (quarteirões) quando o mapa está rotacionado. Para garantir que os
+  // quadriláteros apareçam sempre na imagem exportada, desenhamos eles aqui
+  // manualmente, usando a posição real na tela (map.latLngToContainerPoint),
+  // que já vem corrigida pela rotação atual do mapa.
+  quarteiroesData.forEach(q=>{
+    try{
+      const verts=obterVerticesQt(q);
+      if(!verts||verts.length<3)return;
+      const pts=verts.map(v=>{
+        const p=map.latLngToContainerPoint(L.latLng(v));
+        return {x:p.x,y:p.y};
+      });
+      const fillOp=(q.nlados===2)?0:0.15;
+      if(fillOp>0){
+        ctx.save();
+        ctx.beginPath();
+        pts.forEach((p,i)=>{const x=p.x*escala,y=p.y*escala;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});
+        ctx.closePath();
+        ctx.globalAlpha=fillOp;
+        ctx.fillStyle=q.cor||'#6a1b9a';
+        ctx.fill();
+        ctx.restore();
+      }
+      const n=pts.length;
+      const coresLados=q.coresLados||[];
+      for(let i=0;i<n;i++){
+        const p1=pts[i],p2=pts[(i+1)%n];
+        const cor=coresLados[i]||q.cor||'#6a1b9a';
+        ctx.save();
+        ctx.globalAlpha=1;
+        ctx.strokeStyle=cor;
+        ctx.lineWidth=2.5*escala;
+        ctx.lineCap='round';
+        ctx.beginPath();
+        ctx.moveTo(p1.x*escala,p1.y*escala);
+        ctx.lineTo(p2.x*escala,p2.y*escala);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }catch(e){console.warn('[captura-mapa] erro ao desenhar quarteirão',q.id,e);}
+  });
+}
 async function capturarMapaCanvas(){
   const mapEl=document.getElementById('map');
+  const SCALE=2;
   const canvas = await html2canvas(mapEl, {
     useCORS: true,
     allowTaint: true,
     backgroundColor: '#e8e0d8',
-    scale: 2,
+    scale: SCALE,
     logging: false
   });
+  try{
+    desenharQuarteiroesEmCanvas(canvas.getContext('2d'),SCALE);
+  }catch(e){console.warn('[captura-mapa] falha ao desenhar quarteirões',e);}
   return canvas;
 }
 document.getElementById('btn-capturar').addEventListener('click',async()=>{
