@@ -1010,19 +1010,22 @@ function hexParaRgb(hex){hex=(hex||'#6a1b9a').replace('#','');if(hex.length===3)
 async function fetchImgBlob(src){try{const res=await fetch(src,{mode:'cors'});if(!res.ok)throw new Error();const blob=await res.blob();const url=URL.createObjectURL(blob);return await new Promise(ok=>{const img=new Image();img.onload=()=>{URL.revokeObjectURL(url);ok(img);};img.onerror=()=>{URL.revokeObjectURL(url);ok(null);};img.src=url;});}catch{return null;}}
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
 function containerParaTela(px,py,W,H,S){const ang=-mapBearing*Math.PI/180;const cx=W*S/2,cy=H*S/2;const dx=px*S-cx,dy=py*S-cy;return[cx+dx*Math.cos(ang)-dy*Math.sin(ang),cy+dx*Math.sin(ang)+dy*Math.cos(ang)];}
-function desenharQuarteiroesEmCanvas(ctx,escala){
+function desenharQuarteiroesEmCanvas(ctx,escala,W,H){
   // O html2canvas não captura de forma confiável os polígonos SVG do Leaflet
   // (quarteirões) quando o mapa está rotacionado. Para garantir que os
   // quadriláteros apareçam sempre na imagem exportada, desenhamos eles aqui
-  // manualmente, usando a posição real na tela (map.latLngToContainerPoint),
-  // que já vem corrigida pela rotação atual do mapa.
+  // manualmente, usando a posição real na tela (map.latLngToContainerPoint).
+  // A captura dos tiles é feita com a rotação zerada (ver capturarMapaCanvas),
+  // então aplicamos aqui a mesma transformação de containerParaTela usada para
+  // re-rotacionar a imagem final, mantendo os quarteirões alinhados aos tiles.
   quarteiroesData.forEach(q=>{
     try{
       const verts=obterVerticesQt(q);
       if(!verts||verts.length<3)return;
       const pts=verts.map(v=>{
         const p=map.latLngToContainerPoint(L.latLng(v));
-        return {x:p.x,y:p.y};
+        const [tx,ty]=containerParaTela(p.x,p.y,W,H,1);
+        return {x:tx,y:ty};
       });
       const fillOp=(q.nlados===2)?0:0.15;
       if(fillOp>0){
@@ -1057,13 +1060,34 @@ function desenharQuarteiroesEmCanvas(ctx,escala){
 async function capturarMapaCanvas(){
   const mapEl=document.getElementById('map');
   const SCALE=2;
-  const canvas = await html2canvas(mapEl, {
+  const W=mapEl.clientWidth,H=mapEl.clientHeight;
+  let canvas = await html2canvas(mapEl, {
     useCORS: true,
     allowTaint: true,
     backgroundColor: '#e8e0d8',
     scale: SCALE,
     logging: false
   });
+  // A captura acima é feita com a rotação do mapa zerada (ver clique do botão
+  // "Salvar Mapa"), pois o html2canvas não rasteriza com precisão o CSS
+  // transform de rotação do leaflet-rotate. Para a foto final sair com o
+  // mesmo ângulo visual que o usuário vê na tela (mapBearing), giramos aqui
+  // a imagem já capturada de volta para esse ângulo, preenchendo os cantos
+  // expostos pela rotação com a cor de fundo do mapa.
+  if(mapBearing!==0){
+    const rotado=document.createElement('canvas');
+    rotado.width=canvas.width;rotado.height=canvas.height;
+    const rctx=rotado.getContext('2d');
+    rctx.fillStyle='#e8e0d8';
+    rctx.fillRect(0,0,rotado.width,rotado.height);
+    const cx=canvas.width/2,cy=canvas.height/2,ang=-mapBearing*Math.PI/180;
+    rctx.save();
+    rctx.translate(cx,cy);
+    rctx.rotate(ang);
+    rctx.drawImage(canvas,-cx,-cy);
+    rctx.restore();
+    canvas=rotado;
+  }
   try{
     const ctx=canvas.getContext('2d');
     // O html2canvas devolve o canvas com uma matriz de transformação (escala/
@@ -1073,7 +1097,7 @@ async function capturarMapaCanvas(){
     // todos os quarteirões) — exatamente o bug relatado. Resetamos aqui antes
     // de desenhar qualquer coisa manualmente.
     ctx.setTransform(1,0,0,1,0,0);
-    desenharQuarteiroesEmCanvas(ctx,SCALE);
+    desenharQuarteiroesEmCanvas(ctx,SCALE,W,H);
   }catch(e){console.warn('[captura-mapa] falha ao desenhar quarteirões',e);}
   return canvas;
 }
