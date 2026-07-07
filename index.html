@@ -1073,9 +1073,20 @@ document.getElementById('btn-capturar').addEventListener('click',async()=>{
   const btn=document.getElementById('btn-capturar');if(btn.classList.contains('capturando'))return;btn.classList.add('capturando');btn.textContent='⏳ Processando…';
   const toolbar=document.getElementById('toolbar'),sn=document.getElementById('status-nuvem'),dicaEl=document.getElementById('dica'),la=document.getElementById('legenda-asterisco'),pt=document.getElementById('painel-toggle');
   toolbar.style.display='none';sn.style.display='none';dicaEl.style.display='none';la.style.display='none';pt.style.visibility='hidden';
-  const handlesBkp=_handleQtId;if(handlesBkp!==null)esconderHandles();await new Promise(r=>setTimeout(r,150));
+  const handlesBkp=_handleQtId;if(handlesBkp!==null)esconderHandles();
+  // O html2canvas não rasteriza com precisão de subpixel o CSS transform de
+  // rotação que o leaflet-rotate aplica ao painel de tiles quando o mapa está
+  // girado. Isso faz com que as ruas/tiles capturadas saiam levemente
+  // deslocadas em relação ao que o Leaflet calcula internamente — enquanto os
+  // quarteirões são desenhados por cima usando map.latLngToContainerPoint(),
+  // que é sempre exato. Resultado: quadriláteros fora de posição/proporção
+  // na imagem final. Solução: zerar a rotação só durante a captura (tiles
+  // ficam retos, sem ambiguidade para o html2canvas) e restaurar depois.
+  const bearingBkp=mapBearing;
+  if(bearingBkp!==0){map.setBearing(0);await new Promise(r=>setTimeout(r,350));}
+  else{await new Promise(r=>setTimeout(r,150));}
   try{const canvas=await capturarMapaCanvas();_canvasMapaSemRodape=canvas;const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(canvas,'').toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);document.getElementById('input-nome-doc').value='';document.getElementById('input-nome-arquivo').value=`mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;document.getElementById('modal-salvar').classList.remove('oculto');setTimeout(()=>document.getElementById('input-nome-doc').focus(),100);}catch(e){console.error(e);mostrarToast('❌ '+e.message);}
-  finally{toolbar.style.display='';sn.style.display='';la.style.display='';pt.style.visibility='';btn.classList.remove('capturando');btn.textContent='🖼️ Salvar Mapa';if(handlesBkp!==null)mostrarHandles(handlesBkp);}
+  finally{toolbar.style.display='';sn.style.display='';la.style.display='';pt.style.visibility='';btn.classList.remove('capturando');btn.textContent='🖼️ Salvar Mapa';if(handlesBkp!==null)mostrarHandles(handlesBkp);if(bearingBkp!==0)map.setBearing(bearingBkp);}
 });
 document.getElementById('input-nome-doc').addEventListener('input',()=>{if(!_canvasMapaSemRodape)return;const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim()).toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);});
 document.getElementById('btn-confirmar-salvar').addEventListener('click',()=>{if(!_canvasMapaSemRodape)return;const fc=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim());const nome=(document.getElementById('input-nome-arquivo').value||'mapa_acs_varjota').trim().replace(/\.png$/i,'');const a=document.createElement('a');a.download=`${nome}.png`;a.href=fc.toDataURL('image/png');a.click();document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;mostrarToast('✅ Imagem salva!');});
