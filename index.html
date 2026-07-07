@@ -1065,7 +1065,15 @@ async function capturarMapaCanvas(){
     logging: false
   });
   try{
-    desenharQuarteiroesEmCanvas(canvas.getContext('2d'),SCALE);
+    const ctx=canvas.getContext('2d');
+    // O html2canvas devolve o canvas com uma matriz de transformação (escala/
+    // translação) residual do seu próprio processo interno de renderização
+    // ainda ativa no contexto. Se desenharmos por cima sem resetar isso, cada
+    // ponto sai deslocado de forma consistente (mesma direção/distância em
+    // todos os quarteirões) — exatamente o bug relatado. Resetamos aqui antes
+    // de desenhar qualquer coisa manualmente.
+    ctx.setTransform(1,0,0,1,0,0);
+    desenharQuarteiroesEmCanvas(ctx,SCALE);
   }catch(e){console.warn('[captura-mapa] falha ao desenhar quarteirões',e);}
   return canvas;
 }
