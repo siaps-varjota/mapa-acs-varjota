@@ -1027,66 +1027,111 @@ function encontrarElementosRotacionados(mapEl){
   }
   return alvos;
 }
+function pontoNorteUp(latlng){
+  // Posição em pixels CSS (relativa ao canto superior esquerdo do #map),
+  // no referencial "norte para cima" — o mesmo referencial em que
+  // capturamos canvasNorte (com a rotação do CSS removida). Calculado
+  // direto pelas primitivas internas do Leaflet (project/pixelOrigin/
+  // mapPanePos), que não dependem do CSS de rotação do leaflet-rotate.
+  const layerPt=map.project(L.latLng(latlng),map.getZoom())._subtract(map.getPixelOrigin());
+  const panePos=(map._getMapPanePos&&map._getMapPanePos())||L.point(0,0);
+  return layerPt.subtract(panePos);
+}
+function desenharQuarteiroesEmCanvas(ctx,escala,mostrarLados){
+  if(!mostrarLados)return;
+  quarteiroesData.forEach(q=>{
+    try{
+      const verts=obterVerticesQt(q);
+      if(!verts||verts.length<3)return;
+      const pts=verts.map(v=>pontoNorteUp(v));
+      const fillOp=(q.nlados===2)?0:0.15;
+      if(fillOp>0){
+        ctx.save();
+        ctx.beginPath();
+        pts.forEach((p,i)=>{const x=p.x*escala,y=p.y*escala;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});
+        ctx.closePath();
+        ctx.globalAlpha=fillOp;
+        ctx.fillStyle=q.cor||'#6a1b9a';
+        ctx.fill();
+        ctx.restore();
+      }
+      const n=pts.length;
+      const coresLados=q.coresLados||[];
+      for(let i=0;i<n;i++){
+        const p1=pts[i],p2=pts[(i+1)%n];
+        const cor=coresLados[i]||q.cor||'#6a1b9a';
+        ctx.save();
+        ctx.globalAlpha=1;
+        ctx.strokeStyle=cor;
+        ctx.lineWidth=2.5*escala;
+        ctx.lineCap='round';
+        ctx.beginPath();
+        ctx.moveTo(p1.x*escala,p1.y*escala);
+        ctx.lineTo(p2.x*escala,p2.y*escala);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }catch(e){console.warn('[captura-mapa] erro ao desenhar quarteirão',q.id,e);}
+  });
+}
 async function capturarMapaCanvas(){
   const mapEl=document.getElementById('map');
   const bearingOriginal=mapBearing;
   const precisaRotacionar=Math.abs(bearingOriginal)>0.01;
+  const SCALE=2;
+  const lOn=document.getElementById('chk-mostrar-lados')?document.getElementById('chk-mostrar-lados').checked:true;
 
-  if(!precisaRotacionar){
-    return await comTimeout(html2canvas(mapEl,{useCORS:true,allowTaint:true,backgroundColor:'#e8e0d8',scale:2,logging:false}),12000,'A captura do mapa demorou demais e foi cancelada.');
-  }
-
-  // O leaflet-rotate aplica a rotação no CSS transform de algum pane interno
-  // do Leaflet (o elemento exato varia conforme a versão da lib — pode ser
-  // o _mapPane ou um _rotatePane filho dele). O html2canvas não interpreta
-  // bem esse transform. Em vez de adivinhar qual elemento é, procuramos
-  // TODOS os elementos dentro do mapa que tenham "rotate(...)" no transform
-  // inline, removemos essa parte de todos (sem tocar no bearing/estado do
-  // Leaflet, então nada é reposicionado ou recriado), capturamos, e
-  // restauramos tudo exatamente como estava.
-  const alvos=encontrarElementosRotacionados(mapEl);
+  // Remove temporariamente qualquer rotação CSS/SVG encontrada, só para a
+  // captura dos tiles (isso já funciona corretamente).
+  const alvos=precisaRotacionar?encontrarElementosRotacionados(mapEl):[];
   console.log('[captura-mapa] elementos com rotação encontrados:',alvos.map(a=>({tag:a.el.tagName,classe:a.el.className,tipo:a.tipo,angulo:a.angulo})));
-
   for(const a of alvos){
-    if(a.tipo==='css'){
-      a.el.style.transform=a.original.replace(/rotate\([^)]*\)/,'rotate(0deg)');
-    } else {
-      a.el.setAttribute('transform',a.original.replace(/rotate\([^)]*\)/,'rotate(0)'));
-    }
+    if(a.tipo==='css'){a.el.style.transform=a.original.replace(/rotate\([^)]*\)/,'rotate(0deg)');}
+    else{a.el.setAttribute('transform',a.original.replace(/rotate\([^)]*\)/,'rotate(0)'));}
   }
 
+  let canvasNorte;
   try{
-    await new Promise(r=>requestAnimationFrame(r));
-    const canvasNorte=await comTimeout(html2canvas(mapEl,{useCORS:true,allowTaint:true,backgroundColor:'#e8e0d8',scale:2,logging:false}),12000,'A captura do mapa demorou demais e foi cancelada.');
-
-    if(alvos.length===0)return canvasNorte;
-
-    // Rotaciona o resultado de volta ao ângulo exibido — sem cortar nada:
-    // o canvas de saída é expandido para caber a imagem inteira já
-    // rotacionada, com os cantos preenchidos na cor de fundo do mapa.
-    const anguloCss=alvos[0].angulo;
-    const rad=anguloCss*Math.PI/180;
-    const w=canvasNorte.width,h=canvasNorte.height;
-    const cos=Math.abs(Math.cos(rad)),sin=Math.abs(Math.sin(rad));
-    const outW=Math.ceil(w*cos+h*sin),outH=Math.ceil(w*sin+h*cos);
-    const out=document.createElement('canvas');
-    out.width=outW;out.height=outH;
-    const ctx=out.getContext('2d');
-    ctx.fillStyle='#e8e0d8';
-    ctx.fillRect(0,0,outW,outH);
-    ctx.translate(outW/2,outH/2);
-    ctx.rotate(rad);
-    ctx.drawImage(canvasNorte,-w/2,-h/2);
-    return out;
+    if(alvos.length)await new Promise(r=>requestAnimationFrame(r));
+    canvasNorte=await comTimeout(html2canvas(mapEl,{useCORS:true,allowTaint:true,backgroundColor:'#e8e0d8',scale:SCALE,logging:false}),12000,'A captura do mapa demorou demais e foi cancelada.');
   } finally {
     for(const a of alvos){
-      if(a.tipo==='css'){
-        a.el.style.transform=a.original;
-      } else {
-        a.el.setAttribute('transform',a.original);
-      }
+      if(a.tipo==='css'){a.el.style.transform=a.original;}
+      else{a.el.setAttribute('transform',a.original);}
     }
   }
+
+  // Os quarteirões (polígonos SVG do Leaflet) não estão sendo capturados
+  // pelo html2canvas nessa configuração — problema conhecido e comum entre
+  // html2canvas + overlays SVG do Leaflet. Em vez de depender disso,
+  // desenhamos os quarteirões manualmente aqui, com a geometria real
+  // (lat/lng de cada vértice), o que funciona sempre, independente do que
+  // o html2canvas consiga ou não capturar.
+  try{
+    desenharQuarteiroesEmCanvas(canvasNorte.getContext('2d'),SCALE,lOn);
+  }catch(e){console.warn('[captura-mapa] falha ao desenhar quarteirões',e);}
+
+  if(!precisaRotacionar||alvos.length===0){
+    return canvasNorte;
+  }
+
+  // Rotaciona o resultado de volta ao ângulo exibido — sem cortar nada:
+  // o canvas de saída é expandido para caber a imagem inteira já
+  // rotacionada, com os cantos preenchidos na cor de fundo do mapa.
+  const anguloCss=alvos[0].angulo;
+  const rad=anguloCss*Math.PI/180;
+  const w=canvasNorte.width,h=canvasNorte.height;
+  const cos=Math.abs(Math.cos(rad)),sin=Math.abs(Math.sin(rad));
+  const outW=Math.ceil(w*cos+h*sin),outH=Math.ceil(w*sin+h*cos);
+  const out=document.createElement('canvas');
+  out.width=outW;out.height=outH;
+  const ctx=out.getContext('2d');
+  ctx.fillStyle='#e8e0d8';
+  ctx.fillRect(0,0,outW,outH);
+  ctx.translate(outW/2,outH/2);
+  ctx.rotate(rad);
+  ctx.drawImage(canvasNorte,-w/2,-h/2);
+  return out;
 }
 async function _capturarComToggles(){
   if(_capturandoPreview)return;
