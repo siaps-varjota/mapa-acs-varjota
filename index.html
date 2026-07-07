@@ -1006,6 +1006,27 @@ async function fetchImgBlob(src){try{const res=await fetch(src,{mode:'cors'});if
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
 function containerParaTela(px,py,W,H,S){const ang=-mapBearing*Math.PI/180;const cx=W*S/2,cy=H*S/2;const dx=px*S-cx,dy=py*S-cy;return[cx+dx*Math.cos(ang)-dy*Math.sin(ang),cy+dx*Math.sin(ang)+dy*Math.cos(ang)];}
 function comTimeout(promessa,ms,msgErro){let t;const timeout=new Promise((_,rej)=>{t=setTimeout(()=>rej(new Error(msgErro||'Tempo esgotado')),ms);});return Promise.race([promessa.finally(()=>clearTimeout(t)),timeout]);}
+function encontrarElementosRotacionados(mapEl){
+  const alvos=[];
+  const candidatos=[mapEl,...mapEl.querySelectorAll('*')];
+  for(const el of candidatos){
+    // Caso 1: rotação via propriedade CSS (style.transform)
+    const t=el.style&&el.style.transform;
+    if(t&&/rotate\([^)]*\)/.test(t)){
+      const m=t.match(/rotate\(([-\d.]+)deg\)/);
+      if(m)alvos.push({el,tipo:'css',original:t,angulo:parseFloat(m[1])});
+    }
+    // Caso 2: rotação via atributo SVG "transform" (comum no L.SVG renderer)
+    if(el.getAttribute){
+      const ta=el.getAttribute('transform');
+      if(ta&&/rotate\(/.test(ta)){
+        const m2=ta.match(/rotate\(([-\d.]+)(?:deg)?[, ]?/);
+        if(m2)alvos.push({el,tipo:'attr',original:ta,angulo:parseFloat(m2[1])});
+      }
+    }
+  }
+  return alvos;
+}
 async function capturarMapaCanvas(){
   const mapEl=document.getElementById('map');
   const bearingOriginal=mapBearing;
@@ -1015,35 +1036,35 @@ async function capturarMapaCanvas(){
     return await comTimeout(html2canvas(mapEl,{useCORS:true,allowTaint:true,backgroundColor:'#e8e0d8',scale:2,logging:false}),12000,'A captura do mapa demorou demais e foi cancelada.');
   }
 
-  // O leaflet-rotate aplica a rotação diretamente no CSS transform do
-  // _mapPane interno do Leaflet (o mesmo elemento que o Leaflet usa para
-  // posicionar/panar o mapa, combinando translate3d(...) com rotate(...)).
-  // O html2canvas não interpreta bem esse transform combinado. A tentativa
-  // anterior de contornar isso mudando o bearing/tamanho do mapa ao vivo
-  // fazia o Leaflet reposicionar as camadas (por isso quarteirões e pinos
-  // sumiram). Desta vez não tocamos em nada do estado do Leaflet: apenas
-  // removemos temporariamente a parte "rotate(...)" já calculada no CSS,
-  // sem disparar nenhum evento — nada se move, nada é recriado.
-  const paneEl=map._mapPane;
-  const transformOriginal=paneEl?paneEl.style.transform:null;
-  const match=transformOriginal?transformOriginal.match(/rotate\(([-\d.]+)deg\)/):null;
-  let removido=false;
+  // O leaflet-rotate aplica a rotação no CSS transform de algum pane interno
+  // do Leaflet (o elemento exato varia conforme a versão da lib — pode ser
+  // o _mapPane ou um _rotatePane filho dele). O html2canvas não interpreta
+  // bem esse transform. Em vez de adivinhar qual elemento é, procuramos
+  // TODOS os elementos dentro do mapa que tenham "rotate(...)" no transform
+  // inline, removemos essa parte de todos (sem tocar no bearing/estado do
+  // Leaflet, então nada é reposicionado ou recriado), capturamos, e
+  // restauramos tudo exatamente como estava.
+  const alvos=encontrarElementosRotacionados(mapEl);
+  console.log('[captura-mapa] elementos com rotação encontrados:',alvos.map(a=>({tag:a.el.tagName,classe:a.el.className,tipo:a.tipo,angulo:a.angulo})));
 
-  if(paneEl&&match){
-    paneEl.style.transform=transformOriginal.replace(/rotate\([^)]*\)/,'rotate(0deg)');
-    removido=true;
+  for(const a of alvos){
+    if(a.tipo==='css'){
+      a.el.style.transform=a.original.replace(/rotate\([^)]*\)/,'rotate(0deg)');
+    } else {
+      a.el.setAttribute('transform',a.original.replace(/rotate\([^)]*\)/,'rotate(0)'));
+    }
   }
 
   try{
     await new Promise(r=>requestAnimationFrame(r));
     const canvasNorte=await comTimeout(html2canvas(mapEl,{useCORS:true,allowTaint:true,backgroundColor:'#e8e0d8',scale:2,logging:false}),12000,'A captura do mapa demorou demais e foi cancelada.');
 
-    if(!removido)return canvasNorte;
+    if(alvos.length===0)return canvasNorte;
 
     // Rotaciona o resultado de volta ao ângulo exibido — sem cortar nada:
     // o canvas de saída é expandido para caber a imagem inteira já
     // rotacionada, com os cantos preenchidos na cor de fundo do mapa.
-    const anguloCss=parseFloat(match[1]);
+    const anguloCss=alvos[0].angulo;
     const rad=anguloCss*Math.PI/180;
     const w=canvasNorte.width,h=canvasNorte.height;
     const cos=Math.abs(Math.cos(rad)),sin=Math.abs(Math.sin(rad));
@@ -1058,8 +1079,12 @@ async function capturarMapaCanvas(){
     ctx.drawImage(canvasNorte,-w/2,-h/2);
     return out;
   } finally {
-    if(removido&&paneEl){
-      paneEl.style.transform=transformOriginal;
+    for(const a of alvos){
+      if(a.tipo==='css'){
+        a.el.style.transform=a.original;
+      } else {
+        a.el.setAttribute('transform',a.original);
+      }
     }
   }
 }
