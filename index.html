@@ -1001,7 +1001,6 @@ document.getElementById('input-importar').addEventListener('change',function(e){
 
 // ─── CAPTURAR MAPA ────────────────────────────────────────────────────────────
 let _canvasMapaSemRodape=null;
-let _capturandoPreview=false;
 function setOpacidadeLados(op){quarteiroesData.forEach(q=>{(q.linhas||[]).forEach(l=>{try{l.setStyle({opacity:op});}catch{}});});}
 function setOpacidadePinos(op){lados.forEach(l=>{try{l.marker.setOpacity(op);}catch{}});}
 function montarCanvasFinal(mapaCanvas,nomeDoc){
@@ -1010,100 +1009,30 @@ function montarCanvasFinal(mapaCanvas,nomeDoc){
 function hexParaRgb(hex){hex=(hex||'#6a1b9a').replace('#','');if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');const n=parseInt(hex,16)||0;return{r:(n>>16)&255,g:(n>>8)&255,b:n&255};}
 async function fetchImgBlob(src){try{const res=await fetch(src,{mode:'cors'});if(!res.ok)throw new Error();const blob=await res.blob();const url=URL.createObjectURL(blob);return await new Promise(ok=>{const img=new Image();img.onload=()=>{URL.revokeObjectURL(url);ok(img);};img.onerror=()=>{URL.revokeObjectURL(url);ok(null);};img.src=url;});}catch{return null;}}
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
-function comTimeout(promessa,ms,msgErro){let t;const timeout=new Promise((_,rej)=>{t=setTimeout(()=>rej(new Error(msgErro||'Tempo esgotado')),ms);});return Promise.race([promessa.finally(()=>clearTimeout(t)),timeout]);}
-function desenharQuarteiroesEmCanvas(ctx,escala,mostrarLados){
-  if(!mostrarLados)return;
-  // Usamos map.latLngToContainerPoint(), a mesma API pública do Leaflet que
-  // já usamos para converter cliques em lat/lng (ver containerPointToLatLng
-  // em outro ponto do código). Ela já é corrigida pelo leaflet-rotate para
-  // devolver a posição EXATA na tela como exibida (com a rotação atual já
-  // aplicada) — é o mesmo cálculo que faz o arraste de vértices funcionar
-  // certo com o mapa girado. Por isso não precisamos mais desrotacionar o
-  // mapa antes de capturar nem regirar o canvas depois: capturamos o mapa
-  // exatamente como está na tela (igual a um html2canvas simples) e
-  // desenhamos os quarteirões por cima, nas mesmas coordenadas de tela.
-  quarteiroesData.forEach(q=>{
-    try{
-      const verts=obterVerticesQt(q);
-      if(!verts||verts.length<3)return;
-      const pts=verts.map(v=>{
-        const p=map.latLngToContainerPoint(L.latLng(v));
-        return {x:p.x,y:p.y};
-      });
-      const fillOp=(q.nlados===2)?0:0.15;
-      if(fillOp>0){
-        ctx.save();
-        ctx.beginPath();
-        pts.forEach((p,i)=>{const x=p.x*escala,y=p.y*escala;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});
-        ctx.closePath();
-        ctx.globalAlpha=fillOp;
-        ctx.fillStyle=q.cor||'#6a1b9a';
-        ctx.fill();
-        ctx.restore();
-      }
-      const n=pts.length;
-      const coresLados=q.coresLados||[];
-      for(let i=0;i<n;i++){
-        const p1=pts[i],p2=pts[(i+1)%n];
-        const cor=coresLados[i]||q.cor||'#6a1b9a';
-        ctx.save();
-        ctx.globalAlpha=1;
-        ctx.strokeStyle=cor;
-        ctx.lineWidth=2.5*escala;
-        ctx.lineCap='round';
-        ctx.beginPath();
-        ctx.moveTo(p1.x*escala,p1.y*escala);
-        ctx.lineTo(p2.x*escala,p2.y*escala);
-        ctx.stroke();
-        ctx.restore();
-      }
-    }catch(e){console.warn('[captura-mapa] erro ao desenhar quarteirão',q.id,e);}
-  });
-}
+function containerParaTela(px,py,W,H,S){const ang=-mapBearing*Math.PI/180;const cx=W*S/2,cy=H*S/2;const dx=px*S-cx,dy=py*S-cy;return[cx+dx*Math.cos(ang)-dy*Math.sin(ang),cy+dx*Math.sin(ang)+dy*Math.cos(ang)];}
 async function capturarMapaCanvas(){
   const mapEl=document.getElementById('map');
-  const SCALE=2;
-  const lOn=document.getElementById('chk-mostrar-lados')?document.getElementById('chk-mostrar-lados').checked:true;
-
-  // Captura o mapa exatamente como está na tela (com a rotação do CSS, se
-  // houver, já embutida na imagem — igual ao que o usuário vê).
-  const canvas=await comTimeout(html2canvas(mapEl,{useCORS:true,allowTaint:true,backgroundColor:'#e8e0d8',scale:SCALE,logging:false}),12000,'A captura do mapa demorou demais e foi cancelada.');
-
-  // Os quarteirões (polígonos SVG do Leaflet) não estão sendo capturados
-  // pelo html2canvas nessa configuração — problema conhecido e comum entre
-  // html2canvas + overlays SVG do Leaflet. Em vez de depender disso,
-  // desenhamos os quarteirões manualmente aqui, usando a posição real deles
-  // na tela (map.latLngToContainerPoint), o que funciona sempre, com ou sem
-  // rotação, independente do que o html2canvas consiga ou não capturar.
-  try{
-    desenharQuarteiroesEmCanvas(canvas.getContext('2d'),SCALE,lOn);
-  }catch(e){console.warn('[captura-mapa] falha ao desenhar quarteirões',e);}
-
+  const canvas = await html2canvas(mapEl, {
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#e8e0d8',
+    scale: 2,
+    logging: false
+  });
   return canvas;
 }
 document.getElementById('btn-capturar').addEventListener('click',async()=>{
   const btn=document.getElementById('btn-capturar');if(btn.classList.contains('capturando'))return;btn.classList.add('capturando');btn.textContent='⏳ Processando…';
   const toolbar=document.getElementById('toolbar'),sn=document.getElementById('status-nuvem'),dicaEl=document.getElementById('dica'),la=document.getElementById('legenda-asterisco'),pt=document.getElementById('painel-toggle');
   toolbar.style.display='none';sn.style.display='none';dicaEl.style.display='none';la.style.display='none';pt.style.visibility='hidden';
-  const handlesBkp=_handleQtId;if(handlesBkp!==null)esconderHandles();
-  // Quando o mapa está girado (mapBearing != 0), o leaflet-rotate aplica um
-  // CSS transform: rotate(...) no painel de tiles. O html2canvas não
-  // rasteriza esse transform com precisão de subpixel, então os tiles saem
-  // deslocados/rotacionados de forma levemente diferente do que o Leaflet
-  // calcula internamente — enquanto os quarteirões são desenhados por cima
-  // usando map.latLngToContainerPoint(), que é sempre matematicamente exato.
-  // Resultado: quadriláteros "desalinhados" das ruas na imagem exportada.
-  // Solução: zerar a rotação só durante a captura (tiles ficam retos, sem
-  // transform, sem ambiguidade para o html2canvas) e restaurar depois.
-  const bearingBkp=mapBearing;
-  if(bearingBkp!==0){map.setBearing(0);await new Promise(r=>setTimeout(r,350));}
-  else{await new Promise(r=>setTimeout(r,150));}
+  const handlesBkp=_handleQtId;if(handlesBkp!==null)esconderHandles();await new Promise(r=>setTimeout(r,150));
   try{const canvas=await capturarMapaCanvas();_canvasMapaSemRodape=canvas;const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(canvas,'').toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);document.getElementById('input-nome-doc').value='';document.getElementById('input-nome-arquivo').value=`mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;document.getElementById('modal-salvar').classList.remove('oculto');setTimeout(()=>document.getElementById('input-nome-doc').focus(),100);}catch(e){console.error(e);mostrarToast('❌ '+e.message);}
-  finally{toolbar.style.display='';sn.style.display='';la.style.display='';pt.style.visibility='';btn.classList.remove('capturando');btn.textContent='🖼️ Salvar Mapa';if(handlesBkp!==null)mostrarHandles(handlesBkp);if(bearingBkp!==0)map.setBearing(bearingBkp);}
+  finally{toolbar.style.display='';sn.style.display='';la.style.display='';pt.style.visibility='';btn.classList.remove('capturando');btn.textContent='🖼️ Salvar Mapa';if(handlesBkp!==null)mostrarHandles(handlesBkp);}
 });
 document.getElementById('input-nome-doc').addEventListener('input',()=>{if(!_canvasMapaSemRodape)return;const wrap=document.getElementById('preview-canvas-wrap');wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim()).toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);});
 document.getElementById('btn-confirmar-salvar').addEventListener('click',()=>{if(!_canvasMapaSemRodape)return;const fc=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim());const nome=(document.getElementById('input-nome-arquivo').value||'mapa_acs_varjota').trim().replace(/\.png$/i,'');const a=document.createElement('a');a.download=`${nome}.png`;a.href=fc.toDataURL('image/png');a.click();document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;mostrarToast('✅ Imagem salva!');});
 document.getElementById('btn-cancelar-salvar').addEventListener('click',()=>{document.getElementById('modal-salvar').classList.add('oculto');_canvasMapaSemRodape=null;});
+
 
 // ─── LIMPAR TUDO ──────────────────────────────────────────────────────────────
 document.getElementById('btn-limpar').addEventListener('click',()=>{
