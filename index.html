@@ -1060,27 +1060,141 @@ function desenharQuarteiroesEmCanvas(ctx,escala,mostrarLados){
     }catch(e){console.warn('[captura-mapa] erro ao desenhar quarteirão',q.id,e);}
   });
 }
-async function capturarMapaCanvas(){
-  const mapEl=document.getElementById('map');
-  const SCALE=2;
-  const lOn=document.getElementById('chk-mostrar-lados')?document.getElementById('chk-mostrar-lados').checked:true;
 
-  // Captura o mapa exatamente como está na tela (com a rotação do CSS, se
-  // houver, já embutida na imagem — igual ao que o usuário vê).
-  const canvas=await comTimeout(html2canvas(mapEl,{useCORS:true,allowTaint:true,backgroundColor:'#e8e0d8',scale:SCALE,logging:false}),12000,'A captura do mapa demorou demais e foi cancelada.');
+function desenharLadosEmCanvas(ctx, escala) {
+  const zoom = map.getZoom();
+  const scale = calcZoomScale(zoom);
+  const isMini = zoom < 14;
+  const isMedio = zoom >= 14 && zoom < 15.5;
 
-  // Os quarteirões (polígonos SVG do Leaflet) não estão sendo capturados
-  // pelo html2canvas nessa configuração — problema conhecido e comum entre
-  // html2canvas + overlays SVG do Leaflet. Em vez de depender disso,
-  // desenhamos os quarteirões manualmente aqui, usando a posição real deles
-  // na tela (map.latLngToContainerPoint), o que funciona sempre, com ou sem
-  // rotação, independente do que o html2canvas consiga ou não capturar.
-  try{
-    desenharQuarteiroesEmCanvas(canvas.getContext('2d'),SCALE,lOn);
-  }catch(e){console.warn('[captura-mapa] falha ao desenhar quarteirões',e);}
+  lados.forEach(l => {
+    try {
+      const p = map.latLngToContainerPoint(l.marker.getLatLng());
+      const x = p.x * escala;
+      const y = p.y * escala;
+      
+      const ang = calcAngLabel(l.angulo, l.rotacaoManual || 0, l.fixado);
+      const acsLbl = l.acs || `#${l.id}`;
+      const acsVazio = !l.acs;
+      const qtdLbl = l.pessoas > 0 ? `${l.pessoas}` : '–';
+      
+      const ct = l.corTexto || '#1a7f4b';
+      const op = l.opacidadeFundo !== undefined ? l.opacidadeFundo : 1;
+      const hexFundo = l.corFundo || '#ffffff';
+      const cf = hexOpacidadeParaRgba(hexFundo, op);
+      const bordaCor = op < 0.1 ? 'rgba(0,0,0,0.15)' : (l.corFundo && l.corFundo !== '#ffffff' ? hexFundo + '55' : 'rgba(0,0,0,0.10)');
 
-  return canvas;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale * escala, scale * escala);
+      ctx.rotate(ang * Math.PI / 180);
+
+      const w = 76;
+      const h = 20;
+      
+      if (!isMini) {
+        roundRect(ctx, -w/2, -h/2, w, h, 4);
+        ctx.fillStyle = cf;
+        ctx.fill();
+        ctx.strokeStyle = bordaCor;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        if (isMedio) {
+            ctx.font = 'bold 9px Sora, sans-serif';
+            ctx.fillStyle = acsVazio ? 'rgba(0,0,0,0.35)' : ct;
+            ctx.fillText(acsLbl, 0, 0);
+        } else {
+            ctx.font = 'bold 9px Sora, sans-serif';
+            ctx.fillStyle = acsVazio ? 'rgba(0,0,0,0.35)' : ct;
+            const mAcs = ctx.measureText(acsLbl);
+            
+            ctx.font = 'bold 9px "JetBrains Mono", monospace';
+            const mQtd = ctx.measureText(qtdLbl + '*');
+            
+            const totalW = mAcs.width + 10 + mQtd.width;
+            const startX = -totalW / 2;
+            
+            ctx.textAlign = 'left';
+            ctx.font = 'bold 9px Sora, sans-serif';
+            ctx.fillText(acsLbl, startX, 0);
+            
+            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+            ctx.fillText('|', startX + mAcs.width + 4, 0);
+            
+            ctx.fillStyle = '#1e2a38';
+            ctx.font = 'bold 9px "JetBrains Mono", monospace';
+            ctx.fillText(qtdLbl, startX + mAcs.width + 10, 0);
+            
+            ctx.fillStyle = ct;
+            ctx.font = 'bold 7px "JetBrains Mono", monospace';
+            ctx.fillText('*', startX + mAcs.width + 10 + ctx.measureText(qtdLbl).width, -2);
+        }
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, 3, 0, Math.PI * 2);
+        ctx.fillStyle = ct;
+        ctx.fill();
+      }
+      ctx.restore();
+    } catch (e) { console.warn('Erro ao desenhar marcador', l.id, e); }
+  });
 }
+
+
+async function capturarMapaCanvas(){
+  const mapEl = document.getElementById('map');
+  const SCALE = 2;
+  const lOn = document.getElementById('chk-mostrar-lados') ? document.getElementById('chk-mostrar-lados').checked : true;
+
+  const backupPinos = pinosOcultos;
+  const backupLados = lOn;
+  
+  lados.forEach(l => { if(l.marker) l.marker.setOpacity(0); });
+  quarteiroesData.forEach(q => {
+    if(q.polygon) q.polygon.setStyle({fillOpacity: 0, opacity: 0});
+    (q.linhas || []).forEach(lin => lin.setStyle({opacity: 0}));
+  });
+  const hBkp = _handleQtId;
+  if(hBkp !== null) esconderHandles();
+
+  try {
+    const canvas = await comTimeout(html2canvas(mapEl, {
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#e8e0d8',
+      scale: SCALE,
+      logging: false,
+      ignoreElements: (el) => {
+        return el.id === 'toolbar' || el.id === 'status-nuvem' || el.id === 'painel-toggle' || el.classList.contains('leaflet-control-container');
+      }
+    }), 15000, 'A captura do mapa demorou demais.');
+
+    const ctx = canvas.getContext('2d');
+    desenharQuarteiroesEmCanvas(ctx, SCALE, lOn);
+    if (!backupPinos) {
+      desenharLadosEmCanvas(ctx, SCALE);
+    }
+    return canvas;
+  } finally {
+    lados.forEach(l => { 
+      if(l.marker) l.marker.setOpacity(backupPinos ? 0 : 1); 
+    });
+    quarteiroesData.forEach(q => {
+      const fillOp = (q.nlados === 2) ? 0 : 0.15;
+      if(q.polygon) q.polygon.setStyle({fillOpacity: fillOp, opacity: 1});
+      (q.linhas || []).forEach((lin, idx) => {
+        const cor = (q.coresLados && q.coresLados[idx]) || q.cor || '#6a1b9a';
+        lin.setStyle({opacity: 1, color: cor});
+      });
+    });
+    if(hBkp !== null) mostrarHandles(hBkp);
+  }
+}
+
 document.getElementById('btn-capturar').addEventListener('click',async()=>{
   const btn=document.getElementById('btn-capturar');if(btn.classList.contains('capturando'))return;btn.classList.add('capturando');btn.textContent='⏳ Processando…';
   const toolbar=document.getElementById('toolbar'),sn=document.getElementById('status-nuvem'),dicaEl=document.getElementById('dica'),la=document.getElementById('legenda-asterisco'),pt=document.getElementById('painel-toggle');
