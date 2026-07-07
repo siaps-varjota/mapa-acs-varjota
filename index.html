@@ -1010,58 +1010,25 @@ function montarCanvasFinal(mapaCanvas,nomeDoc){
 function hexParaRgb(hex){hex=(hex||'#6a1b9a').replace('#','');if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');const n=parseInt(hex,16)||0;return{r:(n>>16)&255,g:(n>>8)&255,b:n&255};}
 async function fetchImgBlob(src){try{const res=await fetch(src,{mode:'cors'});if(!res.ok)throw new Error();const blob=await res.blob();const url=URL.createObjectURL(blob);return await new Promise(ok=>{const img=new Image();img.onload=()=>{URL.revokeObjectURL(url);ok(img);};img.onerror=()=>{URL.revokeObjectURL(url);ok(null);};img.src=url;});}catch{return null;}}
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
-function containerParaTela(px,py,W,H,S){const ang=-mapBearing*Math.PI/180;const cx=W*S/2,cy=H*S/2;const dx=px*S-cx,dy=py*S-cy;return[cx+dx*Math.cos(ang)-dy*Math.sin(ang),cy+dx*Math.sin(ang)+dy*Math.cos(ang)];}
 function comTimeout(promessa,ms,msgErro){let t;const timeout=new Promise((_,rej)=>{t=setTimeout(()=>rej(new Error(msgErro||'Tempo esgotado')),ms);});return Promise.race([promessa.finally(()=>clearTimeout(t)),timeout]);}
-function encontrarElementosRotacionados(mapEl){
-  const alvos=[];
-  const candidatos=[mapEl,...mapEl.querySelectorAll('*')];
-  for(const el of candidatos){
-    // Caso 1: rotação via propriedade CSS (style.transform)
-    const t=el.style&&el.style.transform;
-    if(t&&/rotate\([^)]*\)/.test(t)){
-      const m=t.match(/rotate\(([-\d.]+)deg\)/);
-      if(m)alvos.push({el,tipo:'css',original:t,angulo:parseFloat(m[1])});
-    }
-    // Caso 2: rotação via atributo SVG "transform" (comum no L.SVG renderer)
-    if(el.getAttribute){
-      const ta=el.getAttribute('transform');
-      if(ta&&/rotate\(/.test(ta)){
-        const m2=ta.match(/rotate\(([-\d.]+)(?:deg)?[, ]?/);
-        if(m2)alvos.push({el,tipo:'attr',original:ta,angulo:parseFloat(m2[1])});
-      }
-    }
-  }
-  return alvos;
-}
-function pontoNorteUp(latlng){
-  // Posição em pixels CSS (relativa ao canto superior esquerdo do #map),
-  // no referencial "norte para cima" — o mesmo referencial em que
-  // capturamos canvasNorte (com a rotação do CSS removida). Calculado
-  // direto pelas primitivas internas do Leaflet (project/pixelOrigin/
-  // mapPanePos), que não dependem do CSS de rotação do leaflet-rotate.
-  const layerPt=map.project(L.latLng(latlng),map.getZoom())._subtract(map.getPixelOrigin());
-  const panePos=(map._getMapPanePos&&map._getMapPanePos())||L.point(0,0);
-  return layerPt.subtract(panePos);
-}
 function desenharQuarteiroesEmCanvas(ctx,escala,mostrarLados){
   if(!mostrarLados)return;
-  // O leaflet-rotate reescreve as conversões geo->pixel dos overlays SVG para
-  // compensar o bearing do mapa (ver Renderer.js/SVG.js da lib). Isso quer
-  // dizer que map.project()/pixelOrigin/panePos, sozinhos, já NÃO ficam mais
-  // "norte para cima puro" quando o bearing é diferente de zero — falta
-  // reaplicar a mesma rotação de compensação que a lib faz para os overlays.
-  // containerParaTela() já fazia essa rotação em torno do centro do mapa,
-  // mas não estava sendo usada aqui — por isso os quarteirões saíam
-  // desalinhados em relação aos tiles na imagem exportada.
-  const tam=map.getSize();
+  // Usamos map.latLngToContainerPoint(), a mesma API pública do Leaflet que
+  // já usamos para converter cliques em lat/lng (ver containerPointToLatLng
+  // em outro ponto do código). Ela já é corrigida pelo leaflet-rotate para
+  // devolver a posição EXATA na tela como exibida (com a rotação atual já
+  // aplicada) — é o mesmo cálculo que faz o arraste de vértices funcionar
+  // certo com o mapa girado. Por isso não precisamos mais desrotacionar o
+  // mapa antes de capturar nem regirar o canvas depois: capturamos o mapa
+  // exatamente como está na tela (igual a um html2canvas simples) e
+  // desenhamos os quarteirões por cima, nas mesmas coordenadas de tela.
   quarteiroesData.forEach(q=>{
     try{
       const verts=obterVerticesQt(q);
       if(!verts||verts.length<3)return;
       const pts=verts.map(v=>{
-        const p=pontoNorteUp(v);
-        const [cx,cy]=containerParaTela(p.x,p.y,tam.x,tam.y,1);
-        return {x:cx,y:cy};
+        const p=map.latLngToContainerPoint(L.latLng(v));
+        return {x:p.x,y:p.y};
       });
       const fillOp=(q.nlados===2)?0:0.15;
       if(fillOp>0){
@@ -1095,62 +1062,24 @@ function desenharQuarteiroesEmCanvas(ctx,escala,mostrarLados){
 }
 async function capturarMapaCanvas(){
   const mapEl=document.getElementById('map');
-  const bearingOriginal=mapBearing;
-  const precisaRotacionar=Math.abs(bearingOriginal)>0.01;
   const SCALE=2;
   const lOn=document.getElementById('chk-mostrar-lados')?document.getElementById('chk-mostrar-lados').checked:true;
 
-  // Remove temporariamente qualquer rotação CSS/SVG encontrada, só para a
-  // captura dos tiles (isso já funciona corretamente).
-  const alvos=precisaRotacionar?encontrarElementosRotacionados(mapEl):[];
-  console.log('[captura-mapa] elementos com rotação encontrados:',alvos.map(a=>({tag:a.el.tagName,classe:a.el.className,tipo:a.tipo,angulo:a.angulo})));
-  for(const a of alvos){
-    if(a.tipo==='css'){a.el.style.transform=a.original.replace(/rotate\([^)]*\)/,'rotate(0deg)');}
-    else{a.el.setAttribute('transform',a.original.replace(/rotate\([^)]*\)/,'rotate(0)'));}
-  }
-
-  let canvasNorte;
-  try{
-    if(alvos.length)await new Promise(r=>requestAnimationFrame(r));
-    canvasNorte=await comTimeout(html2canvas(mapEl,{useCORS:true,allowTaint:true,backgroundColor:'#e8e0d8',scale:SCALE,logging:false}),12000,'A captura do mapa demorou demais e foi cancelada.');
-  } finally {
-    for(const a of alvos){
-      if(a.tipo==='css'){a.el.style.transform=a.original;}
-      else{a.el.setAttribute('transform',a.original);}
-    }
-  }
+  // Captura o mapa exatamente como está na tela (com a rotação do CSS, se
+  // houver, já embutida na imagem — igual ao que o usuário vê).
+  const canvas=await comTimeout(html2canvas(mapEl,{useCORS:true,allowTaint:true,backgroundColor:'#e8e0d8',scale:SCALE,logging:false}),12000,'A captura do mapa demorou demais e foi cancelada.');
 
   // Os quarteirões (polígonos SVG do Leaflet) não estão sendo capturados
   // pelo html2canvas nessa configuração — problema conhecido e comum entre
   // html2canvas + overlays SVG do Leaflet. Em vez de depender disso,
-  // desenhamos os quarteirões manualmente aqui, com a geometria real
-  // (lat/lng de cada vértice), o que funciona sempre, independente do que
-  // o html2canvas consiga ou não capturar.
+  // desenhamos os quarteirões manualmente aqui, usando a posição real deles
+  // na tela (map.latLngToContainerPoint), o que funciona sempre, com ou sem
+  // rotação, independente do que o html2canvas consiga ou não capturar.
   try{
-    desenharQuarteiroesEmCanvas(canvasNorte.getContext('2d'),SCALE,lOn);
+    desenharQuarteiroesEmCanvas(canvas.getContext('2d'),SCALE,lOn);
   }catch(e){console.warn('[captura-mapa] falha ao desenhar quarteirões',e);}
 
-  if(!precisaRotacionar||alvos.length===0){
-    return canvasNorte;
-  }
-
-  // Rotaciona o resultado de volta ao ângulo exibido — sem cortar nada:
-  // o canvas de saída é expandido para caber a imagem inteira já
-  // rotacionada, com os cantos preenchidos na cor de fundo do mapa.
-  const anguloCss=alvos[0].angulo;
-  const rad=anguloCss*Math.PI/180;
-  const w=canvasNorte.width,h=canvasNorte.height;
-  const cos=Math.abs(Math.cos(rad)),sin=Math.abs(Math.sin(rad));
-  const outW=Math.ceil(w*cos+h*sin),outH=Math.ceil(w*sin+h*cos);
-  const out=document.createElement('canvas');
-  out.width=outW;out.height=outH;
-  const ctx=out.getContext('2d');
-  ctx.fillStyle='#e8e0d8';
-  ctx.fillRect(0,0,outW,outH);
-  ctx.translate(outW/2,outH/2);
-  ctx.rotate(rad);
-  ctx.drawImage(canvasNorte,-w/2,-h/2);
-  return out;
+  return canvas;
 }
 document.getElementById('btn-capturar').addEventListener('click',async()=>{
   const btn=document.getElementById('btn-capturar');if(btn.classList.contains('capturando'))return;btn.classList.add('capturando');btn.textContent='⏳ Processando…';
