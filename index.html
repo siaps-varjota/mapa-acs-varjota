@@ -1045,11 +1045,24 @@ function pontoNorteUp(latlng){
 }
 function desenharQuarteiroesEmCanvas(ctx,escala,mostrarLados){
   if(!mostrarLados)return;
+  // O leaflet-rotate reescreve as conversões geo->pixel dos overlays SVG para
+  // compensar o bearing do mapa (ver Renderer.js/SVG.js da lib). Isso quer
+  // dizer que map.project()/pixelOrigin/panePos, sozinhos, já NÃO ficam mais
+  // "norte para cima puro" quando o bearing é diferente de zero — falta
+  // reaplicar a mesma rotação de compensação que a lib faz para os overlays.
+  // containerParaTela() já fazia essa rotação em torno do centro do mapa,
+  // mas não estava sendo usada aqui — por isso os quarteirões saíam
+  // desalinhados em relação aos tiles na imagem exportada.
+  const tam=map.getSize();
   quarteiroesData.forEach(q=>{
     try{
       const verts=obterVerticesQt(q);
       if(!verts||verts.length<3)return;
-      const pts=verts.map(v=>pontoNorteUp(v));
+      const pts=verts.map(v=>{
+        const p=pontoNorteUp(v);
+        const [cx,cy]=containerParaTela(p.x,p.y,tam.x,tam.y,1);
+        return {x:cx,y:cy};
+      });
       const fillOp=(q.nlados===2)?0:0.15;
       if(fillOp>0){
         ctx.save();
