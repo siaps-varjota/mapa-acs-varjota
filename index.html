@@ -159,6 +159,9 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 #btn-osm.ativo{background:#e8f5ee;color:#2e7d32;border-color:#81c784;}
 #btn-satelite.ativo{background:#1a1a2e;color:#a8d8a8;border-color:#4caf50;}
 #btn-hibrido.ativo{background:#1a1a2e;color:#ffd54f;border-color:#ff8f00;}
+#btn-toggle-pinos{background:var(--cinza);border:1px solid var(--borda);}
+#btn-toggle-pinos:hover{background:var(--borda);}
+#btn-toggle-pinos.ativo{background:#ffebee;color:var(--vermelho);border-color:#ef9a9a;}
 #rot-controls{display:flex;align-items:center;gap:3px;background:#fff;border:1px solid var(--borda);border-radius:8px;padding:4px 7px;height:32px;flex-shrink:0;}
 #rot-controls button{width:24px;height:24px;border:1px solid var(--borda);border-radius:5px;background:var(--cinza);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;font-family:'Sora',sans-serif;font-weight:600;}
 #rot-controls button:hover{background:var(--borda);border-color:var(--verde2);}
@@ -289,6 +292,7 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
         <button id="btn-esri">🗺️ Mapa Esri</button>
         <button id="btn-ruas">🛣️ Ruas OSM</button>
         <button id="btn-osm">🗺️ OpenStreetMap</button>
+        <button id="btn-toggle-pinos">👁️ Ocultar Pinos</button>
         <button id="btn-capturar">🖼️ Salvar Mapa</button>
         <button id="btn-exportar">📋 Exportar JSON</button>
         <button id="btn-importar">📥 Importar JSON</button>
@@ -498,6 +502,15 @@ document.getElementById('btn-osm').addEventListener('click',()=>{limparTileAtivo
 document.getElementById('btn-satelite').addEventListener('click',()=>{limparTileAtivo();tileGoogleSat.addTo(map);document.getElementById('btn-satelite').classList.add('ativo');modoAtual='sat';});
 document.getElementById('btn-hibrido').addEventListener('click',()=>{limparTileAtivo();tileGoogleHybrid.addTo(map);document.getElementById('btn-hibrido').classList.add('ativo');modoAtual='hibrido';});
 
+let pinosOcultos=false;
+document.getElementById('btn-toggle-pinos').addEventListener('click',()=>{
+  pinosOcultos=!pinosOcultos;
+  setOpacidadePinos(pinosOcultos?0:1);
+  const btn=document.getElementById('btn-toggle-pinos');
+  btn.classList.toggle('ativo',pinosOcultos);
+  btn.innerHTML=pinosOcultos?'🙈 Mostrar Pinos':'👁️ Ocultar Pinos';
+});
+
 async function carregarDados(dadosLados,dadosQts){
   esconderHandles();
   lados.forEach(l=>{try{map.removeLayer(l.marker);}catch{}});
@@ -584,6 +597,7 @@ function buildIcon(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFun
 function atualizarTodosOsIcones(){lados.forEach(l=>atualizarIconeMarcador(l.id));}
 function _criarMarker(id,lat,lng,icon){
   const marker=L.marker([lat,lng],{icon,draggable:true,autoPan:false}).addTo(map);
+  if(pinosOcultos)marker.setOpacity(0);
   let _hasDragged=false;
   marker.on('dragstart',()=>{_hasDragged=true;});
   marker.on('dragend',()=>{setTimeout(()=>{_hasDragged=false;},50);});
@@ -1153,7 +1167,7 @@ async function _capturarComToggles(){
     wrap.innerHTML='';const img=document.createElement('img');img.src=montarCanvasFinal(_canvasMapaSemRodape,document.getElementById('input-nome-doc').value.trim()).toDataURL('image/png');img.style.cssText='max-width:100%;max-height:220px;display:block;';wrap.appendChild(img);
   }catch(e){console.error(e);wrap.innerHTML='';if(prevImg)wrap.appendChild(prevImg);mostrarToast('❌ '+e.message);}
   finally{
-    setOpacidadeLados(1);setOpacidadePinos(1);
+    setOpacidadeLados(1);setOpacidadePinos(pinosOcultos?0:1);
     toolbar.style.display='';sn.style.display='';la.style.display='';pt.style.visibility='';if(handlesBkp!==null)mostrarHandles(handlesBkp);
     _capturandoPreview=false;
   }
@@ -1161,7 +1175,7 @@ async function _capturarComToggles(){
 document.getElementById('btn-capturar').addEventListener('click',async()=>{
   const btn=document.getElementById('btn-capturar');if(btn.classList.contains('capturando'))return;btn.classList.add('capturando');btn.textContent='⏳ Processando…';
   document.getElementById('chk-mostrar-lados').checked=true;
-  document.getElementById('chk-mostrar-pinos').checked=true;
+  document.getElementById('chk-mostrar-pinos').checked=!pinosOcultos;
   document.getElementById('input-nome-doc').value='';document.getElementById('input-nome-arquivo').value=`mapa_acs_varjota_${new Date().toISOString().slice(0,10)}`;
   document.getElementById('modal-salvar').classList.remove('oculto');
   await _capturarComToggles();
