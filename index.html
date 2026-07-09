@@ -195,10 +195,10 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 .marker-label .lbl-qtd{display:inline;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;color:#1e2a38;letter-spacing:.3px;}
 .marker-label .lbl-ast{display:inline;font-family:'JetBrains Mono',monospace;font-size:7px;font-weight:700;color:#25b36a;vertical-align:super;line-height:0;}
 .leaflet-marker-icon{background:transparent!important;border:none!important;}
-.qt-label{background:rgba(255,255,255,.94);border:1.5px solid var(--qt-cor,#6a1b9a);border-radius:7px;padding:3px 9px;font-family:'Sora',sans-serif;text-align:center;white-space:nowrap;box-shadow:0 1px 5px rgba(0,0,0,.2);pointer-events:none;user-select:none;transform:translate(-50%,-50%);line-height:1.35;}
-.qt-label .qt-lbl-acs{display:block;font-size:11px;font-weight:800;color:var(--qt-cor,#6a1b9a);}
-.qt-label .qt-lbl-acs.vazio{color:rgba(0,0,0,.35);font-style:italic;font-weight:600;}
-.qt-label .qt-lbl-pessoas{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#1e2a38;}
+.qt-label{background:transparent;border:none;padding:0;font-family:'Sora',sans-serif;text-align:center;white-space:nowrap;box-shadow:none;pointer-events:none;user-select:none;transform:translate(-50%,-50%);line-height:1.35;}
+.qt-label .qt-lbl-acs{display:block;font-size:11px;font-weight:800;color:var(--qt-cor,#6a1b9a);text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff,0 1px 3px rgba(0,0,0,.35);}
+.qt-label .qt-lbl-acs.vazio{color:rgba(0,0,0,.45);font-style:italic;font-weight:600;}
+.qt-label .qt-lbl-pessoas{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#1e2a38;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff,0 1px 3px rgba(0,0,0,.3);}
 .qt-vertex-handle path{cursor:crosshair!important;}
 .leaflet-interactive.qt-vertex-handle{cursor:crosshair!important;}
 #lados-lista::-webkit-scrollbar,#qts-lista::-webkit-scrollbar{width:5px;}
@@ -1101,31 +1101,24 @@ function desenharQuarteiroesEmCanvas(ctx,escala,W,H,ang){
         ctx.save();
         ctx.translate(cx,cy);
         ctx.textBaseline='middle';ctx.textAlign='center';
-        const fsNome=11*s,fsPes=10*s;
+        const fsNome=11*s,fsPes=10*s,lineGap=2*s;
         const fonteNome=`800 ${fsNome}px Sora, sans-serif`;
         const nomeTxt=nome||`Quarteirão #${q.id}`;
-        ctx.font=fonteNome;
-        const wNome=ctx.measureText(nomeTxt).width;
         const pesTxt=pessoas>0?`👥 ${pessoas.toLocaleString('pt-BR')}`:'';
-        let wPes=0;
-        if(pesTxt){ctx.font=`700 ${fsPes}px 'JetBrains Mono', monospace`;wPes=ctx.measureText(pesTxt).width;}
-        const padX=9*s,padY=4*s,lineGap=2*s;
-        const totalW=Math.max(wNome,wPes)+padX*2;
-        const totalH=(pesTxt?(fsNome+fsPes+lineGap):fsNome)+padY*2;
-        const rx=-totalW/2,ry=-totalH/2;
-        roundRect(ctx,rx,ry,totalW,totalH,6*s);
-        ctx.fillStyle='rgba(255,255,255,.94)';
-        ctx.fill();
-        ctx.lineWidth=Math.max(0.8,1.4*s);
-        ctx.strokeStyle=q.cor||'#6a1b9a';
-        ctx.stroke();
-        const yNome=pesTxt?ry+padY+fsNome/2:0;
+        const yNome=pesTxt?-(fsPes+lineGap)/2:0;
+        ctx.lineJoin='round';ctx.miterLimit=2;
         ctx.font=fonteNome;
-        ctx.fillStyle=nome?(q.cor||'#6a1b9a'):'rgba(0,0,0,0.35)';
+        ctx.lineWidth=Math.max(2,3.2*s);
+        ctx.strokeStyle='rgba(255,255,255,.95)';
+        ctx.strokeText(nomeTxt,0,yNome);
+        ctx.fillStyle=nome?(q.cor||'#6a1b9a'):'rgba(0,0,0,0.45)';
         ctx.fillText(nomeTxt,0,yNome);
         if(pesTxt){
-          const yPes=ry+padY+fsNome+lineGap+fsPes/2;
+          const yPes=yNome+fsNome/2+lineGap+fsPes/2;
           ctx.font=`700 ${fsPes}px 'JetBrains Mono', monospace`;
+          ctx.lineWidth=Math.max(2,3*s);
+          ctx.strokeStyle='rgba(255,255,255,.95)';
+          ctx.strokeText(pesTxt,0,yPes);
           ctx.fillStyle='#1e2a38';
           ctx.fillText(pesTxt,0,yPes);
         }
