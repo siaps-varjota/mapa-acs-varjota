@@ -525,7 +525,7 @@ async function carregarDados(dadosLados,dadosQts){
 }
 
 // ─── ZOOM / ESCALA ─────────────────────────────────────────────────────────────
-function calcZoomScale(zoom){return Math.min(3.0,Math.max(0.15,Math.pow(2,(zoom-16)*0.6)))*0.5;}
+function calcZoomScale(zoom){return Math.min(3.0,Math.max(0.15,Math.pow(2,(zoom-16)*0.6)))*0.2;}
 function atualizarEscalaZoom(){
   const zoom=map.getZoom(),scale=calcZoomScale(zoom),isMini=zoom<14,isMedio=zoom>=14&&zoom<15.5;
   lados.forEach(l=>{const el=document.getElementById(`marker-${l.id}`);if(!el)return;el.style.transform=`scale(${scale})`;el.classList.toggle('mini',isMini);el.classList.toggle('medio',isMedio);});
