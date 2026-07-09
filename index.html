@@ -521,7 +521,7 @@ async function carregarDados(dadosLados,dadosQts){
   lados=[];quarteiroesData=[];proximoId=1;proximoQtId=1;
   for(const d of dadosLados){if(d.id>=proximoId)proximoId=d.id+1;await adicionarLadoSilencioso(d);}
   for(const q of(dadosQts||[])){if(q.id>=proximoQtId)proximoQtId=q.id+1;adicionarQuarteirao(q.lat,q.lng,q.largura,q.altura,q.angulo,q.cor,q.id,q.nlados||resolverNLados(q.forma||'retangulo'),q.vertices||null,q.coresLados||null);}
-  renderCards();renderQtCards();atualizarResumo();atualizarBadge();agendarSave();setTimeout(atualizarEscalaZoom,50);
+  renderCards();renderQtCards();atualizarResumo();atualizarBadge();agendarSave();setTimeout(atualizarEscalaZoom,80);
 }
 
 // ─── ZOOM / ESCALA ─────────────────────────────────────────────────────────────
