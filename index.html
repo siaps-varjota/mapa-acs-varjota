@@ -1179,6 +1179,8 @@ async function capturarMapaCanvas(anguloRad){
     });
   }
   lados.forEach(l=>{try{ladosOpBkp.push([l.marker,l.marker.options.opacity]);l.marker.setOpacity(0);}catch{}});
+  const qtLabelOpBkp=[];
+  quarteiroesData.forEach(q=>{try{qtLabelOpBkp.push([q.labelMarker,q.labelMarker.options.opacity]);q.labelMarker.setOpacity(0);}catch{}});
   let canvas;
   try{
     canvas = await html2canvas(mapEl, {
@@ -1191,6 +1193,7 @@ async function capturarMapaCanvas(anguloRad){
   }finally{
     poiEls.forEach(([el,d])=>{el.style.display=d;});
     ladosOpBkp.forEach(([marker,op])=>{try{marker.setOpacity(op!==undefined?op:1);}catch{}});
+    qtLabelOpBkp.forEach(([marker,op])=>{try{marker.setOpacity(op!==undefined?op:1);}catch{}});
   }
   // A captura acima é feita com a rotação do mapa zerada (ver clique do botão
   // "Salvar Mapa"), pois o html2canvas não rasteriza com precisão o CSS
