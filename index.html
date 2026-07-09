@@ -1061,20 +1061,46 @@ async function capturarMapaCanvas(anguloRad){
   const mapEl=document.getElementById('map');
   const SCALE=2;
   const W=mapEl.clientWidth,H=mapEl.clientHeight;
-  let canvas = await html2canvas(mapEl, {
-    useCORS: true,
-    allowTaint: true,
-    backgroundColor: '#e8e0d8',
-    scale: SCALE,
-    logging: false
-  });
+  // Os pinos de POI (🍴💊💰🏥🛒 etc.) ficam sempre "em pé" na tela, mesmo com
+  // o mapa girado — o leaflet-rotate aplica uma contra-rotação neles. Se o
+  // html2canvas os capturasse junto com os tiles (com bearing=0), eles
+  // sairiam em pé só porque a captura acontece sem rotação; ao girarmos a
+  // imagem inteira de volta para o ângulo real (abaixo), eles ficariam
+  // tortos junto com o mapa. Por isso escondemos os pinos antes da captura e
+  // os redesenhamos manualmente depois, sempre em pé, só corrigindo a
+  // posição deles.
+  const poisInfo=[];
+  const poiEls=[];
+  if(poiLayer){
+    poiLayer.eachLayer(m=>{
+      const el=m.getElement&&m.getElement();
+      if(!el)return;
+      const inner=el.querySelector('div');
+      const emoji=inner?inner.textContent:'';
+      const p=map.latLngToContainerPoint(m.getLatLng());
+      poisInfo.push({x:p.x,y:p.y,emoji});
+      poiEls.push([el,el.style.display]);
+      el.style.display='none';
+    });
+  }
+  let canvas;
+  try{
+    canvas = await html2canvas(mapEl, {
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#e8e0d8',
+      scale: SCALE,
+      logging: false
+    });
+  }finally{
+    poiEls.forEach(([el,d])=>{el.style.display=d;});
+  }
   // A captura acima é feita com a rotação do mapa zerada (ver clique do botão
   // "Salvar Mapa"), pois o html2canvas não rasteriza com precisão o CSS
   // transform de rotação do leaflet-rotate. Para a foto final sair com o
   // mesmo ângulo visual que o usuário vê na tela, giramos aqui a imagem já
-  // capturada de volta usando o ângulo real (em radianos) lido do próprio
-  // CSS do mapa antes de zerarmos a rotação — evita ter que adivinhar o
-  // sentido/sinal usado internamente pelo leaflet-rotate. Os cantos expostos
+  // capturada de volta usando o ângulo real (medido empiricamente antes de
+  // zerar o bearing — ver clique do botão "Salvar Mapa"). Os cantos expostos
   // pela rotação ficam preenchidos com a cor de fundo do mapa.
   if(anguloRad){
     const rotado=document.createElement('canvas');
@@ -1100,8 +1126,23 @@ async function capturarMapaCanvas(anguloRad){
     // de desenhar qualquer coisa manualmente.
     ctx.setTransform(1,0,0,1,0,0);
     desenharQuarteiroesEmCanvas(ctx,SCALE,W,H,anguloRad);
+    desenharPOIsEmCanvas(ctx,SCALE,W,H,anguloRad,poisInfo);
   }catch(e){console.warn('[captura-mapa] falha ao desenhar quarteirões',e);}
   return canvas;
+}
+function desenharPOIsEmCanvas(ctx,escala,W,H,ang,poisInfo){
+  poisInfo.forEach(p=>{
+    const [tx,ty]=ang?rotacionarPontoTela(p.x,p.y,W,H,1,ang):[p.x,p.y];
+    ctx.save();
+    ctx.font=`${18*escala}px sans-serif`;
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.shadowColor='rgba(0,0,0,0.3)';
+    ctx.shadowBlur=3*escala;
+    ctx.shadowOffsetY=1*escala;
+    ctx.fillText(p.emoji,tx*escala,ty*escala);
+    ctx.restore();
+  });
 }
 document.getElementById('btn-capturar').addEventListener('click',async()=>{
   const btn=document.getElementById('btn-capturar');if(btn.classList.contains('capturando'))return;btn.classList.add('capturando');btn.textContent='⏳ Processando…';
