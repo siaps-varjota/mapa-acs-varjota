@@ -162,6 +162,8 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 #btn-toggle-pinos{background:var(--cinza);border:1px solid var(--borda);}
 #btn-toggle-pinos:hover{background:var(--borda);}
 #btn-toggle-pinos.ativo{background:#ffebee;color:var(--vermelho);border-color:#ef9a9a;}
+#btn-fundo-transparente{background:var(--cinza);border:1px solid var(--borda);}
+#btn-fundo-transparente:hover{background:var(--borda);}
 #rot-controls{display:flex;align-items:center;gap:3px;background:#fff;border:1px solid var(--borda);border-radius:8px;padding:4px 7px;height:32px;flex-shrink:0;}
 #rot-controls button{width:24px;height:24px;border:1px solid var(--borda);border-radius:5px;background:var(--cinza);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;font-family:'Sora',sans-serif;font-weight:600;}
 #rot-controls button:hover{background:var(--borda);border-color:var(--verde2);}
@@ -293,6 +295,7 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
         <button id="btn-ruas">🛣️ Ruas OSM</button>
         <button id="btn-osm">🗺️ OpenStreetMap</button>
         <button id="btn-toggle-pinos">👁️ Ocultar Pinos</button>
+        <button id="btn-fundo-transparente" title="Deixa o fundo de todos os cards de nome transparente">🫥 Fundo Transparente</button>
         <button id="btn-capturar">🖼️ Salvar Mapa</button>
         <button id="btn-exportar">📋 Exportar JSON</button>
         <button id="btn-importar">📥 Importar JSON</button>
@@ -503,6 +506,14 @@ document.getElementById('btn-toggle-pinos').addEventListener('click',()=>{
   btn.innerHTML=pinosOcultos?'🙈 Mostrar Pinos':'👁️ Ocultar Pinos';
 });
 
+document.getElementById('btn-fundo-transparente').addEventListener('click',()=>{
+  if(!lados.length){mostrarToast('Nenhum pino no mapa ainda.');return;}
+  if(!confirm(`Deixar o fundo de todos os ${lados.length} cards de nome transparente?`))return;
+  lados.forEach(l=>{l.opacidadeFundo=0;atualizarIconeMarcador(l.id);});
+  renderCards();agendarSave();
+  mostrarToast('✅ Fundo dos pinos deixado transparente!');
+});
+
 async function carregarDados(dadosLados,dadosQts){
   esconderHandles();
   lados.forEach(l=>{try{map.removeLayer(l.marker);}catch{}});
@@ -578,9 +589,9 @@ function calcAngLabel(anguloRua, rotacaoManual, fixado){
 
 function buildMarkerHtml(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo,scale=1){
   const acsLbl=acs||`#${id}`,acsCls=acs?'lbl-acs':'lbl-acs vazio',qtdLbl=pessoas>0?`${pessoas}`:'–',ang=calcAngLabel(anguloRua,rotacaoManual||0,fixado);
-  const ct=corTexto||'#1a7f4b';const op=opacidadeFundo!==undefined?opacidadeFundo:1;const hexFundo=corFundo||'#ffffff';const cf=hexOpacidadeParaRgba(hexFundo,op);const bordaCor=op<0.1?'rgba(0,0,0,0.15)':(corFundo&&corFundo!=='#ffffff'?hexFundo+'55':'rgba(0,0,0,0.10)');
+  const ct=corTexto||'#1a7f4b';const op=opacidadeFundo!==undefined?opacidadeFundo:1;const hexFundo=corFundo||'#ffffff';const cf=hexOpacidadeParaRgba(hexFundo,op);const transp=op<0.1;const bordaCor=transp?'transparent':(corFundo&&corFundo!=='#ffffff'?hexFundo+'55':'rgba(0,0,0,0.10)');const sombra=transp?'none':'0 1px 4px rgba(0,0,0,.18)';
   // A escala é aplicada diretamente no wrapper para evitar "pulos" visuais
-  return `<div class="marker-wrapper" id="marker-${id}" style="transform:scale(${scale})"><div class="marker-label" style="--ang:${ang}deg;background:${cf};border-color:${bordaCor}"><span class="${acsCls}" style="color:${ct}">${escHtml(acsLbl)}</span><span class="lbl-sep">|</span><span class="lbl-qtd">${escHtml(qtdLbl)}<span class="lbl-ast" style="color:${ct}">*</span></span></div></div>`;
+  return `<div class="marker-wrapper" id="marker-${id}" style="transform:scale(${scale})"><div class="marker-label" style="--ang:${ang}deg;background:${cf};border-color:${bordaCor};box-shadow:${sombra}"><span class="${acsCls}" style="color:${ct}">${escHtml(acsLbl)}</span><span class="lbl-sep">|</span><span class="lbl-qtd">${escHtml(qtdLbl)}<span class="lbl-ast" style="color:${ct}">*</span></span></div></div>`;
 }
 function buildIcon(id,acs,pessoas,anguloRua,rotacaoManual,fixado,corTexto,corFundo,opacidadeFundo){
   const scale = calcZoomScale(map.getZoom());
@@ -625,7 +636,7 @@ async function adicionarLadoSilencioso(d){
 
 function adicionarLado(lat,lng,rua='Localização marcada',angulo=0){
   const id=proximoId++;
-  const marker=_criarMarker(id,lat,lng,buildIcon(id,'',0,angulo,0,false,'#1a7f4b','#ffffff',1));
+  const marker=_criarMarker(id,lat,lng,buildIcon(id,'',0,angulo,0,false,'#1a7f4b','#ffffff',0));
   marker.bindTooltip(`Lado #${id} — ${rua}`,{permanent:false});
   marker.on('dragend',(e)=>{
     const _ll=e.target.getLatLng();
@@ -642,7 +653,7 @@ function adicionarLado(lat,lng,rua='Localização marcada',angulo=0){
       }
     }
   });
-  lados.push({id,lat,lng,rua,angulo,rotacaoManual:0,fixado:false,acs:'',pessoas:0,corTexto:'#1a7f4b',corFundo:'#ffffff',opacidadeFundo:1,marker});
+  lados.push({id,lat,lng,rua,angulo,rotacaoManual:0,fixado:false,acs:'',pessoas:0,corTexto:'#1a7f4b',corFundo:'#ffffff',opacidadeFundo:0,marker});
   if(!painelAberto)togglePainel();renderCards();atualizarResumo();abrirCard(id);atualizarBadge();agendarSave();setTimeout(atualizarEscalaZoom,50);
 }
 
@@ -1102,7 +1113,7 @@ async function capturarMapaCanvas(anguloRad){
       const op=l.opacidadeFundo!==undefined?l.opacidadeFundo:1;
       const hexFundo=l.corFundo||'#ffffff';
       const cf=hexOpacidadeParaRgba(hexFundo,op);
-      const bordaCor=op<0.1?'rgba(0,0,0,0.15)':(l.corFundo&&l.corFundo!=='#ffffff'?hexFundo+'55':'rgba(0,0,0,0.10)');
+      const bordaCor=op<0.1?'transparent':(l.corFundo&&l.corFundo!=='#ffffff'?hexFundo+'55':'rgba(0,0,0,0.10)');
       ladosInfo.push({x:p.x,y:p.y,scale:scaleAtual,angLabel,acs:l.acs,acsLbl:l.acs||`#${l.id}`,qtdLbl:l.pessoas>0?`${l.pessoas}`:'–',ct,cf,bordaCor,medio:medioAtual});
     });
   }
@@ -1193,9 +1204,11 @@ function desenharLadosEmCanvas(ctx,escala,W,H,ang,ladosInfo){
       roundRect(ctx,rx,ry,totalW,totalH,5*s);
       ctx.fillStyle=info.cf;
       ctx.fill();
-      ctx.lineWidth=Math.max(0.6,1*s);
-      ctx.strokeStyle=info.bordaCor;
-      ctx.stroke();
+      if(info.bordaCor&&info.bordaCor!=='transparent'){
+        ctx.lineWidth=Math.max(0.6,1*s);
+        ctx.strokeStyle=info.bordaCor;
+        ctx.stroke();
+      }
       let curX=rx+padX;
       ctx.textAlign='left';
       ctx.font=fonteAcs;
