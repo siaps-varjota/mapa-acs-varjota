@@ -1083,6 +1083,30 @@ async function capturarMapaCanvas(anguloRad){
       el.style.display='none';
     });
   }
+  // Os pinos ACS (nome + qtd de pessoas) sofrem do mesmo problema: o
+  // html2canvas não rasteriza com confiabilidade a posição/contra-rotação que
+  // o leaflet-rotate aplica ao ícone (divIcon) quando o mapa está girado, o
+  // que faz o pino sair fora do lugar em relação ao restante da imagem. Assim
+  // como os quarteirões e os POIs, escondemos os pinos reais antes da captura
+  // e os redesenhamos manualmente depois, usando a posição geográfica exata
+  // (map.latLngToContainerPoint), que nunca falha.
+  const ladosInfo=[];
+  const ladosOpBkp=[];
+  if(!pinosOcultos){
+    const zoomAtual=map.getZoom(),scaleAtual=calcZoomScale(zoomAtual),miniAtual=zoomAtual<14,medioAtual=zoomAtual>=14&&zoomAtual<15.5;
+    lados.forEach(l=>{
+      if(miniAtual)return;
+      const p=map.latLngToContainerPoint(L.latLng(l.lat,l.lng));
+      const angLabel=calcAngLabel(l.angulo,l.rotacaoManual||0,l.fixado);
+      const ct=l.corTexto||'#1a7f4b';
+      const op=l.opacidadeFundo!==undefined?l.opacidadeFundo:1;
+      const hexFundo=l.corFundo||'#ffffff';
+      const cf=hexOpacidadeParaRgba(hexFundo,op);
+      const bordaCor=op<0.1?'rgba(0,0,0,0.15)':(l.corFundo&&l.corFundo!=='#ffffff'?hexFundo+'55':'rgba(0,0,0,0.10)');
+      ladosInfo.push({x:p.x,y:p.y,scale:scaleAtual,angLabel,acs:l.acs,acsLbl:l.acs||`#${l.id}`,qtdLbl:l.pessoas>0?`${l.pessoas}`:'–',ct,cf,bordaCor,medio:medioAtual});
+    });
+  }
+  lados.forEach(l=>{try{ladosOpBkp.push([l.marker,l.marker.options.opacity]);l.marker.setOpacity(0);}catch{}});
   let canvas;
   try{
     canvas = await html2canvas(mapEl, {
@@ -1094,6 +1118,7 @@ async function capturarMapaCanvas(anguloRad){
     });
   }finally{
     poiEls.forEach(([el,d])=>{el.style.display=d;});
+    ladosOpBkp.forEach(([marker,op])=>{try{marker.setOpacity(op!==undefined?op:1);}catch{}});
   }
   // A captura acima é feita com a rotação do mapa zerada (ver clique do botão
   // "Salvar Mapa"), pois o html2canvas não rasteriza com precisão o CSS
@@ -1127,8 +1152,73 @@ async function capturarMapaCanvas(anguloRad){
     ctx.setTransform(1,0,0,1,0,0);
     desenharQuarteiroesEmCanvas(ctx,SCALE,W,H,anguloRad);
     desenharPOIsEmCanvas(ctx,SCALE,W,H,anguloRad,poisInfo);
+    desenharLadosEmCanvas(ctx,SCALE,W,H,anguloRad,ladosInfo);
   }catch(e){console.warn('[captura-mapa] falha ao desenhar quarteirões',e);}
   return canvas;
+}
+function desenharLadosEmCanvas(ctx,escala,W,H,ang,ladosInfo){
+  // Mesma lógica dos quarteirões/POIs: a posição (x,y) foi capturada com o
+  // mapa "achatado" (bearing 0), então precisa ser rotacionada de volta para
+  // bater com a imagem final. Já o ângulo do PRÓPRIO label (info.angLabel) é
+  // independente da rotação do mapa — o leaflet-rotate contra-rotaciona os
+  // ícones em tela para que o texto sempre siga o ângulo geográfico da rua,
+  // não o ângulo de visualização do mapa. Por isso ele é aplicado sozinho,
+  // sem somar ao ângulo de rotação da imagem (ang).
+  ladosInfo.forEach(info=>{
+    try{
+      const [tx,ty]=ang?rotacionarPontoTela(info.x,info.y,W,H,1,ang):[info.x,info.y];
+      const cx=tx*escala,cy=ty*escala,s=(info.scale||1)*escala;
+      ctx.save();
+      ctx.translate(cx,cy);
+      ctx.rotate((info.angLabel||0)*Math.PI/180);
+      ctx.textBaseline='middle';
+      const fsAcs=8*s,fsSep=7*s,fsQtd=8*s,fsAst=7*s;
+      const fonteAcs=`${info.acs?'700':'italic 600'} ${fsAcs}px Sora, sans-serif`;
+      ctx.font=fonteAcs;
+      const acsTxt=info.acsLbl;
+      const wAcs=ctx.measureText(acsTxt).width;
+      let wSep=0,sepTxt='';
+      if(!info.medio){sepTxt=' | ';ctx.font=`700 ${fsSep}px Sora, sans-serif`;wSep=ctx.measureText(sepTxt).width;}
+      let wQtd=0,wAst=0;
+      if(!info.medio){
+        ctx.font=`700 ${fsQtd}px 'JetBrains Mono', monospace`;
+        wQtd=ctx.measureText(info.qtdLbl).width;
+        ctx.font=`700 ${fsAst}px 'JetBrains Mono', monospace`;
+        wAst=ctx.measureText('*').width;
+      }
+      const padX=6*s,padY=3*s;
+      const totalW=wAcs+wSep+wQtd+wAst+padX*2;
+      const totalH=fsAcs*1.6+padY*2;
+      const rx=-totalW/2,ry=-totalH/2;
+      roundRect(ctx,rx,ry,totalW,totalH,5*s);
+      ctx.fillStyle=info.cf;
+      ctx.fill();
+      ctx.lineWidth=Math.max(0.6,1*s);
+      ctx.strokeStyle=info.bordaCor;
+      ctx.stroke();
+      let curX=rx+padX;
+      ctx.textAlign='left';
+      ctx.font=fonteAcs;
+      ctx.fillStyle=info.acs?info.ct:'rgba(0,0,0,0.35)';
+      ctx.fillText(acsTxt,curX,0);
+      curX+=wAcs;
+      if(!info.medio){
+        ctx.font=`700 ${fsSep}px Sora, sans-serif`;
+        ctx.fillStyle='rgba(0,0,0,0.15)';
+        ctx.fillText(sepTxt,curX,0);
+        curX+=wSep;
+        ctx.font=`700 ${fsQtd}px 'JetBrains Mono', monospace`;
+        ctx.fillStyle='#1e2a38';
+        ctx.fillText(info.qtdLbl,curX,0);
+        curX+=wQtd;
+        ctx.font=`700 ${fsAst}px 'JetBrains Mono', monospace`;
+        ctx.fillStyle=info.ct;
+        ctx.textBaseline='top';
+        ctx.fillText('*',curX,-fsQtd*0.55);
+      }
+      ctx.restore();
+    }catch(e){console.warn('[captura-mapa] erro ao desenhar pino',e);}
+  });
 }
 function desenharPOIsEmCanvas(ctx,escala,W,H,ang,poisInfo){
   poisInfo.forEach(p=>{
