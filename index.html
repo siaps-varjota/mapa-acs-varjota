@@ -974,7 +974,7 @@ rotInput.addEventListener('input',()=>{mapBearing=((parseFloat(rotInput.value)%3
 rotInput.addEventListener('keydown',(e)=>{if(e.key==='ArrowUp'){e.preventDefault();girarMapa(1);}if(e.key==='ArrowDown'){e.preventDefault();girarMapa(-1);}});
 
 // ─── ZOOM ─────────────────────────────────────────────────────────────────────
-const ZOOM_PADRAO=16,ZOOM_STEP=40,PCT_MIN=25,PCT_MAX=400;
+const ZOOM_PADRAO=16,ZOOM_STEP=25,PCT_MIN=25,PCT_MAX=400;
 const zoomRange=document.getElementById('zoom-range'),zoomVal=document.getElementById('zoom-val');
 function pctParaZoom(p){return ZOOM_PADRAO+Math.log2(p/100);}
 function zoomParaPct(z){return Math.round(Math.pow(2,z-ZOOM_PADRAO)*100);}
