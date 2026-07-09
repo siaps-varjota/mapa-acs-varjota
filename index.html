@@ -195,7 +195,8 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 .marker-label .lbl-qtd{display:inline;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;color:#1e2a38;letter-spacing:.3px;}
 .marker-label .lbl-ast{display:inline;font-family:'JetBrains Mono',monospace;font-size:7px;font-weight:700;color:#25b36a;vertical-align:super;line-height:0;}
 .leaflet-marker-icon{background:transparent!important;border:none!important;}
-.qt-label{background:transparent;border:none;padding:0;font-family:'Sora',sans-serif;text-align:center;white-space:nowrap;box-shadow:none;pointer-events:none;user-select:none;transform:translate(-50%,-50%);line-height:1.35;}
+.qt-label-wrapper{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.qt-label{background:transparent;border:none;padding:0;font-family:'Sora',sans-serif;text-align:center;white-space:nowrap;box-shadow:none;pointer-events:none;user-select:none;line-height:1.35;}
 .qt-label .qt-lbl-acs{display:block;font-size:11px;font-weight:800;color:var(--qt-cor,#6a1b9a);text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff,0 1px 3px rgba(0,0,0,.35);}
 .qt-label .qt-lbl-acs.vazio{color:rgba(0,0,0,.45);font-style:italic;font-weight:600;}
 .qt-label .qt-lbl-pessoas{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#1e2a38;text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff,0 1px 3px rgba(0,0,0,.3);}
@@ -383,6 +384,7 @@ header .badge{margin-left:auto;background:rgba(255,255,255,.2);border-radius:8px
 // ─── ESTADO ───────────────────────────────────────────────────────────────────
 let lados=[],quarteiroesData=[],proximoId=1,proximoQtId=1,mapBearing=333,painelAberto=true,poiLayer=null;
 const ICON_W=84,ICON_H=28;
+const QT_LABEL_W=220,QT_LABEL_H=50;
 let _handleGroup=null,_handleQtId=null;
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
@@ -710,11 +712,11 @@ function buildQtLabelHtml(q){
   const nomeCls=nome?'qt-lbl-acs':'qt-lbl-acs vazio';
   const nomeTxt=nome?escHtml(nome):`Quarteirão #${q.id}`;
   const pessoasHtml=pessoas>0?`<span class="qt-lbl-pessoas">👥 ${pessoas.toLocaleString('pt-BR')}</span>`:'';
-  return `<div class="qt-label" style="--qt-cor:${q.cor||'#6a1b9a'}"><span class="${nomeCls}">${nomeTxt}</span>${pessoasHtml}</div>`;
+  return `<div class="qt-label-wrapper"><div class="qt-label" style="--qt-cor:${q.cor||'#6a1b9a'}"><span class="${nomeCls}">${nomeTxt}</span>${pessoasHtml}</div></div>`;
 }
-function criarLabelQt(q){const c=centroideQt(q);q.labelMarker=L.marker(c,{icon:L.divIcon({className:'',html:buildQtLabelHtml(q),iconSize:[0,0],iconAnchor:[0,0]}),interactive:false,keyboard:false,zIndexOffset:450}).addTo(map);}
+function criarLabelQt(q){const c=centroideQt(q);q.labelMarker=L.marker(c,{icon:L.divIcon({className:'',html:buildQtLabelHtml(q),iconSize:[QT_LABEL_W,QT_LABEL_H],iconAnchor:[QT_LABEL_W/2,QT_LABEL_H/2]}),interactive:false,keyboard:false,zIndexOffset:450}).addTo(map);}
 function reposicionarLabelQt(q){if(!q||!q.labelMarker)return;try{q.labelMarker.setLatLng(centroideQt(q));}catch{}}
-function atualizarLabelQt(id){const q=quarteiroesData.find(x=>x.id===id);if(!q||!q.labelMarker)return;q.labelMarker.setLatLng(centroideQt(q));q.labelMarker.setIcon(L.divIcon({className:'',html:buildQtLabelHtml(q),iconSize:[0,0],iconAnchor:[0,0]}));}
+function atualizarLabelQt(id){const q=quarteiroesData.find(x=>x.id===id);if(!q||!q.labelMarker)return;q.labelMarker.setLatLng(centroideQt(q));q.labelMarker.setIcon(L.divIcon({className:'',html:buildQtLabelHtml(q),iconSize:[QT_LABEL_W,QT_LABEL_H],iconAnchor:[QT_LABEL_W/2,QT_LABEL_H/2]}));}
 function adicionarQuarteirao(lat,lng,lM,aM,angDeg,cor,forceId,nlados,verticesIniciais,coresLadosIniciais,acsInicial,pessoasInicial){
   nlados=Math.max(2,parseInt(nlados)||4);cor=cor||'#6a1b9a';const id=forceId!==undefined?forceId:proximoQtId++;
   const forma=nlados;const verts=verticesIniciais||calcVertices(lat,lng,lM,aM,angDeg,forma);
