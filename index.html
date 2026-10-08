@@ -1184,10 +1184,47 @@ function desenharQuarteiroesEmCanvas(ctx,escala,W,H,ang,outW=W,outH=H){
     }catch(e){console.warn('[captura-mapa] erro ao desenhar quarteirão',q.id,e);}
   });
 }
+// Aguarda os tiles do mapa terminarem de carregar (com limite de tempo).
+function aguardarTilesCarregarem(timeout=8000){
+  return new Promise(resolve=>{
+    const pend=[];
+    map.eachLayer(l=>{if(l instanceof L.TileLayer&&l._loading)pend.push(l);});
+    if(!pend.length){setTimeout(resolve,400);return;}
+    let feitos=0,t=null;
+    const fim=()=>{clearTimeout(t);setTimeout(resolve,400);};
+    t=setTimeout(fim,timeout);
+    pend.forEach(l=>l.once('load',()=>{if(++feitos>=pend.length)fim();}));
+  });
+}
+// Para a imagem girada sair com TODOS os cantos preenchidos, o mapa "achatado"
+// (bearing 0) precisa ser capturado numa área maior que a tela: a caixa
+// delimitadora do retângulo visível depois de girado. Aumentamos o #map só
+// durante a captura, esperamos os tiles carregarem e restauramos no final.
 async function capturarMapaCanvas(anguloRad){
   const mapEl=document.getElementById('map');
-  const SCALE=2;
+  const W0=mapEl.clientWidth,H0=mapEl.clientHeight;
+  if(!anguloRad)return _capturarMapaCanvasInterno(0,W0,H0);
+  const cos=Math.abs(Math.cos(anguloRad)),sin=Math.abs(Math.sin(anguloRad));
+  const bw=Math.ceil(W0*cos+H0*sin)+4,bh=Math.ceil(W0*sin+H0*cos)+4;
+  const centro=map.getCenter(),zoom=map.getZoom(),cssBkp=mapEl.style.cssText;
+  try{
+    mapEl.style.cssText=cssBkp+`;flex:none;position:fixed;left:0;top:0;width:${bw}px;height:${bh}px;z-index:9999;`;
+    map.invalidateSize({animate:false,pan:false});
+    map.setView(centro,zoom,{animate:false});
+    await new Promise(r=>setTimeout(r,500));
+    await aguardarTilesCarregarem();
+    return await _capturarMapaCanvasInterno(anguloRad,W0,H0);
+  }finally{
+    mapEl.style.cssText=cssBkp;
+    map.invalidateSize({animate:false,pan:false});
+    map.setView(centro,zoom,{animate:false});
+  }
+}
+async function _capturarMapaCanvasInterno(anguloRad,W0,H0){
+  const mapEl=document.getElementById('map');
   const W=mapEl.clientWidth,H=mapEl.clientHeight;
+  // limita a resolução para não estourar o limite de área de canvas do navegador
+  const SCALE=Math.max(1,Math.min(2,Math.sqrt(36e6/(W*H))));
   // Os pinos de POI (🍴💊💰🏥🛒 etc.) ficam sempre "em pé" na tela, mesmo com
   // o mapa girado — o leaflet-rotate aplica uma contra-rotação neles. Se o
   // html2canvas os capturasse junto com os tiles (com bearing=0), eles
@@ -1263,10 +1300,9 @@ async function capturarMapaCanvas(anguloRad){
     // da rotação. Manter a mesma largura/altura do canvas original fazia os
     // quatro cantos do mapa saírem cortados (a diagonal do retângulo girado
     // é maior que os lados originais).
-    const cos=Math.abs(Math.cos(anguloRad)),sin=Math.abs(Math.sin(anguloRad));
     const rotado=document.createElement('canvas');
-    rotado.width=Math.ceil(canvas.width*cos+canvas.height*sin);
-    rotado.height=Math.ceil(canvas.width*sin+canvas.height*cos);
+    rotado.width=Math.round(W0*SCALE);
+    rotado.height=Math.round(H0*SCALE);
     const rctx=rotado.getContext('2d');
     rctx.fillStyle='#e8e0d8';
     rctx.fillRect(0,0,rotado.width,rotado.height);
